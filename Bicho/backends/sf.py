@@ -24,8 +24,8 @@ from HTMLParser import HTMLParser
 from ParserSFBugs import *
 import re
 import time
-#import SqlBug
-import Bicho.Bug
+import Bicho.Bug as Bug
+from Bicho.SqlBug import *
 
 
 class SFBackend (Backend):
@@ -33,8 +33,7 @@ class SFBackend (Backend):
     def __init__ (self):
         Backend.__init__ (self)
 
-    #def run (self):
-    #    pass
+
 
    
     def get_links (self, url):
@@ -52,7 +51,6 @@ class SFBackend (Backend):
    
    
     def getLinksBugs (self, url):
-        #Next code must be located in the specific engine of SF
         links = []
         bugs = []
         next_bugs = ""
@@ -75,9 +73,10 @@ class SFBackend (Backend):
 
     
     def analyzeBug(self, bugUrl):
-        
+
+        print bugUrl
         parser = ParserSFBugs(bugUrl)
-        print "Analizando: " + bugUrl
+        print "Analysing: " + bugUrl
         parser.feed(urllib.urlopen(bugUrl).read())
         parser.close()
         
@@ -89,16 +88,26 @@ class SFBackend (Backend):
         
         debug ("Running Bicho")
         
-
         #There are several pages of bugs for each project and 50 bugs per page
         #25th August 2007
+
+        #Creating database
+        db = DBDatabase()
+        
         while url != "":
-            print "Obteniendo links de bugs, de la url: " + url
+            print "Obtaining bug links, from url: " + url
             bugs, url = self.getLinksBugs(url)
             
             for bug in bugs:
+                
                 time.sleep(5)
-                print self.analyzeBug(bug)
+                #print self.analyzeBug(bug)
+                dataBug = self.analyzeBug(bug)
+                print "Procediendo a crear objeto DBBug"
+
+                dbBug = DBBug(dataBug)
+                
+                db.insert(dbBug)
 
 
 

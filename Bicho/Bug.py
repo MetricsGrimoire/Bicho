@@ -22,16 +22,7 @@ class Bug:
 
     def __init__(self):
         
-##        self.id
-##        self.Summary 
-##        self.Description 
-##        self.DateSubmitted 
-##        self.Status 
-##        self.Priority 
-##        self.Category 
-##        self.Group 
-##        self.AssignedTo 
-##        self.SubmittedBy 
+ 
         
         self.__dict__ = {"Id" : None,
                                 "Summary" : None,
@@ -44,7 +35,6 @@ class Bug:
                                 "AssignedTo" : None,
                                 "SubmittedBy" : None}
         
-    
     def __getattr__(self, attr):
         return self.__dict__[attr]
     
@@ -53,9 +43,7 @@ class Bug:
         self.__dict__[attr] = value
 
     def __str__(self):
-##        return  "Description: " + self.Description + "\n" + \
-##                     "Summary: " + self.Summary + "\n"
-                     
+
         return "\n\n\nId: " + self.Id + "\n" + \
                     "Summary: " + self.Summary + "\n" + \
                     "Description: " + self.Description + "\n" + \
@@ -68,8 +56,4 @@ class Bug:
                     "SubmittedBy: " + self.SubmittedBy + "\n\n\n" 
         
         
-if __name__ == "__main__":
-    b = Bug ()
-    b.id = 25
-    b.Summary = "hola"
-    print b
+

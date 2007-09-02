@@ -1,3 +1,16 @@
+2007-09-02 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/Bug.py: Cleaning code
+	* Bicho/SqlBug.py: Added support only for MySQL using Storm
+	* Bicho/backends/sf.py: Comments deleted/Added support for MySQL
+	* Bicho/backends/HTMLUtils.py: Cleaning code/Fixed a bug
+	* Bicho/backends/ParserSFBugs.py: Cleaning code
+	* Bicho/Bicho.py: Cleaning code
+
+	Added support for MySQL access (be careful the string to access
+	is hardcoded) and some comments have been deleted.
+	
+
 2007-08-29 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Initial import

@@ -19,13 +19,10 @@
 
 import urllib
 from utils import *
-#from HTMLUtils import *
-#from HTMLParser import HTMLParser
-#from ParserSFBugs import *
 import re
 import time
-#import SqlBug
 import Bug
+from SqlBug import DBBug
 
 from backends import create_backend
 

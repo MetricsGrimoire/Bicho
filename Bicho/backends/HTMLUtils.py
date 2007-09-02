@@ -68,7 +68,7 @@ class HTMLTag:
         self.attrs = {}
         self.data = ""
         for name, value in attrs:
-            self.attrs[name.lower ()] = value.lower ()
+            self.attrs[name.lower ()] = value
 
     def data_append (self, data):
         if self.data != "":
@@ -163,17 +163,4 @@ class Parser (HTMLParser):
 
         return retval
 
-##if __name__ == "__main__":
-##    import urllib
-##
-##    p = Parser ()
-##    p.add_filter (['a'])
-##    p.feed (urllib.urlopen ('http://sourceforge.net/tracker/?group_id=93438&atid=604306&set=any').read ())
-##    #p.feed (urllib.urlopen ('http://gsyc.escet.urjc.es/~dizquierdo/table3.html').read ())
-##    p.close ()
-##    
-##    links = p.get_tags ('a')
-##    for  link in links:
-##        print "Link to: %s Content: %s" % (link.get ('href'), link.get_data ())
-##
-##    #print url_join ('https://forge.morfeo-project.org/', '/projects', 'libresoft-tools')
+

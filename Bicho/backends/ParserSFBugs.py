@@ -40,7 +40,6 @@ class ParserSFBugs(HTMLParser):
         self.state = ParserSFBugs.INIT_ST
         
         self.currentKey = ""
-        
         #dictionary key(initial td in table)-value (next td value in table)
         self.dataBugs = {"Submitted By:" : "",
                         "Date Submitted:" : "",
@@ -59,12 +58,12 @@ class ParserSFBugs(HTMLParser):
                         "Description:" : "",
                         "URL:" : bugURL,
                         "IdBug:" : self.getIdBug(bugURL)}
-        #probando
+        
     
 
     def getIdBug(self, bugURL):
         #FIXME: no errors control
-    
+        
         query = urllib.splitquery (bugURL)
         attrs = query[1].split('&')
         for attr in attrs:
@@ -77,7 +76,6 @@ class ParserSFBugs(HTMLParser):
         
         #Parsering the data (Deleting tabs and others ...)
         data = data.replace("\t", "")
-        #data = data.replace("\n", "")
         strings = data.splitlines()
         for string in strings:
             if string <>"":
@@ -89,17 +87,15 @@ class ParserSFBugs(HTMLParser):
     def statesMachine(self, data, tag):
     
         if self.state == ParserSFBugs.INIT_ST:
-            #print "Estado 1"
+            #print "Step 1"
             if tag == "<td>":
                 self.state = ParserSFBugs.ST_2
             
         elif self.state == ParserSFBugs.ST_2:
         
             value = self.normalizeData(data)
-            #print "Estado 2"
-            #print self.dataBugs.has_key(value)
-            #print value == "Private:"
-            #print "***" + value + "***"
+            #print "Step 2"
+            
             
             if self.dataBugs.has_key(value):
                 self.currentKey= value
@@ -111,11 +107,9 @@ class ParserSFBugs(HTMLParser):
                self.data = ""
             
         elif self.state == ParserSFBugs.ST_3:
-            #print "Estado 3"
+            #print "Step 3"
             value = self.normalizeData(data)
-            #print value
             if tag == "</td>":
-                #print self.data
                 self.dataBugs[self.currentKey] = self.data
                 self.state = ParserSFBugs.ST_4
             else:
@@ -123,16 +117,14 @@ class ParserSFBugs(HTMLParser):
                     self.data = self.data + value
                 
         elif self.state == ParserSFBugs.ST_4:
-            #print "Estado 4"
+            #print "Step 4"
             if tag == "<td>":
                 self.state = ParserSFBugs.ST_2
 
         elif self.state == ParserSFBugs.ST_5:
-            #print "Estado 5"
+            #print "Step 5"
             value = self.normalizeData(data)
-            #print value
             if tag == "</td>":
-                #print self.data
                 self.dataBugs[self.currentKey] = self.data
                 self.state = ParserSFBugs.ST_6
             else:
@@ -140,26 +132,22 @@ class ParserSFBugs(HTMLParser):
                     self.data = self.data + value
           
         elif self.state == ParserSFBugs.ST_6:
-            #print "Estado 6"
+            #print "Step 6"
             if tag == "<td>":
                 self.state = ParserSFBugs.ST_7
          
         elif self.state == ParserSFBugs.ST_7:
-            #print "Estado 7"
+            #print "Step 7"
             value = self.normalizeData(data)
-            #print value
             if tag == "</td>":
-                #print self.data
                 self.dataBugs["Description:"] = self.data
                 self.state = ParserSFBugs.ST_8
-                #print self.dataBugs
             else:
                 if value <> "(?)":
                     self.data = self.data + value
             
         elif self.state == ParserSFBugs.ST_8:
-            #print "Estado 8"
-            #print "Hemos llegado al final"
+            #print "Step 8"
             return
             
  
@@ -169,7 +157,6 @@ class ParserSFBugs(HTMLParser):
                         
     def handle_data (self, data):
         self.statesMachine(data, "")
-        #print data
             
     def handle_endtag(self, tag):
         if tag == "td":
@@ -195,9 +182,4 @@ class ParserSFBugs(HTMLParser):
         return bug
         
         
-##if __name__ == "__main__":
-##    import urllib
-##
-##    p = ParserSFBugs ()
-##    p.feed (urllib.urlopen ('http://sourceforge.net/tracker/index.php?func=detail&aid=1781992&group_id=93438&atid=604306').read ())
-##    p.close ()
+
