@@ -20,6 +20,30 @@
 import sys
 import config
 
+class Opt_CommandLine:
+    #Pattern singleton applied
+
+    __shared_state = {"type": None,
+                      "url" : None,
+                      "db_driver": "sqlite",
+                      "db_user": "operator",
+                      "db_password": "operator",
+                      "db_database" : "bicho",
+                      "db_hostname": "localhost", 
+                      "db_port" : "3306"}
+
+    def __init__ (self):
+        self.__dict__ = self.__shared_state
+
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+
+
+    def __setattr__(self, attr, value):
+        self.__dict__[attr] = value
+
+
 
 def printout (str = '\n'):
     if str != '\n':

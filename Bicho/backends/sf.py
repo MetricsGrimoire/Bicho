@@ -32,7 +32,8 @@ class SFBackend (Backend):
 
     def __init__ (self):
         Backend.__init__ (self)
-
+        options = Opt_CommandLine()
+        self.url = options.url
 
 
    
@@ -84,7 +85,7 @@ class SFBackend (Backend):
         
     
     
-    def run (self, url):
+    def run (self):
         
         debug ("Running Bicho")
         
@@ -93,8 +94,9 @@ class SFBackend (Backend):
 
         #Creating database
         #SqlBug file
-        db = getDatabase('mysql')
-        
+        db = getDatabase()
+        url = self.url        
+
         while url != "":
             print "Obtaining bug links, from url: " + url
             bugs, url = self.getLinksBugs(url)

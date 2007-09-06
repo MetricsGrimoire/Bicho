@@ -30,10 +30,11 @@ class BackendUnknownError (Exception):
 class Backend:
 
     def __init__ (self):
-        self.url = None
+        pass
+        #self.url = None
 
-    def set_url (self, url):
-        self.url = url
+#    def set_url (self, url):
+#        self.url = url
         
     def run (self):
         raise NotImplementedError

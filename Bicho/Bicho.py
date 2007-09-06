@@ -27,14 +27,16 @@ from SqlBug import DBBug
 from backends import create_backend
 
 class Bicho:
-    def __init__ (self, type, url_base):
-        self.backend = create_backend (type)
-        self.url = url_base
+    def __init__ (self):
+        options = Opt_CommandLine()
+
+
+        self.backend = create_backend (options.type)
         debug ("Bicho object created")
         
    
-    def run(self, url):
-        self.backend.run(self.url)
+    def run(self):
+        self.backend.run()
                 
             
         

@@ -17,6 +17,7 @@
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
 #
 
+from utils import *
 from storm.locals import *
 from storm import database
 database.DEBUG = True
@@ -30,17 +31,18 @@ database.DEBUG = True
 #This factory will create the concrete object depending on the
 #type of database used
 
-def getDatabase (type):
-    if type == "mysql":
+def getDatabase ():
+    options = Opt_CommandLine()
+
+    if options.db_driver == "mysql":
         return DBMySQL()
-    elif type == "postgresql":
+    elif options.db_driver == "postgresql":
         return DBPostGreSQL()
-    elif type == "sqlite":
+    elif options.db_driver == "sqlite":
         return SQLite()
 
 
 
-#Abstract class
 class DBDatabase:
 
     def __init__(self):
@@ -57,7 +59,12 @@ class DBDatabase:
 class DBMySQL(DBDatabase):
 
     def __init__ (self):
-        self.database = create_database("mysql://root:root@localhost:3306/Prueba_Storm")
+        options = Opt_CommandLine()
+         
+        self.database = create_database(options.db_driver +"://"+ 
+        options.db_user +":"+ options.db_password  +"@"+ 
+        options.db_hostname+":"+ options.db_port+"/"+ options.db_database)
+
         self.store = Store(self.database)
         self.store.execute ("CREATE TABLE  IF NOT EXISTS Bugs (" +
                            "id int auto_increment primary key," +

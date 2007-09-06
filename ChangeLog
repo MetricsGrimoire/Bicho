@@ -1,4 +1,20 @@
 2007-09-06 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/SqlBug.py: Modified to use Singleton pattern
+	* Bicho/utils.py: Here you can find the class which is the
+	singleton and it contains all the options obtained by command line
+	* Bicho/backends/sf.py: Modified to use Singleton pattern
+	* Bicho/backends/__init__.py: Modified to use Singleton pattern
+	* Bicho/Bicho.py: Modified to use Singleton pattern
+	* Bicho/main.py: Modified to use Singleton pattern and added options
+	for database (output format in bicho)
+	
+	Added singleton pattern. Now the class Opt_CommandLine has
+	a shared variable with values. This class will be use by each object
+	which needs to access command line options given by user.
+
+
+2007-09-06 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 	
 	* Bicho/SqlBug.py: Added simple factory pattern (supporting now
 	more databases, but not implemented)
