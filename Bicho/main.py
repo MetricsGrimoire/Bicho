@@ -19,7 +19,6 @@
 
 import getopt
 import sys
-
 from utils import *
 
 
@@ -31,9 +30,6 @@ It extracts data from bug tracking systems from a project given
 Options:
 
   -h, --help           Print this usage message.
-  -V, --version        Show version
-  -q, --quiet          Run silently, only print error messages
-  -g, --debug          Show debug messages
   -t, --type           Type of bug tracking system (for the moment sf (SourceForge))
 
 """
@@ -42,8 +38,9 @@ Options:
 def main (argv):
     import Bicho
 
-    short_opts = "hVqgt:"
-    long_opts = ["help", "version", "quiet", "debug", "type="]
+
+    short_opts = "ht:"
+    long_opts = ["help", "type="]
 
     
     try:
@@ -52,6 +49,7 @@ def main (argv):
         print e
         return 1
 
+
     typ = None
     url = None
     
@@ -59,24 +57,14 @@ def main (argv):
         if opt in ("-h", "--help"):
             usage ()
             return 0
-        elif opt in ("-V", "--version"):
-            print VERSION
-            return 0
-        elif opt in ("-q", "--quiet"):
-            import config
-            config.quiet = True
-        elif opt in ("-g", "--debug"):
-            import config
-            config.debug = True
         elif opt in ("-t", "--type"):
             typ = value
         else:
-            print("Wrong argument")
             usage()
 
-
-    if len (args) > 0:
+    if len(args) > 0:
         url = args[0]
+        
 
     if typ is None:
         printerr ("Required parameter --type is missing")
@@ -89,11 +77,6 @@ def main (argv):
             
   
     bich = Bicho.Bicho (typ, url)
-    #try:
-    #    bich = Bicho.Bicho (type, url)
-    #except Bicho.ProjectTypeUnsupported:
-    #    printerr ("Project type %s is not supported by Bicho" % (type))
-    #    return 1
 
     bich.run (url)
 

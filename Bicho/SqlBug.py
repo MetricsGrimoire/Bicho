@@ -23,7 +23,38 @@ database.DEBUG = True
 
 
 
+
+
+
+#Pattern simple factory.
+#This factory will create the concrete object depending on the
+#type of database used
+
+def getDatabase (type):
+    if type == "mysql":
+        return DBMySQL()
+    elif type == "postgresql":
+        return DBPostGreSQL()
+    elif type == "sqlite":
+        return SQLite()
+
+
+
+#Abstract class
 class DBDatabase:
+
+    def __init__(self):
+        self.database = ""
+        self.store = ""
+
+
+    def insert(self, dbBug):
+        self.store.add(dbBug)
+        self.store.flush()
+
+
+
+class DBMySQL(DBDatabase):
 
     def __init__ (self):
         self.database = create_database("mysql://root:root@localhost:3306/Prueba_Storm")
@@ -42,13 +73,20 @@ class DBDatabase:
                            "SubmittedBy varchar(128)) DEFAULT CHARSET=utf8")
 
 
-    def insert(self, dbBug):
-        self.store.add(dbBug)
-        self.store.flush()
-        
-        
+class DBPostGreSQL(DBDatabase):
+    def __init__ (self):
+        print "Access to PostGreSQL not implemented"
 
 
+
+class SQLite(DBDatabase):
+    def __init__ (self):
+        print "Access to SQLite not implemented"
+
+
+
+
+#Class necessary to talk to Storm
 class DBBug (object):
     __storm_table__ = "Bugs"
 

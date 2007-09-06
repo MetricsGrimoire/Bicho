@@ -1,3 +1,14 @@
+2007-09-06 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+	
+	* Bicho/SqlBug.py: Added simple factory pattern (supporting now
+	more databases, but not implemented)
+	* Bicho/backends/sf.py: Brief changes made to use that pattern
+	* Bicho/main.py: Deleted command line options (they must be added
+	in future)
+
+	Added simple factory pattern and cleaned command line options.
+
+
 2007-09-02 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/Bug.py: Cleaning code

@@ -92,7 +92,8 @@ class SFBackend (Backend):
         #25th August 2007
 
         #Creating database
-        db = DBDatabase()
+        #SqlBug file
+        db = getDatabase('mysql')
         
         while url != "":
             print "Obtaining bug links, from url: " + url
