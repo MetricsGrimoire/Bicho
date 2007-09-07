@@ -32,7 +32,7 @@ class SFBackend (Backend):
 
     def __init__ (self):
         Backend.__init__ (self)
-        options = Opt_CommandLine()
+        options = OptionsStore()
         self.url = options.url
 
 

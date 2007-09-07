@@ -32,13 +32,13 @@ database.DEBUG = True
 #type of database used
 
 def getDatabase ():
-    options = Opt_CommandLine()
+    options = OptionsStore()
 
-    if options.db_driver == "mysql":
+    if options.db_driver_out == "mysql":
         return DBMySQL()
-    elif options.db_driver == "postgresql":
+    elif options.db_driver_out == "postgresql":
         return DBPostGreSQL()
-    elif options.db_driver == "sqlite":
+    elif options.db_driver_out == "sqlite":
         return SQLite()
 
 
@@ -59,11 +59,11 @@ class DBDatabase:
 class DBMySQL(DBDatabase):
 
     def __init__ (self):
-        options = Opt_CommandLine()
+        options = OptionsStore()
          
-        self.database = create_database(options.db_driver +"://"+ 
-        options.db_user +":"+ options.db_password  +"@"+ 
-        options.db_hostname+":"+ options.db_port+"/"+ options.db_database)
+        self.database = create_database(options.db_driver_out +"://"+ 
+        options.db_user_out +":"+ options.db_password_out  +"@"+ 
+        options.db_hostname_out+":"+ options.db_port_out+"/"+ options.db_database_out)
 
         self.store = Store(self.database)
         self.store.execute ("CREATE TABLE  IF NOT EXISTS Bugs (" +

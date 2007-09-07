@@ -1,3 +1,15 @@
+2007-09-07 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+	* Bicho/main.py: Added support for config file (it must be in
+	Bicho/bicho.conf)
+	* Bicho/Bicho.py: Minor changes (to support options store class)
+	* Bicho/backends/sf.py: Minor changes (to support options store class)
+	* Bicho/utils.py: Modified Options store class (new options added)
+	* Bicho/SqlBug.py: Minor changes (to support options store class)
+
+	Added support for file config and added options for an input database
+	(eg: bugzilla support)
+
+
 2007-09-06 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/SqlBug.py: Modified to use Singleton pattern

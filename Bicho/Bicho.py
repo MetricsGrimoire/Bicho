@@ -28,7 +28,7 @@ from backends import create_backend
 
 class Bicho:
     def __init__ (self):
-        options = Opt_CommandLine()
+        options = OptionsStore()
 
 
         self.backend = create_backend (options.type)

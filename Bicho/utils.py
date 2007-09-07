@@ -15,22 +15,31 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+#          Added class OptionsStore by: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
 #
 
 import sys
 import config
 
-class Opt_CommandLine:
+class OptionsStore:
     #Pattern singleton applied
 
     __shared_state = {"type": None,
                       "url" : None,
-                      "db_driver": "sqlite",
-                      "db_user": "operator",
-                      "db_password": "operator",
-                      "db_database" : "bicho",
-                      "db_hostname": "localhost", 
-                      "db_port" : "3306"}
+
+                      "db_driver_in": None,
+                      "db_user_in": None,
+                      "db_password_in": None,
+                      "db_database_in": None,
+                      "db_hostname_in": None,
+                      "db_port_in": None,
+
+                      "db_driver_out": None,
+                      "db_user_out": None,
+                      "db_password_out": None,
+                      "db_database_out" : None,
+                      "db_hostname_out": None, 
+                      "db_port_out" : None}
 
     def __init__ (self):
         self.__dict__ = self.__shared_state
