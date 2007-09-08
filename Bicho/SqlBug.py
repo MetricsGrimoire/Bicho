@@ -19,8 +19,8 @@
 
 from utils import *
 from storm.locals import *
-from storm import database
-database.DEBUG = True
+#from storm import database
+#database.DEBUG = True
 
 
 
@@ -36,7 +36,7 @@ def getDatabase ():
 
     if options.db_driver_out == "mysql":
         return DBMySQL()
-    elif options.db_driver_out == "postgresql":
+    elif options.db_driver_out == "postgres":
         return DBPostGreSQL()
     elif options.db_driver_out == "sqlite":
         return SQLite()
@@ -50,10 +50,13 @@ class DBDatabase:
         self.store = ""
 
 
-    def insert(self, dbBug):
+    def insert_bug(self, dbBug):
         self.store.add(dbBug)
         self.store.flush()
 
+    def insert_comment(self, dbComment):
+        self.store.add(dbComment)
+        self.store.flush()
 
 
 class DBMySQL(DBDatabase):
@@ -79,17 +82,110 @@ class DBMySQL(DBDatabase):
                            "AssignedTo varchar(128),"+
                            "SubmittedBy varchar(128)) DEFAULT CHARSET=utf8")
 
+        self.store.execute("CREATE TABLE IF NOT EXISTS Comments (" + 
+                           "id int auto_increment primary key," +  
+                           "idBug varchar(128)," +
+                           "DateSubmitted varchar(128),"+
+                           "SubmittedBy varchar(128), " + 
+                           "Comment text)")
+
 
 class DBPostGreSQL(DBDatabase):
     def __init__ (self):
-        print "Access to PostGreSQL not implemented"
+        options = OptionsStore()
+
+        self.database = create_database(options.db_driver_out +"://"+
+        options.db_user_out +":"+ options.db_password_out  +"@"+
+        options.db_hostname_out+":"+ options.db_port_out+"/"+ options.db_database_out)
+
+        self.store = Store(self.database)
+
+        self.store.execute("CREATE TABLE Bugs (" + 
+                           "id serial primary key," + 
+                           "idBug varchar(128)," + 
+                           "Summary text, " + 
+                           "Description text," + 
+                           "Datesubmitted varchar(128),"+
+                           "Status varchar(64),"+
+                           "Priority varchar(64),"+
+                           "Category varchar(128),"+
+                           "Igroup varchar(128),"+
+                           "Assignedto varchar(128),"+
+                           "Submittedby varchar(128))")
+
+        self.store.execute("CREATE TABLE Comments (" + 
+                           "id serial primary key," + 
+                           "idBug varchar(128)," + 
+                           "DateSubmitted varchar(128),"+
+                           "SubmittedBy varchar(128), " +
+                           "Comment text)")
 
 
 
 class SQLite(DBDatabase):
     def __init__ (self):
-        print "Access to SQLite not implemented"
+        
+        options = OptionsStore()
 
+        self.database = create_database(options.db_driver_out + ':' + options.db_database_out + '.db')
+
+        self.store = Store(self.database)
+
+        self.store.execute("CREATE TABLE Bugs (" +
+                           "id integer primary key," +
+                           "idBug varchar," +
+                           "summary varchar, " +
+                           "description text," +
+                           "datesubmitted varchar,"+
+                           "status varchar,"+
+                           "priority varchar,"+
+                           "category varchar,"+
+                           "igroup varchar,"+
+                           "assignedto varchar,"+
+                           "submittedby varchar)")
+
+        self.store.execute("CREATE TABLE Comments (" +
+                           "id integer primary key," +
+                           "idBug varchar(128)," +
+                           "DateSubmitted varchar(128),"+
+                           "SubmittedBy varchar(128), " +
+                           "Comment text)")
+
+
+class DBComment (object):
+    __storm_table__ = "Comments"
+
+    id = Int (primary = True)
+    IdBug = Unicode()
+    DateSubmitted = Unicode()
+    SubmittedBy = Unicode()
+    Comment = Unicode()
+
+    def __init__ (self, comment):
+
+        try:
+            print comment.IdBug
+            self.IdBug = unicode(comment.IdBug)
+        except:
+            pass
+
+        try:
+            print comment.DateSubmitted
+            self.DateSubmitted = unicode(comment.DateSubmitted)
+        except:
+            pass
+ 
+        try:
+            print comment.SubmittedBy
+            self.SubmittedBy = unicode(comment.SubmittedBy)
+        except:
+            pass
+
+        try:
+            self.Comment = unicode(comment.Comment)
+        except:
+            pass
+        
 
 
 
@@ -163,6 +259,5 @@ class DBBug (object):
             self.SubmittedBy = unicode(bug.SubmittedBy)
         except:
             pass
-
 
 

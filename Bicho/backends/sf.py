@@ -109,8 +109,12 @@ class SFBackend (Backend):
                 print "Procediendo a crear objeto DBBug"
 
                 dbBug = DBBug(dataBug)
-                
-                db.insert(dbBug)
+                db.insert_bug(dbBug)
+
+                print "Procediendo a insertar comentarios"
+                for comment in dataBug.Comments:
+                    dbComment = DBComment(comment)
+                    db.insert_comment(dbComment)
 
 
 

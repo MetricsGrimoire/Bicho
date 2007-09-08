@@ -25,11 +25,59 @@ import Bicho.Bug as Bug
 import urllib
 import re
 
+
+class SFComment:
+    def __init__ (self):
+    
+        self.__dict__ = {"IdBug" : None,
+                         "Date" : None,
+                         "Sender" :  None,
+                         "LoggedIn" : None,
+                         "user_id" : None,
+                         "Originator" : None,
+                         "CommentText" : None}    
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+
+
+    def __setattr__(self, attr, value):
+        self.__dict__[attr] = value
+
+    def sfData2sfComment(self, text):
+        #From SF Html data to SFComment object
+
+#        print "**\nComentario encontrado!!"
+#        print text
+#        print "**"
+        date, rest = text.split("Sender: ")
+        self.Date = date.split("Date: ")[1]
+
+        self.Sender, rest = rest.split("Logged In: ")
+
+        if  rest[0:2] == "NO":
+            self.LoggedIn =  "NO"
+            self.CommentText = rest[3:len(rest)]
+        else:
+            self.LoggedIn = "YES"
+            rest = rest[4:len(rest)]
+
+            user_id, rest = rest.split("Originator: ")
+            self.user_id = user_id.split("user_id=")[1]
+
+            if rest[0:2] == "NO":
+                self.Originator = "NO"
+                self.CommentText =  rest[3:len(rest)]
+            else:
+                self.Originator = "YES"
+                self.CommentText = rest[4:len(rest)]
+
+
 class ParserSFBugs(HTMLParser):
     #FIXME: The description contains the sentence "Add a comment:". It must be deleted from the
     #whole string
 
-    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8) = range (8)
+    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10, ST_11, ST_12) = range (12)
 
     def __init__(self, bugURL):
         HTMLParser.__init__ (self)
@@ -57,7 +105,8 @@ class ParserSFBugs(HTMLParser):
                         "Private: " : "",
                         "Description:" : "",
                         "URL:" : bugURL,
-                        "IdBug:" : self.getIdBug(bugURL)}
+                        "IdBug:" : self.getIdBug(bugURL),
+                        "Comments:" : []}
         
     
 
@@ -73,14 +122,13 @@ class ParserSFBugs(HTMLParser):
     
     def normalizeData(self, data):
         value = ""
-        
         #Parsering the data (Deleting tabs and others ...)
         data = data.replace("\t", "")
         strings = data.splitlines()
         for string in strings:
             if string <>"":
-                value = value.join(string)
-                
+                value = value + string
+               
         return (value)
         
         
@@ -142,18 +190,58 @@ class ParserSFBugs(HTMLParser):
             if tag == "</td>":
                 self.dataBugs["Description:"] = self.data
                 self.state = ParserSFBugs.ST_8
+                self.data = ""
             else:
                 if value <> "(?)":
                     self.data = self.data + value
             
         elif self.state == ParserSFBugs.ST_8:
             #print "Step 8"
+            value = self.normalizeData(data)
+            if value == "Comments":
+                self.state = ParserSFBugs.ST_9
+
+        elif self.state == ParserSFBugs.ST_9:
+            #print "Step 9"
+            #print "data: " + data
+            if tag == "<pre>":
+                self.state = ParserSFBugs.ST_10
+                self.data = ""
+
+        elif self.state == ParserSFBugs.ST_10:
+            #print "Step 10"
+            value = self.normalizeData(data)
+            if tag == "</pre>":
+                comment = SFComment()
+                comment.sfData2sfComment(self.data)
+                self.dataBugs["Comments:"].append(comment)
+                self.state = ParserSFBugs.ST_11
+                self.data = ""
+            else:
+                self.data = self.data + value
+                #print self.data
+
+        elif self.state == ParserSFBugs.ST_11:
+            #print "Step 11"
+            if tag == "</table>":
+                self.state = ParserSFBugs.ST_12
+            elif tag == "<pre>":
+                self.state = ParserSFBugs.ST_10
+
+        elif self.state == ParserSFBugs.ST_12:
+            #print "Step 12"
+            pass
+
+        else:
             return
             
  
     def handle_starttag (self, tag, attrs):
         if tag == "td":
             self.statesMachine("", "<td>")
+        if tag == "pre":
+            self.statesMachine("", "<pre>")
+        
                         
     def handle_data (self, data):
         self.statesMachine(data, "")
@@ -161,9 +249,14 @@ class ParserSFBugs(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "td":
             self.statesMachine("", "</td>")
+        if tag == "pre":
+            self.statesMachine("", "</pre>")
+        if tag == "table":
+            self.statesMachine("", "</table>")
         
     def error (self, msg):
         printerr ("Parsing Error \"%s\", trying to recover..." % (msg))
+        pass
         
     def getDataBug(self):
     
@@ -178,8 +271,25 @@ class ParserSFBugs(HTMLParser):
         bug.Group = self.dataBugs["Group: "]
         bug.AssignedTo = self.dataBugs["Assigned To: "]
         bug.SubmittedBy = self.dataBugs["Submitted By:"]
-    
+
+        for comment in self.dataBugs["Comments:"]:
+            c = Bug.Comment()
+            c.IdBug = self.dataBugs["IdBug:"]
+            c.DateSubmitted = comment.Date
+            c.SubmittedBy = comment.Sender
+            c.Comment = comment.CommentText
+            bug.Comments.append(c)
+
         return bug
         
-        
+       
+if __name__ == "__main__":
 
+    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=1789223&group_id=93438&atid=604306")
+
+    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=1789223&group_id=93438&atid=604306").read())
+
+    parser.close()
+
+ 
+     

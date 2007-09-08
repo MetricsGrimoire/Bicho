@@ -18,6 +18,31 @@
 #
 
 
+class Comment:
+    
+    def __init__(self):
+
+        self.__dict__ = {"IdBug" : None,
+                        "DateSubmitted" : None,
+                        "SubmittedBy" : None,
+                        "Comment" : None}
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+    
+    
+    def __setattr__(self, attr, value):
+        self.__dict__[attr] = value
+        
+
+    def __str__ (self):
+        
+        return "\n\nId: " + self.Id + "\n" + \
+               "IdBug: " + self.IdBug  + "\n" + \
+               "DateSubmitted: " + self.DateSubmitted  + "\n" + \
+               "Comment: " + self.Comment  + "\n"
+
+
 class Bug:
 
     def __init__(self):
@@ -33,7 +58,8 @@ class Bug:
                                 "Category" : None,
                                 "Group" : None,
                                 "AssignedTo" : None,
-                                "SubmittedBy" : None}
+                                "SubmittedBy" : None,
+                                "Comments" : []}
         
     def __getattr__(self, attr):
         return self.__dict__[attr]
