@@ -26,6 +26,30 @@ import urllib
 import re
 
 
+class SFAttachment:
+
+    def __init__(self):
+        self.__dict__ = {"IdBug" : None,
+                         "Name" : None,
+                         "Description" : None,
+                         "Url" : None}
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+
+
+    def __setattr__(self, attr, value):
+        self.__dict__[attr] = value
+
+    def __str__ (self):
+        return "\n\n\nIdBug: **" + str(self.IdBug) + "**\n" + \
+               "Name: **" + str(self.Name) +  "**\n" + \
+               "Description: **" + str(self.Description) +  "**\n" + \
+               "Url: **" + str(self.Url) +  "**\n"
+
+
+
+
 class SFComment:
     def __init__ (self):
     
@@ -62,28 +86,45 @@ class SFComment:
             self.LoggedIn = "YES"
             rest = rest[4:len(rest)]
 
-            user_id, rest = rest.split("Originator: ")
-            self.user_id = user_id.split("user_id=")[1]
+            if len(rest.split("Originator: "))==2:
+                #Originator not found
+                user_id, rest = rest.split("Originator: ")
+                self.user_id = user_id.split("user_id=")[1]
+             
 
-            if rest[0:2] == "NO":
-                self.Originator = "NO"
-                self.CommentText =  rest[3:len(rest)]
+                if rest[0:2] == "NO":
+                    self.Originator = "NO"
+                    self.CommentText =  rest[2:len(rest)]
+                else:
+                    self.Originator = "YES"
+                    self.CommentText = rest[3:len(rest)]
             else:
-                self.Originator = "YES"
-                self.CommentText = rest[4:len(rest)]
+                #FIXME: user_id not obtained
+                self.CommentText = rest
+                print self.CommentText
 
+
+    def __str__ (self):
+        return "\n\n\nIdBug: **" + self.IdBug + "**\n" + \
+               "Date: **" + self.Date +  "**\n" + \
+               "Sender: **" + self.Sender +  "**\n" + \
+               "LoggedIn: **" + self.LoggedIn +  "**\n" + \
+               "user_id: **" + self.user_id +  "**\n" + \
+               "Originator: **" + self.Originator +  "**\n" + \
+               "CommentText: **" + self.CommentText +  "**\n"
 
 class ParserSFBugs(HTMLParser):
     #FIXME: The description contains the sentence "Add a comment:". It must be deleted from the
     #whole string
 
-    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10, ST_11, ST_12) = range (12)
+    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10, ST_11, ST_12, ST_13, ST_14, ST_15, ST_16, ST_17, ST_18, ST_19) = range (19)
 
     def __init__(self, bugURL):
         HTMLParser.__init__ (self)
         self.data = ""
         self.attrs = {}
         self.tag = ""
+        self.attach = SFAttachment()
         
         self.state = ParserSFBugs.INIT_ST
         
@@ -106,7 +147,8 @@ class ParserSFBugs(HTMLParser):
                         "Description:" : "",
                         "URL:" : bugURL,
                         "IdBug:" : self.getIdBug(bugURL),
-                        "Comments:" : []}
+                        "Comments:" : [],
+                        "Attachments:" : []}
         
     
 
@@ -132,7 +174,7 @@ class ParserSFBugs(HTMLParser):
         return (value)
         
         
-    def statesMachine(self, data, tag):
+    def statesMachine(self, data, tag, attrs=None):
     
         if self.state == ParserSFBugs.INIT_ST:
             #print "Step 1"
@@ -200,6 +242,9 @@ class ParserSFBugs(HTMLParser):
             value = self.normalizeData(data)
             if value == "Comments":
                 self.state = ParserSFBugs.ST_9
+            if value == "No follow-up comments have been posted.":
+                print "No se han encontrado comentarios!!"
+                self.state = ParserSFBugs.ST_12
 
         elif self.state == ParserSFBugs.ST_9:
             #print "Step 9"
@@ -230,8 +275,62 @@ class ParserSFBugs(HTMLParser):
 
         elif self.state == ParserSFBugs.ST_12:
             #print "Step 12"
-            pass
+            value = self.normalizeData(data)
+            if value =="Download":
+                self.state = ParserSFBugs.ST_13
 
+        elif self.state == ParserSFBugs.ST_13:
+            #print "Step13"
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_14
+
+        elif self.state == ParserSFBugs.ST_14:
+            #print "Step 14"
+            value = self.normalizeData(data)
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_15
+            if value == "No Files Currently Attached":
+                print "No se han encontrado ficheros adjuntos!!"
+                self.state = ParserSFBugs.ST_18
+
+        elif self.state == ParserSFBugs.ST_15:
+            #print "Step 15"
+            value = self.normalizeData(data)
+            #print value
+            if value <> "":
+                self.attach = SFAttachment()
+                self.attach.Name = value
+                
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_16
+
+        elif self.state == ParserSFBugs.ST_16:
+            #print "Step 16"
+            value = self.normalizeData(data)
+            if value<>"":
+                self.attach.Description = value
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_17
+
+        elif self.state == ParserSFBugs.ST_17:
+            #print "Step 17"
+            value = self.normalizeData(data)
+            if tag == "<a>":
+                self.attach.Url = "http://sourceforge.net" + attrs[0][1]
+            if tag == "</td>":
+                self.dataBugs["Attachments:"].append(self.attach)
+                self.state = ParserSFBugs.ST_18
+
+        elif self.state == ParserSFBugs.ST_18:
+            #print "Step 18"
+            if tag == "</table>":
+                self.state = ParserSFBugs.ST_19
+            if tag == "<td>":
+                self.state = ParserSFBugs.ST_14
+
+        elif self.state == ParserSFBugs.ST_19:
+            #print "FINISHED"    
+            pass
         else:
             return
             
@@ -241,6 +340,8 @@ class ParserSFBugs(HTMLParser):
             self.statesMachine("", "<td>")
         if tag == "pre":
             self.statesMachine("", "<pre>")
+        if tag == "a":
+            self.statesMachine("", "<a>", attrs)
         
                         
     def handle_data (self, data):
@@ -271,6 +372,8 @@ class ParserSFBugs(HTMLParser):
         bug.Group = self.dataBugs["Group: "]
         bug.AssignedTo = self.dataBugs["Assigned To: "]
         bug.SubmittedBy = self.dataBugs["Submitted By:"]
+        print len(self.dataBugs["Comments:"])
+        print len(self.dataBugs["Attachments:"])
 
         for comment in self.dataBugs["Comments:"]:
             c = Bug.Comment()
@@ -280,14 +383,21 @@ class ParserSFBugs(HTMLParser):
             c.Comment = comment.CommentText
             bug.Comments.append(c)
 
+        for attach in self.dataBugs["Attachments:"]:
+            a = Bug.Attachment()
+            a.IdBug = self.dataBugs["IdBug:"]
+            a.Name = attach.Name
+            a.Description = attach.Description
+            a.Url = attach.Url
+            bug.Attachments.append(a)
         return bug
         
        
 if __name__ == "__main__":
 
-    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=1789223&group_id=93438&atid=604306")
+    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=1593763&group_id=7118&atid=107118")
 
-    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=1789223&group_id=93438&atid=604306").read())
+    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=1593763&group_id=7118&atid=107118").read())
 
     parser.close()
 

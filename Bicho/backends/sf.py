@@ -116,7 +116,10 @@ class SFBackend (Backend):
                     dbComment = DBComment(comment)
                     db.insert_comment(dbComment)
 
-
+                print "Procediendo a insertar attachments"
+                for attach in dataBug.Attachments:
+                    dbAttachment = DBAttachment(attach)
+                    db.insert_attachment(dbAttachment)
 
 
 register_backend ("sf", SFBackend)

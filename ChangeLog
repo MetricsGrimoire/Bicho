@@ -1,3 +1,18 @@
+2007-09-09 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/Bug.py: Added Attachment class
+	* Bicho/SqlBug.py: Added support for new class Attachment (class storm
+	DBAttachment and sql queries to create table Attachment in mysql,
+	postgres and sqlite)
+	* Bicho/backends/sf.py: Modified to add Attachments to database
+	* Bicho/backends/ParserSFBugs.py: Added more states to parse HTML
+	which contains attachments and some bugs were fixed (related to 
+	comments)
+	
+	Attachments are registered in this version and they are stored in the
+	database.
+
+
 2007-09-08 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/Bug.py: Added "Comment" class

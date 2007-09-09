@@ -58,6 +58,9 @@ class DBDatabase:
         self.store.add(dbComment)
         self.store.flush()
 
+    def insert_attachment(self, dbAttach):
+        self.store.add(dbAttach)
+        self.store.flush()
 
 class DBMySQL(DBDatabase):
 
@@ -89,6 +92,12 @@ class DBMySQL(DBDatabase):
                            "SubmittedBy varchar(128), " + 
                            "Comment text)")
 
+        self.store.execute("CREATE TABLE IF NOT EXISTS Attachments (" +
+                           "id int auto_increment primary key," +
+                           "idBug varchar(128)," +
+                           "Name varchar(256), " +
+                           "Description text, " + 
+                           "Url varchar(256))")
 
 class DBPostGreSQL(DBDatabase):
     def __init__ (self):
@@ -120,6 +129,12 @@ class DBPostGreSQL(DBDatabase):
                            "SubmittedBy varchar(128), " +
                            "Comment text)")
 
+        self.store.execute("CREATE TABLE Attachments (" +
+                           "id serial primary key," +
+                           "idBug varchar(128)," +
+                           "Name varchar(256), " +
+                           "Description text, " +
+                           "Url varchar(256))")
 
 
 class SQLite(DBDatabase):
@@ -151,6 +166,50 @@ class SQLite(DBDatabase):
                            "SubmittedBy varchar(128), " +
                            "Comment text)")
 
+        self.store.execute("CREATE TABLE Attachments (" +
+                           "id integer primary key," +
+                           "idBug varchar(128)," +
+                           "Name varchar(256), " +
+                           "Description text, " +
+                           "Url varchar(256))")
+
+
+class DBAttachment(object):
+    __storm_table__ = "Attachments"
+
+    id = Int (primary = True)
+    IdBug = Unicode()
+    Name = Unicode()
+    Description = Unicode()
+    Url = Unicode()
+
+    def __init__ (self, attachment):
+
+        try: 
+            self.IdBug = unicode(attachment.IdBug)
+        except:
+            pass
+
+        try: 
+            self.IdBug = unicode(attachment.IdBug)
+        except:
+            pass
+
+        try:
+            self.Name = unicode(attachment.Name)
+        except:
+            pass
+
+        try:
+            self.Description = unicode(attachment.Description)
+        except:
+            pass
+
+        try:
+            self.Url = unicode(attachment.Url)
+        except:
+            pass
+
 
 class DBComment (object):
     __storm_table__ = "Comments"
@@ -164,19 +223,16 @@ class DBComment (object):
     def __init__ (self, comment):
 
         try:
-            print comment.IdBug
             self.IdBug = unicode(comment.IdBug)
         except:
             pass
 
         try:
-            print comment.DateSubmitted
             self.DateSubmitted = unicode(comment.DateSubmitted)
         except:
             pass
  
         try:
-            print comment.SubmittedBy
             self.SubmittedBy = unicode(comment.SubmittedBy)
         except:
             pass
