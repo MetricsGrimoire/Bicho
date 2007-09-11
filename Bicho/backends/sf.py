@@ -96,8 +96,10 @@ class SFBackend (Backend):
         #SqlBug file
         db = getDatabase()
         url = self.url        
+        urls = []
 
-        while url != "":
+        while url != "" and not url in urls:
+            urls.append(url)
             print "Obtaining bug links, from url: " + url
             bugs, url = self.getLinksBugs(url)
             

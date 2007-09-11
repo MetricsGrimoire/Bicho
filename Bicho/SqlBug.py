@@ -21,7 +21,7 @@ from utils import *
 from storm.locals import *
 #from storm import database
 #database.DEBUG = True
-
+from storm.exceptions import *
 
 
 
@@ -40,6 +40,26 @@ def getDatabase ():
         return DBPostGreSQL()
     elif options.db_driver_out == "sqlite":
         return SQLite()
+
+
+class DBDatabaseException (Exception):
+    '''Generic DBDatabase Exception'''
+    
+    def __init__ (self, message = None):
+        Exception.__init__ (self)
+
+        self.message = message
+
+class DBDatabaseDriverNotAvailable (DBDatabaseException):
+    '''Database driver is not available'''
+class DBDatabaseDriverNotSupported (DBDatabaseException):
+    '''Database driver is not supported'''
+class DBDatabaseNotFound (DBDatabaseException):
+    '''Selected database doesn't exist'''
+class DBAccessDenied (DBDatabaseException):
+    '''Access denied to databse''' 
+class DBTableAlreadyExists (DBDatabaseException):
+    '''Table alredy exists in database'''
 
 
 
@@ -67,9 +87,17 @@ class DBMySQL(DBDatabase):
     def __init__ (self):
         options = OptionsStore()
          
-        self.database = create_database(options.db_driver_out +"://"+ 
-        options.db_user_out +":"+ options.db_password_out  +"@"+ 
-        options.db_hostname_out+":"+ options.db_port_out+"/"+ options.db_database_out)
+        try:
+            self.database = create_database(options.db_driver_out +"://"+ 
+            options.db_user_out +":"+ options.db_password_out  +"@"+ 
+            options.db_hostname_out+":"+ options.db_port_out+"/"+ options.db_database_out)
+        except DatabaseModuleError, e:
+            raise DBDatabaseDriverNotAvailable (str (e))
+        except ImportError:
+            raise DBDatabaseDriverNotSupported
+        except:
+            raise
+
 
         self.store = Store(self.database)
         self.store.execute ("CREATE TABLE  IF NOT EXISTS Bugs (" +

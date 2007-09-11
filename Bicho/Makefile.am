@@ -10,10 +10,15 @@ bicho_PYTHON = 		\
 	SqlBug.py	\
 	utils.py
 
+confdir = $(bichodir)
+conf_DATA = bicho.conf
+
 nodist_bicho_PYTHON = config.py
 
 CLEANFILES = config.py
-EXTRA_DIST = config.py.in
+EXTRA_DIST = 		\
+	config.py.in	\
+	bicho.conf
 
 all-local: config.py
 

@@ -1,0 +1,63 @@
+Dependencies
+------------
+
+ * Python >= 2.4
+ * Python Storm (optional, required only for database output)
+
+
+Database Output Results
+----------------------
+
+Database output device uses storm, which is an object-relational mapper (ORM) for Python, 
+so it has to be installed in order to be able to use it. Depending on the 
+database driver to be used, the following specific libraries will be needed too:
+
+ * MySQL support depends on the MySQLdb module for Python
+ * PostgreSQL support depends on the psycopg2 module for Python
+ * SQLite support depends on the pysqlite2 module for Python
+
+
+Contact
+-------
+
+ * Website
+
+   https://forge.morfeo-project.org/projects/libresoft-tools/
+
+ * Mailing list
+
+   http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/
+
+
+Examples
+--------
+
+Getting information from FreeMind project hosted in SourceForge
+
+1- Configure bicho.conf:
+
+[General]
+type=sf
+url=http://sourceforge.net/tracker/index.php?func=browse&group_id=138511&atid=740882&set=any
+
+[DatabaseIn]
+db_driver_in=NotNeeded
+db_user_in=NotNeeded
+db_password_in=NotNeeded
+db_database_in=NotNeeded
+db_hostname_in=NotNeeded
+db_port_in=NotNeeded
+
+[DatabaseOut]
+db_driver_out=mysql
+db_user_out=password
+db_password_out=password
+db_database_out=Bicho_FreeMind
+db_hostname_out=localhost
+db_port_out=3306
+
+
+2- Command line options
+
+bicho -t sf --db-driver_out mysql --db_user_out password --db_password_out password --db_database_out Bicho_FreeMind --db_hostname_out localhost --db_port_out 3306 "http://sourceforge.net/tracker/index.php?func=browse&group_id=138511&atid=740882&set=any"
+

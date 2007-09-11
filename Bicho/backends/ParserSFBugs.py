@@ -71,37 +71,37 @@ class SFComment:
     def sfData2sfComment(self, text):
         #From SF Html data to SFComment object
 
-#        print "**\nComentario encontrado!!"
-#        print text
-#        print "**"
         date, rest = text.split("Sender: ")
         self.Date = date.split("Date: ")[1]
 
-        self.Sender, rest = rest.split("Logged In: ")
+        if len(rest.split("Logged In: ")) == 2:
+            self.Sender, rest = rest.split("Logged In: ")
 
-        if  rest[0:2] == "NO":
-            self.LoggedIn =  "NO"
-            self.CommentText = rest[3:len(rest)]
-        else:
-            self.LoggedIn = "YES"
-            rest = rest[4:len(rest)]
+            if  rest[0:2] == "NO":
+                self.LoggedIn =  "NO"
+                self.CommentText = rest[3:len(rest)]
+            else:
+                self.LoggedIn = "YES"
+                rest = rest[4:len(rest)]
 
-            if len(rest.split("Originator: "))==2:
-                #Originator not found
-                user_id, rest = rest.split("Originator: ")
-                self.user_id = user_id.split("user_id=")[1]
+                if len(rest.split("Originator: "))==2:
+                    #Originator not found
+                    user_id, rest = rest.split("Originator: ")
+                    self.user_id = user_id.split("user_id=")[1]
              
 
-                if rest[0:2] == "NO":
-                    self.Originator = "NO"
-                    self.CommentText =  rest[2:len(rest)]
+                    if rest[0:2] == "NO":
+                        self.Originator = "NO"
+                        self.CommentText =  rest[2:len(rest)]
+                    else:
+                        self.Originator = "YES"
+                        self.CommentText = rest[3:len(rest)]
                 else:
-                    self.Originator = "YES"
-                    self.CommentText = rest[3:len(rest)]
-            else:
-                #FIXME: user_id not obtained
-                self.CommentText = rest
-                print self.CommentText
+                    #FIXME: user_id not obtained
+                    self.CommentText = rest
+        else:
+            #LoggedIn not found
+            self.CommentText = rest
 
 
     def __str__ (self):
@@ -243,12 +243,10 @@ class ParserSFBugs(HTMLParser):
             if value == "Comments":
                 self.state = ParserSFBugs.ST_9
             if value == "No follow-up comments have been posted.":
-                print "No se han encontrado comentarios!!"
                 self.state = ParserSFBugs.ST_12
 
         elif self.state == ParserSFBugs.ST_9:
             #print "Step 9"
-            #print "data: " + data
             if tag == "<pre>":
                 self.state = ParserSFBugs.ST_10
                 self.data = ""
@@ -264,7 +262,6 @@ class ParserSFBugs(HTMLParser):
                 self.data = ""
             else:
                 self.data = self.data + value
-                #print self.data
 
         elif self.state == ParserSFBugs.ST_11:
             #print "Step 11"
@@ -290,13 +287,11 @@ class ParserSFBugs(HTMLParser):
             if tag == "</td>":
                 self.state = ParserSFBugs.ST_15
             if value == "No Files Currently Attached":
-                print "No se han encontrado ficheros adjuntos!!"
                 self.state = ParserSFBugs.ST_18
 
         elif self.state == ParserSFBugs.ST_15:
             #print "Step 15"
             value = self.normalizeData(data)
-            #print value
             if value <> "":
                 self.attach = SFAttachment()
                 self.attach.Name = value
@@ -372,8 +367,6 @@ class ParserSFBugs(HTMLParser):
         bug.Group = self.dataBugs["Group: "]
         bug.AssignedTo = self.dataBugs["Assigned To: "]
         bug.SubmittedBy = self.dataBugs["Submitted By:"]
-        print len(self.dataBugs["Comments:"])
-        print len(self.dataBugs["Attachments:"])
 
         for comment in self.dataBugs["Comments:"]:
             c = Bug.Comment()
@@ -395,9 +388,9 @@ class ParserSFBugs(HTMLParser):
        
 if __name__ == "__main__":
 
-    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=1593763&group_id=7118&atid=107118")
+    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=221623&group_id=7118&atid=107118")
 
-    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=1593763&group_id=7118&atid=107118").read())
+    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=221623&group_id=7118&atid=107118").read())
 
     parser.close()
 
