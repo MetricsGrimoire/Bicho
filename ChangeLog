@@ -5,6 +5,13 @@
 	Release 0.1
 
 
+2007-09-10 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/bicho.conf: config file added
+
+	Added config file
+
+
 2007-09-09 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/Bug.py: Added Attachment class
