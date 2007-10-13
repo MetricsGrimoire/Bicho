@@ -1,3 +1,13 @@
+2007-10-13 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/utils.py: Added path option (to store dowloaded web pages)
+	* Bicho/bicho.conf: Added path option (by default /tmp/bicho/)
+	* Bicho/backends/sf.py: Store web pages functionality added 
+	* Bicho/main.py: Path option added
+
+	Bicho stores downloaded web pages
+
+
 2007-09-10 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* configure.in:

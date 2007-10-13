@@ -30,22 +30,21 @@ It extracts data from bug tracking systems from a project given
 
 Options:
 
-  -h, --help		Print this usage message.
-  -t, --type            Type of bug tracking system (for the moment sf (SourceForge))
+   -h, --help		Print this usage message.
+   -t, --type           Type of bug tracking system (for the moment sf (SourceForge))
+   -p, --path		Path where downloaded URLs will be stored (/tmp/bicho/)
 
 Database input specific options:
-   --db-driver_in	Input databaes driver [sqlite|mysql|postgres] (None)
+   --db-driver_in	Input database driver [sqlite|mysql|postgres] (None)
    --db-user_in		Database user name (None)
    --db-password_in	Database user password (None)
    --db-database_in	Database name (None)
    --db-hostname_in	Name of the host where database server is running (None)
    --db-port_in		Port where the database server is running (None)
 
-
-
 Database output specific options:
 
-  --db-driver_out	Output database driver [sqlite|mysql|postgres] (sqlite)
+  --db-driver_out	Output database driver [sqlite|mysql|postgres] (None)
   --db-user_out		Database user name (None)
   --db-password_out	Database user password (None)
   --db-database_out	Database name (None)
@@ -82,6 +81,8 @@ def getOptsFromFile ():
             options.type = value
         if opt == "url":
             options.url = value
+        if opt == "path":
+            options.path = value
 
     for opt,value in config.items('DatabaseIn'):
         if opt == "db_driver_in":
@@ -199,8 +200,8 @@ def main (argv):
     #Shared object
     options = getOptsFromFile()
 
-    short_opts = "ht:"
-    long_opts = ["help", "type=", "db-driver_in=", "db-user_in=", "db-password_in=",
+    short_opts = "htp:"
+    long_opts = ["help", "type=", "path=", "db-driver_in=", "db-user_in=", "db-password_in=",
                  "db-database_in=", "db-hostname_in=", "db-port_in=",
                  "db-driver_out=", "db-user_out=", "db-password_out=",
                  "db-database_out=", "db-hostname_out=", "db-port_out="]
@@ -218,6 +219,8 @@ def main (argv):
             return 0
         elif opt in ("-t", "--type"):
             options.type = value
+        elif opt in ("-p", "--path"):
+            options.path = value
         elif opt in ("--db-driver_in"):
             options.db_driver_in = value
         elif opt in ("--db-user_in"):

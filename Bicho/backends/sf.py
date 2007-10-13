@@ -26,6 +26,7 @@ import re
 import time
 import Bicho.Bug as Bug
 from Bicho.SqlBug import *
+import os
 
 
 class SFBackend (Backend):
@@ -72,16 +73,35 @@ class SFBackend (Backend):
        
         return bugs, next_bugs
 
+    def storeData(self, data, idBug):
+        opt = OptionsStore()
+        if not os.path.exists(opt.path):
+             os.makedirs(opt.path)
+        if not os.path.exists(os.path.join(opt.path, opt.db_database_out)):
+             os.makedirs(os.path.join(opt.path, opt.db_database_out))
+
+        #creating file to store data
+        file = open(os.path.join(os.path.join(opt.path, opt.db_database_out), str(idBug)), 'w')
+        file.write(data)
+        file.close
+
     
     def analyzeBug(self, bugUrl):
 
         print bugUrl
         parser = ParserSFBugs(bugUrl)
         print "Analysing: " + bugUrl
-        parser.feed(urllib.urlopen(bugUrl).read())
+
+        dataWeb = urllib.urlopen(bugUrl).read()
+        parser.feed(dataWeb)
         parser.close()
         
-        return parser.getDataBug()
+        dataBug = parser.getDataBug()
+
+        #storing data
+        self.storeData(dataWeb, dataBug.Id)
+
+        return dataBug
         
     
     

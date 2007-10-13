@@ -26,6 +26,7 @@ class OptionsStore:
 
     __shared_state = {"type": None,
                       "url" : None,
+                      "path" : None,
 
                       "db_driver_in": None,
                       "db_user_in": None,
