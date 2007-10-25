@@ -39,7 +39,7 @@ class SFBackend (Backend):
 
    
     def get_links (self, url):
-        p = Parser ()
+        p = ParserSFLinksBugs ()
         p.add_filter (['a'])
 
         try:

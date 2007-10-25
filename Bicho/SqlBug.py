@@ -88,6 +88,7 @@ class DBMySQL(DBDatabase):
         options = OptionsStore()
          
         try:
+            print options.db_driver_out
             self.database = create_database(options.db_driver_out +"://"+ 
             options.db_user_out +":"+ options.db_password_out  +"@"+ 
             options.db_hostname_out+":"+ options.db_port_out+"/"+ options.db_database_out)

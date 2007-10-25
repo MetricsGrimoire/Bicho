@@ -1,3 +1,4 @@
+
 # Copyright (C) 2007  GSyC/LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
@@ -384,6 +385,113 @@ class ParserSFBugs(HTMLParser):
             a.Url = attach.Url
             bug.Attachments.append(a)
         return bug
+
+
+#Next classes are used to obtain links from a HTML page
+#HTMLTag, ParserSFLinksBugs
+class HTMLTag:
+
+    def __init__ (self, tag, attrs):
+        self.tag = tag.lower ()
+        self.attrs = {}
+        self.data = ""
+        for name, value in attrs:
+            self.attrs[name.lower ()] = value
+
+    def data_append (self, data):
+        if self.data != "":
+            self.data += ' ' + data
+        else:
+            self.data += data
+
+    def get (self, name):
+        retval = None
+        try:
+            retval = self.attrs[name.lower ()]
+        except:
+            pass
+
+        return retval
+
+    def get_data (self):
+        return self.data
+
+
+class ParserSFLinksBugs (HTMLParser):
+
+    def __init__ (self):
+        HTMLParser.__init__ (self)
+        self.filter = []
+        self.tags = {}
+        self.current = []
+
+    def error (self, msg):
+        printwrn ("Parsing Error \"%s\", trying to recover..." % (msg))
+        
+    def __save_tag (self, tag, attrs):
+        if len (self.filter) > 0 and tag not in self.filter:
+            return
+
+        if not self.tags.has_key (tag):
+            self.tags[tag] = []
+
+        self.tags[tag].append (HTMLTag (tag, attrs))
+        
+    def handle_starttag (self, tag, attrs):
+        self.__save_tag (tag.lower (), attrs)
+        if self.tags.has_key (tag):
+            self.current.append (self.tags[tag][-1])
+        
+    def handle_startendtag (self, tag, attrs):
+        self.__save_tag (tag.lower (), attrs)
+
+    def handle_endtag (self, tag):
+        if len (self.filter) > 0 and tag not in self.filter:
+            return
+        
+        try:
+            self.current.pop ()
+        except:
+            pass
+
+    def handle_data (self, data):
+        try:
+            self.current[-1].data_append (data)
+        except:
+            pass
+
+    def add_filter (self, tags):
+        for tag in tags:
+            self.filter.append (tag.lower ())
+
+    def get_tags (self, tag = None, attrs = None):
+        retval = []
+        tags = []
+        
+        if tag is not None:
+            try:
+                tags = self.tags[tag]
+            except:
+                return retval
+        else:
+            for t in self.tags.keys ():
+                tags.extend (self.tags[t])
+                
+        if attrs is None:
+            return tags
+
+        for t in tags:
+            found = True
+            for name, value in attrs:
+                if t.get (name) != value:
+                    found = False
+                    break
+                
+            if found:
+                retval.append (t)
+
+        return retval
+
         
        
 if __name__ == "__main__":
