@@ -1,3 +1,10 @@
+2007-10-29 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/backends/ParserSFBugs.py: Fixed [#330] Error parsing information from a bug in SourceForge
+
+	Fixed: [#330] Error parsing information from a bug in SourceForge
+
+
 2007-10-25 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/backends/ParserSFBugs.py: Added source code to unify in the same file SourceForge parser functionality

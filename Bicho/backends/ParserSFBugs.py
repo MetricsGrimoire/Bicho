@@ -72,9 +72,22 @@ class SFComment:
     def sfData2sfComment(self, text):
         #From SF Html data to SFComment object
 
-        date, rest = text.split("Sender: ")
+        #Working on sender field
+        if text.split("Sender: ")== 2:
+            date, rest = text.split("Sender: ")
+        else:
+            portions = text.split("Sender: ")
+            date = portions[0]
+            portions = portions[1 : len(portions)]
+            rest = ""
+            for portion in portions:
+                rest = rest + portion
+
+        #Working on Date field
         self.Date = date.split("Date: ")[1]
 
+
+        #Working on Logged In field
         if len(rest.split("Logged In: ")) == 2:
             self.Sender, rest = rest.split("Logged In: ")
 
@@ -425,8 +438,8 @@ class ParserSFLinksBugs (HTMLParser):
         self.tags = {}
         self.current = []
 
-    def error (self, msg):
-        printwrn ("Parsing Error \"%s\", trying to recover..." % (msg))
+    #def error (self, msg):
+    #    printwrn ("Parsing Error \"%s\", trying to recover..." % (msg))
         
     def __save_tag (self, tag, attrs):
         if len (self.filter) > 0 and tag not in self.filter:
@@ -496,9 +509,9 @@ class ParserSFLinksBugs (HTMLParser):
        
 if __name__ == "__main__":
 
-    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=221623&group_id=7118&atid=107118")
+    parser = ParserSFBugs ("http://sourceforge.net/tracker/index.php?func=detail&aid=1251682&group_id=2435&atid=102435")
 
-    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=221623&group_id=7118&atid=107118").read())
+    parser.feed(urllib.urlopen("http://sourceforge.net/tracker/index.php?func=detail&aid=1251682&group_id=2435&atid=102435").read())
 
     parser.close()
 
