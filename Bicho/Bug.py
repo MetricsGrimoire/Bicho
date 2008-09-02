@@ -57,6 +57,33 @@ class Comment:
                "DateSubmitted: " + self.DateSubmitted  + "\n" + \
                "Comment: " + self.Comment  + "\n"
 
+class Change:
+
+    def __init__(self):
+        self.__dict__= {"IdBug" : None,
+                       "Field" : None,
+                       "OldValue" : None,
+                       "Date" : None,
+                       "SubmittedBy" : None}
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+
+    def __setattr__(self, attr, value):
+        self.__dict__[attr] = value
+
+    def __str__ (self):
+
+        return "\n\nId: " + self.Id + "\n" + \
+               "IdBug: " + self.IdBug  + "\n" + \
+               "Field: " + self.Field  + "\n" + \
+               "OldValue: " + self.OldValue  + "\n" + \
+               "Date: " + self.Date  + "\n" + \
+               "SubmittedBy: " + self.SubmittedBy  + "\n"
+
+
+
+
 
 class Bug:
 
@@ -75,7 +102,8 @@ class Bug:
                                 "AssignedTo" : None,
                                 "SubmittedBy" : None,
                                 "Comments" : [],
-                                "Attachments" : []}
+                                "Attachments" : [],
+                                "Changes" : []}
         
     def __getattr__(self, attr):
         return self.__dict__[attr]

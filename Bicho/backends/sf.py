@@ -57,9 +57,8 @@ class SFBackend (Backend):
         bugs = []
         next_bugs = ""
         
-        #links = get_links('http://sourceforge.net/tracker/?group_id=93438&atid=604306&set=any')
         links = self.get_links(url)
-       
+      
         for link in links:
             url_str = str(link.get('href'))
             # Bugs URLs
@@ -88,7 +87,6 @@ class SFBackend (Backend):
     
     def analyzeBug(self, bugUrl):
 
-        print bugUrl
         parser = ParserSFBugs(bugUrl)
         print "Analysing: " + bugUrl
 
@@ -120,7 +118,7 @@ class SFBackend (Backend):
 
         while url != "" and not url in urls:
             urls.append(url)
-            print "Obtaining bug links, from url: " + url
+            print "Obtaining bug links, from url: " + str(url)
             bugs, url = self.getLinksBugs(url)
             
             for bug in bugs:
@@ -128,20 +126,25 @@ class SFBackend (Backend):
                 time.sleep(5)
                 #print self.analyzeBug(bug)
                 dataBug = self.analyzeBug(bug)
-                print "Procediendo a crear objeto DBBug"
+                print "Creating DBBug object"
 
                 dbBug = DBBug(dataBug)
                 db.insert_bug(dbBug)
 
-                print "Procediendo a insertar comentarios"
+                print "Adding comments"
                 for comment in dataBug.Comments:
                     dbComment = DBComment(comment)
                     db.insert_comment(dbComment)
 
-                print "Procediendo a insertar attachments"
+                print "Adding attachments"
                 for attach in dataBug.Attachments:
                     dbAttachment = DBAttachment(attach)
                     db.insert_attachment(dbAttachment)
+
+                print "Adding changes"
+                for change in dataBug.Changes:
+                    dbChange = DBChange(change)
+                    db.insert_change(dbChange)
 
 
 register_backend ("sf", SFBackend)

@@ -82,6 +82,10 @@ class DBDatabase:
         self.store.add(dbAttach)
         self.store.flush()
 
+    def insert_change(self, dbChange):
+        self.store.add(dbChange)
+        self.store.flush()
+
 class DBMySQL(DBDatabase):
 
     def __init__ (self):
@@ -128,6 +132,15 @@ class DBMySQL(DBDatabase):
                            "Description text, " + 
                            "Url varchar(256))")
 
+        self.store.execute("CREATE TABLE IF NOT EXISTS Changes (" +
+                           "id int auto_increment primary key," +
+                           "idBug varchar(128)," +
+                           "Field varchar(256), " +
+                           "OldValue varchar(256), " +
+                           "Date varchar(256), " +
+                           "SubmittedBy varchar(256))")
+
+
 class DBPostGreSQL(DBDatabase):
     def __init__ (self):
         options = OptionsStore()
@@ -165,6 +178,15 @@ class DBPostGreSQL(DBDatabase):
                            "Description text, " +
                            "Url varchar(256))")
 
+        self.store.execute("CREATE TABLE IF NOT EXISTS Changes (" +
+                           "id serial primary key," +
+                           "idBug varchar(128)," +
+                           "Field varchar(256), " +
+                           "OldValue varchar(256), " +
+                           "Date varchar(256), " +
+                           "SubmittedBy varchar(256))")
+
+
 
 class SQLite(DBDatabase):
     def __init__ (self):
@@ -201,6 +223,15 @@ class SQLite(DBDatabase):
                            "Name varchar(256), " +
                            "Description text, " +
                            "Url varchar(256))")
+
+        self.store.execute("CREATE TABLE IF NOT EXISTS Changes (" +
+                           "id integer primary key," +
+                           "idBug varchar(128)," +
+                           "Field varchar(256), " +
+                           "OldValue varchar(256), " +
+                           "Date varchar(256), " +
+                           "SubmittedBy varchar(256))")
+
 
 
 class DBAttachment(object):
@@ -270,7 +301,46 @@ class DBComment (object):
             self.Comment = unicode(comment.Comment)
         except:
             pass
-        
+    
+
+class DBChange (object):
+    __storm_table__ = "Changes"
+
+    id = Int (primary = True)
+    IdBug = Unicode()
+    Field = Unicode()
+    OldValue = Unicode()
+    Date = Unicode()
+    SubmittedBy = Unicode()
+
+    def __init__ (self, change):
+
+        try:
+            self.IdBug = unicode(change.IdBug)
+        except:
+            pass
+
+        try:
+            self.Field = unicode(change.Field)
+        except:
+            pass
+
+        try:
+            self.OldValue = unicode(change.OldValue)
+        except:
+            pass
+    
+        try:
+            self.Date = unicode(change.Date)
+        except:
+            pass
+
+        try:
+            self.SubmittedBy = unicode(change.SubmittedBy)
+        except:
+            pass
+
+
 
 
 

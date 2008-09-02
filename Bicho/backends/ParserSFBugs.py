@@ -50,6 +50,16 @@ class SFAttachment:
 
 
 
+class SFChange:
+    def __init__(self):
+        self.__dict__={"IdBug" : None,
+                       "Field" : None,
+                       "OldValue" : None,
+                       "Date" : None,
+                       "SubmittedBy" : None}
+
+
+
 
 class SFComment:
     def __init__ (self):
@@ -131,7 +141,7 @@ class ParserSFBugs(HTMLParser):
     #FIXME: The description contains the sentence "Add a comment:". It must be deleted from the
     #whole string
 
-    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10, ST_11, ST_12, ST_13, ST_14, ST_15, ST_16, ST_17, ST_18, ST_19) = range (19)
+    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10, ST_11, ST_12, ST_13, ST_14, ST_15, ST_16, ST_17, ST_18, ST_19, ST_20, ST_21, ST_22, ST_23, ST_24, ST_25, ST_26, ST_27) = range (27)
 
     def __init__(self, bugURL):
         HTMLParser.__init__ (self)
@@ -139,6 +149,7 @@ class ParserSFBugs(HTMLParser):
         self.attrs = {}
         self.tag = ""
         self.attach = SFAttachment()
+        self.change = SFChange()
         
         self.state = ParserSFBugs.INIT_ST
         
@@ -162,7 +173,8 @@ class ParserSFBugs(HTMLParser):
                         "URL:" : bugURL,
                         "IdBug:" : self.getIdBug(bugURL),
                         "Comments:" : [],
-                        "Attachments:" : []}
+                        "Attachments:" : [],
+                        "Changes:" : []}
         
     
 
@@ -291,7 +303,7 @@ class ParserSFBugs(HTMLParser):
                 self.state = ParserSFBugs.ST_13
 
         elif self.state == ParserSFBugs.ST_13:
-            #print "Step13"
+            #print "Step 13"
             if tag == "</td>":
                 self.state = ParserSFBugs.ST_14
 
@@ -338,6 +350,71 @@ class ParserSFBugs(HTMLParser):
                 self.state = ParserSFBugs.ST_14
 
         elif self.state == ParserSFBugs.ST_19:
+            #print "Step 19"
+            value = self.normalizeData(data)
+            if value == "Changes:":
+                self.state = ParserSFBugs.ST_20
+                self.change = SFChange()
+
+
+        elif self.state == ParserSFBugs.ST_20:
+            #print "Step 21"
+            value = self.normalizeData(data)
+            if value == "No Changes Have Been Made to This Item":
+                self.state = ParserSFBugs.ST_27
+            if self.normalizeData(data) == "By":
+                self.state = ParserSFBugs.ST_21
+
+        elif self.state == ParserSFBugs.ST_21:
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_22
+
+   
+        elif self.state == ParserSFBugs.ST_22:
+            #print "Step 22"
+            value = self.normalizeData(data)
+            if value <> "":
+                self.change = SFChange()
+                self.change.Field = value
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_23
+
+        elif self.state == ParserSFBugs.ST_23:
+            #print "Step 23"
+            value = self.normalizeData(data)
+            if value <> "":
+                self.change.OldValue = value
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_24
+
+        elif self.state == ParserSFBugs.ST_24:
+            #print "Step 24"
+            value = self.normalizeData(data)
+            if value <> "":
+                self.change.Date = value
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_25
+
+        elif self.state == ParserSFBugs.ST_25:
+            #print "Step 25"
+            value = self.normalizeData(data)
+            if value <> "":
+                self.change.SubmittedBy = value
+            if tag == "</td>":
+                self.state = ParserSFBugs.ST_26
+
+        elif self.state == ParserSFBugs.ST_26:
+            #print "Step 26"
+            if tag == "<td>":
+                self.state = ParserSFBugs.ST_22
+                self.dataBugs["Changes:"].append(self.change)
+                
+            if tag == "</table>":
+                self.state = ParserSFBugs.ST_27
+                self.dataBugs["Changes:"].append(self.change)
+
+
+        elif self.state == ParserSFBugs.ST_27:
             #print "FINISHED"    
             pass
         else:
@@ -397,11 +474,22 @@ class ParserSFBugs(HTMLParser):
             a.Description = attach.Description
             a.Url = attach.Url
             bug.Attachments.append(a)
+
+        for change in self.dataBugs["Changes:"]:
+            ch = Bug.Change()
+            ch.IdBug = self.dataBugs["IdBug:"]
+            ch.Field = change.Field
+            ch.OldValue = change.OldValue
+            ch.Date = change.Date
+            ch.SubmittedBy = change.SubmittedBy
+            bug.Changes.append(ch)
+
         return bug
 
 
 #Next classes are used to obtain links from a HTML page
 #HTMLTag, ParserSFLinksBugs
+# Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 class HTMLTag:
 
     def __init__ (self, tag, attrs):
@@ -438,8 +526,8 @@ class ParserSFLinksBugs (HTMLParser):
         self.tags = {}
         self.current = []
 
-    #def error (self, msg):
-    #    printwrn ("Parsing Error \"%s\", trying to recover..." % (msg))
+    def error (self, msg):
+        printwrn ("Parsing Error \"%s\", trying to recover..." % (msg))
         
     def __save_tag (self, tag, attrs):
         if len (self.filter) > 0 and tag not in self.filter:
@@ -480,7 +568,9 @@ class ParserSFLinksBugs (HTMLParser):
     def get_tags (self, tag = None, attrs = None):
         retval = []
         tags = []
+       
         
+ 
         if tag is not None:
             try:
                 tags = self.tags[tag]

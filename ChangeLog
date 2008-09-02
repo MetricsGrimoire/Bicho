@@ -1,3 +1,17 @@
+2008-09-02 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/Bug.py: Added support for field "changes" from SourceForge
+	HTML (bug's history)
+	* Bicho/SqlBug.py: Added support for bug's history, new table for
+	sqlite, mysql and postgres
+	* Bicho/backends/sf.py: "Changes" are added
+	* Bicho/backends/ParserSFBugs.py: The statets machine was modified.
+	Now "changes" HTML is supported
+
+	Changes from SourceForge HTML is now recorded and stored in the
+	database
+
+
 2007-10-29 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/backends/ParserSFBugs.py: Fixed [#330] Error parsing information from a bug in SourceForge
