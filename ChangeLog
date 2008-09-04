@@ -1,3 +1,15 @@
+2008-09-04 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
+
+	* Bicho/backends/sf.py: Now, it recognises the name of the project and
+	the name of the tracker
+	* Bicho/SqlBug.py: Added a new storm object, GeneralInfo, which
+	contains general info about: project, url, tracker's name, date
+	* Bicho/Bug.py: GeneralInfo object added
+
+	Now, it detects the project name, url, tracker's name and date of
+	analysis. That info is stored in a database
+
+
 2008-09-02 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/Bug.py: Added support for field "changes" from SourceForge

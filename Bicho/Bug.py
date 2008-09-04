@@ -17,6 +17,22 @@
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
 #
 
+class GeneralInfo:
+    def __init__(self):
+        self.__dict__={"Project" : None,
+                      "Url" : None,
+                      "Tracker" : None,
+                      "Date" : None}
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+
+
+    def __setattr__(self, attr, value):
+        self.__dict__[attr] = value
+
+
+
 class Attachment:
     def __init__(self):
         self.__dict__={"IdBug" : None,

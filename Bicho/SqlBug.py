@@ -69,6 +69,9 @@ class DBDatabase:
         self.database = ""
         self.store = ""
 
+    def insert_general_info(self, dbGeneralInfo):
+        self.store.add(dbGeneralInfo)
+        self.store.flush()
 
     def insert_bug(self, dbBug):
         self.store.add(dbBug)
@@ -105,6 +108,14 @@ class DBMySQL(DBDatabase):
 
 
         self.store = Store(self.database)
+
+        self.store.execute("CREATE TABLE IF NOT EXISTS GeneralInfo(" +
+                           "id int auto_increment primary key," +
+                           "Project varchar(256), " +
+                           "Url varchar(256), " +
+                           "Tracker varchar(256), " +
+                           "Date varchar(128))")
+
         self.store.execute ("CREATE TABLE  IF NOT EXISTS Bugs (" +
                            "id int auto_increment primary key," +
                            "idBug varchar(128)," +
@@ -150,6 +161,14 @@ class DBPostGreSQL(DBDatabase):
         options.db_hostname_out+":"+ options.db_port_out+"/"+ options.db_database_out)
 
         self.store = Store(self.database)
+
+        self.store.execute("CREATE TABLE IF NOT EXISTS GeneralInfo(" +
+                           "id serial primary key," +
+                           "Project varchar(256), " +
+                           "Url varchar(256), " +
+                           "Tracker varchar(256), " +
+                           "Date varchar(128))")
+
 
         self.store.execute("CREATE TABLE Bugs (" + 
                            "id serial primary key," + 
@@ -197,6 +216,13 @@ class SQLite(DBDatabase):
 
         self.store = Store(self.database)
 
+        self.store.execute("CREATE TABLE IF NOT EXISTS GeneralInfo(" +
+                           "id integer primary key," +
+                           "Project varchar(256), " +
+                           "Url varchar(256), " +
+                           "Tracker varchar(256), " +
+                           "Date varchar(128))")
+
         self.store.execute("CREATE TABLE Bugs (" +
                            "id integer primary key," +
                            "idBug varchar," +
@@ -231,6 +257,38 @@ class SQLite(DBDatabase):
                            "OldValue varchar(256), " +
                            "Date varchar(256), " +
                            "SubmittedBy varchar(256))")
+
+
+class DBGeneralInfo(object):
+    __storm_table__ = "GeneralInfo"
+
+    id = Int (primary = True)
+    Project = Unicode()
+    Url = Unicode()
+    Tracker = Unicode()
+    Date = Unicode()
+
+    def __init__ (self, project, url, tracker, date):
+
+        try:
+            self.Project = unicode(project)
+        except:
+            pass
+
+        try:
+            self.Url = unicode(url)
+        except:
+            pass
+
+        try:
+            self.Tracker = unicode(tracker)
+        except:
+            pass
+
+        try:
+            self.Date = unicode(date)
+        except:
+            pass
 
 
 

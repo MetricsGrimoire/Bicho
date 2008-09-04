@@ -27,6 +27,9 @@ import time
 import Bicho.Bug as Bug
 from Bicho.SqlBug import *
 import os
+import time
+import datetime
+
 
 
 class SFBackend (Backend):
@@ -100,8 +103,34 @@ class SFBackend (Backend):
         self.storeData(dataWeb, dataBug.Id)
 
         return dataBug
-        
     
+    
+    def insert_general_info(self, url):
+        firstTime = True
+        project = ""
+        tracker = ""
+        cont = 0
+
+        links = self.get_links (url)
+
+        for link in links:
+            url_str = str(link.get('href'))
+            if re.search("softwaremap", url_str): 
+                cont = cont + 1
+
+            elif cont == 2:
+                project = link.get_data()
+                cont = cont + 1
+            elif cont == 3:
+                cont = cont + 1
+            elif cont == 4:
+                tracker = link.get_data()
+                break
+                            
+        db = getDatabase()
+        dbGeneralInfo = DBGeneralInfo(project, url, tracker, datetime.date.today())
+        db.insert_general_info(dbGeneralInfo)
+
     
     def run (self):
         
@@ -116,6 +145,8 @@ class SFBackend (Backend):
         url = self.url        
         urls = []
 
+        self.insert_general_info(url)
+
         while url != "" and not url in urls:
             urls.append(url)
             print "Obtaining bug links, from url: " + str(url)
@@ -124,9 +155,7 @@ class SFBackend (Backend):
             for bug in bugs:
                 
                 time.sleep(5)
-                #print self.analyzeBug(bug)
                 dataBug = self.analyzeBug(bug)
-                print "Creating DBBug object"
 
                 dbBug = DBBug(dataBug)
                 db.insert_bug(dbBug)
