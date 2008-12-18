@@ -1,3 +1,8 @@
+2008-12-18 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+	* configure.in:
+
+	Release 0.2
+
 2008-09-04 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.escet.urjc.es>
 
 	* Bicho/backends/sf.py: Now, it recognises the name of the project and

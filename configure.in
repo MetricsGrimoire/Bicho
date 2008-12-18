@@ -1,5 +1,5 @@
 AC_PREREQ(2.57)
-AC_INIT([Bicho],[0.1])
+AC_INIT([Bicho],[0.2])
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-dist-gzip])
 
 AM_MAINTAINER_MODE

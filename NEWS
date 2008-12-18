@@ -1,4 +1,22 @@
 ================
+  Bicho    0.2
+================
+
+Changes since version 0.1:
+
+	* It stores web pages (dizquierdo)
+	* Unification of SF parser in just one file (dizquierdo)
+	* Fixed some minor bugs parsing information from SF (dizquierdo)
+	* Field "changes" in SF is now stored (dizquierdo)
+	* Bicho detects the name, URL, tracker's name and date
+	of analysis and it is stored in the database. (dizquierdo)
+
+Thanks:
+
+	Carlos Garcia Campos
+
+
+================
   Bicho    0.1
 ================
 
