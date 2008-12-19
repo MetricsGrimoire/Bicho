@@ -1,4 +1,9 @@
 2008-12-18 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+	* Bicho/bicho.conf: Trunk file to default options
+
+	Trunk config file to default options
+
+2008-12-18 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 	* configure.in:
 
 	Release 0.2
