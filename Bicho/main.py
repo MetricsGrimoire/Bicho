@@ -31,7 +31,7 @@ It extracts data from bug tracking systems from a project given
 Options:
 
    -h, --help		Print this usage message.
-   -t, --type           Type of bug tracking system (for the moment sf (SourceForge))
+   -t, --type           Type of bug tracking system (sf|bg) SourceForge or Bugzilla
    -p, --path		Path where downloaded URLs will be stored (/tmp/bicho/)
 
 Database input specific options:

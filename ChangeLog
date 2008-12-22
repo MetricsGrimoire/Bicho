@@ -1,3 +1,11 @@
+2008-12-22 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* main.py: New option for parsing bugzillas added
+	* backends/bg.py: bugzilla backend added
+
+	Given support for bugzilla analysis. So far, basic information
+	is stored in the database. No comments, no changes.
+
 2008-12-19 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* configure.in:
