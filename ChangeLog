@@ -1,3 +1,10 @@
+2009-04-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/backends/bg.py: Stores information in the database
+
+	"Changes" information is now stored in mysql format
+
+
 2009-03-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* Bicho/backends/bg.py: It retrieves changes information

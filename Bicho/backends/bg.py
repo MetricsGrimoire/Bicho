@@ -38,56 +38,84 @@ from Bicho.utils import *
 #Parsing HTML from each change
 #######################################################
 class Change():
-    def __init__(self, who, when, what, removed, added):
-        self.who = who
-        self.when = when
-        self.what = what
-        self.removed = removed
-        self.added = added
+#Bugzilla provides five fields for each change:
+#Who, When, What, Removed and Added.
+#In order to translate that information to the standar database 
+#used in Bicho:
+#	Who = SubmittedBy
+#	When = Date
+#	What = Field
+#	Removed = OldValue
+#	Regarding the Added, this is one of the current data, so 
+#it is not necessary to add this information.
+
+    def __init__(self, idBug, who, when, what, removed, added):
+        self.IdBug = idBug
+        self.SubmittedBy = who
+        self.Date = when
+        self.Field = what
+        self.OldValue = removed
+        self.added = added #This value is stored, but not used
 
     def __init__(self):
-        self.who = ""
-        self.when = ""
-        self.what = ""
-        self.removed = ""
-        self.added = ""
+        self.IdBug = ""
+        self.SubmittedBy = ""
+        self.Date = ""
+        self.Field = ""
+        self.OldValue = ""
+        self.added = "" #This value is stored but not used
 
-    def setWho(self, who):
-        self.who = who
+    def __init__ (self, idBug):
+        self.IdBug = idBug
+        self.SubmittedBy = ""
+        self.Date = ""
+        self.Field = ""
+        self.OldValue = ""
+        self.added = "" #This value is stored but not used
 
-    def setWhen(self, when):
-        self.when = when
+
+    def setIdBug(self, idBug):
+        self.IdBug = idBug
+
+    def setSubmittedBy(self, who):
+        self.SubmittedBy = who
+
+    def setDate(self, when):
+        self.Date = when
   
-    def setWhat(self, what):
-        self.what = what
+    def setField(self, what):
+        self.Field = what
 
-    def setRemoved(self, removed):
-        self.removed = removed
+    def setOldValue(self, removed):
+        self.OldValue = removed
 
     def setAdded(self, added):
         self.added = added
 
-    def getWho(self):
-        return self.who
+    def getIdBug(self):
+        return self.IdBug
 
-    def getWhen(self):
-        return self.when
+    def getSubmittedBy(self):
+        return self.SubmittedBy
+
+    def getDate(self):
+        return self.Date
  
-    def getWhat(self):
-        return self.what
+    def getField(self):
+        return self.Field
 
-    def getRemoved(self):
-        return self.removed
+    def getOldValue(self):
+        return self.OldValue
 
     def getAdded(self):
         return self.added
 
    
     def printChange(self):
-        print "Who: " + self.who
-        print "When: " + self.when
-        print "What: " + self.what
-        print "Removed: " + self.removed
+        print "Who (SubmittedBy): " + self.SubmittedBy
+        print "When (Date): " + self.Date
+        print "What (Field): " + self.Field
+        print "Removed (Old Value): " + self.OldValue
         print "Added: " + self.added
 
 
@@ -95,12 +123,12 @@ class ParserBGChanges(HTMLParser):
 
     (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6) = range(6)
 
-    def __init__(self, bugURL):
+    def __init__(self, bugURL, idBug):
         HTMLParser.__init__(self)
         self.data = ""
         self.state = ParserBGChanges.INIT_ST
-        self.who = ""
-        self.when = ""
+        self.SubmittedBy = ""
+        self.Date = ""
         self.rows = 0
         self.dataChanges = {"Who"  :  "",
                             "When" :  "",
@@ -108,35 +136,36 @@ class ParserBGChanges(HTMLParser):
                             "Removed" : "",
                             "Added":  ""}
         self.changes = []
-        self.change = Change()
+        #self.change = Change()
         self.values = []
         self.waitingData = False
         self.data = ""
+        self.IdBug = idBug
 
     def parserData(self, data):
-        print data
+        #print data
         values = data.split('\n')
 
         init = True
         changes = []
         firstBlank = False
         secondBlank = False
-        who = ""
-        when = ""
+        submittedBy = ""
+        date = ""
 
         for value in values:
             if init:
-                change = Change()
+                change = Change(self.IdBug)
                 init = False
-                change.setWho(value)
+                change.setSubmittedBy(value)
 
                 continue
 
 
             if firstBlank and secondBlank:
-                changes.append(change)
-                change = Change()
-                change.setWho(value)
+                self.changes.append(change)
+                change = Change(self.IdBug)
+                change.setSubmittedBy(value)
                 firstBlank = False
                 secondBlank = False
                 continue
@@ -149,33 +178,35 @@ class ParserBGChanges(HTMLParser):
                 secondBlank = True
                 continue
 
-            if value <> "" and firstBlank and change.getWhat()<>"":
-                change.printChange()
-                changes.append(change)
+            if value <> "" and firstBlank and change.getField()<>"":
+                #change.printChange()
+                self.changes.append(change)
 
-                who = change.getWho()
-                when = change.getWhen()
+                submittedBy = change.getSubmittedBy()
+                date = change.getDate()
 
-                change = Change()
-                change.setWho(who)
-                change.setWhen(when)
-                change.setWhat(value)
+                change = Change(self.IdBug)
+                change.setSubmittedBy(submittedBy)
+                change.setDate(date)
+                change.setField(value)
                 
                 firstBlank = False
                 continue
 
-            if value <> "" and firstBlank and change.getWhat()== "":
+            if value <> "" and firstBlank and change.getField()== "":
                 firstBlank = False
 
                 
-            if change.getWho() == "":
-                change.setWho(value)
-            elif change.getWhen() == "":
-                change.setWhen(value)
-            elif change.getWhat() == "":
-                change.setWhat(value)
-            elif change.getRemoved() == "":
-                change.setRemoved(value)
+            if change.getSubmittedBy() == "":
+                change.setSubmittedBy(value)
+            elif change.getDate() == "":
+                change.setDate(value)
+            elif change.getField() == "":
+                change.setField(value)
+            elif change.getOldValue() == "":
+                change.setOldValue(value)
+
+            #Data is stored but not used
             elif change.getAdded() == "":
                 change.setAdded(value)
                    
@@ -257,8 +288,7 @@ class ParserBGChanges(HTMLParser):
 
     def getDataChanges(self):
         
-        #code ...
-        return ""
+        return self.changes
 
 
 #######################################################
@@ -273,15 +303,6 @@ class BGComment:
         self.thetext = None
 
 
-class BGChanges:
-    def __init__(self):
-        #Common fields in every Bugzilla BTS
-        self.bug_id
-        self.who
-        self.what
-        self.when
-        self.removed
-        self.added
 
 class BugsHandler(xml.sax.handler.ContentHandler):
 
@@ -388,6 +409,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         print "Assigned To: " + self.assigned_to
         print ""
 
+    def getIdBug(self):
+        return self.bug_id
 
     def getDataBug(self):
 
@@ -402,12 +425,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         bug.Group = ""
         bug.AssignedTo = self.assigned_to
         bug.SubmittedBy = self.reporter
-
-        #for comment in comments ...
-            #c = Bug.Comment()
-
-        #for change in changes ...
-            #ch = Bug.Change()
 
         return bug
 
@@ -457,12 +474,12 @@ class BGBackend (Backend):
         
         print bug_activity_url
 
-        parser = ParserBGChanges(bug_activity_url)
+        parser = ParserBGChanges(bug_activity_url, bug_id)
         data_activity = urllib.urlopen(bug_activity_url).read()
         parser.feed(data_activity)
         parser.close()
         print "Getting changes"
-        dataBug.changes = parser.getDataChanges()
+        dataBug.Changes = parser.getDataChanges()
 
         return dataBug
 
@@ -493,11 +510,11 @@ class BGBackend (Backend):
             #The URL from bugzilla (so far KDE and GNOME) are like:
             #http://<domain>/show_bug.cgi?id=<bugid>&ctype=xml 
             
-            try:
-                dataBug = self.analyzeBug(bug, url)
-            except:
-                print "ERROR detected"
-                continue
+            #try:
+            dataBug = self.analyzeBug(bug, url)
+            #except:
+            #    print "ERROR detected"
+            #    continue
             
             
             
@@ -511,10 +528,13 @@ class BGBackend (Backend):
 #                dbComment = DBComment(comment)
 #                db.insert_comment(dbComment)
 
-#            print "Adding changes"
-#            for change in dataBug.Changes:
-#                dbChange = DBChange(change)
-#                db.insert_change(dbChange)
+            print "Adding changes"
+            print dataBug.Changes
+            for change in dataBug.Changes:
+                print change
+                dbChange = DBChange(change)
+                print dbChange
+                db.insert_change(dbChange)
         
 
             time.sleep(10)
