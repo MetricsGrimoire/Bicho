@@ -37,6 +37,60 @@ from Bicho.utils import *
 #######################################################
 #Parsing HTML from each change
 #######################################################
+class Change():
+    def __init__(self, who, when, what, removed, added):
+        self.who = who
+        self.when = when
+        self.what = what
+        self.removed = removed
+        self.added = added
+
+    def __init__(self):
+        self.who = ""
+        self.when = ""
+        self.what = ""
+        self.removed = ""
+        self.added = ""
+
+    def setWho(self, who):
+        self.who = who
+
+    def setWhen(self, when):
+        self.when = when
+  
+    def setWhat(self, what):
+        self.what = what
+
+    def setRemoved(self, removed):
+        self.removed = removed
+
+    def setAdded(self, added):
+        self.added = added
+
+    def getWho(self):
+        return self.who
+
+    def getWhen(self):
+        return self.when
+ 
+    def getWhat(self):
+        return self.what
+
+    def getRemoved(self):
+        return self.removed
+
+    def getAdded(self):
+        return self.added
+
+   
+    def printChange(self):
+        print "Who: " + self.who
+        print "When: " + self.when
+        print "What: " + self.what
+        print "Removed: " + self.removed
+        print "Added: " + self.added
+
+
 class ParserBGChanges(HTMLParser):
 
     (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6) = range(6)
@@ -44,33 +98,167 @@ class ParserBGChanges(HTMLParser):
     def __init__(self, bugURL):
         HTMLParser.__init__(self)
         self.data = ""
-        self.state = ParserBFChanges.INIT_ST
-
+        self.state = ParserBGChanges.INIT_ST
+        self.who = ""
+        self.when = ""
+        self.rows = 0
         self.dataChanges = {"Who"  :  "",
                             "When" :  "",
                             "What" :  "",
                             "Removed" : "",
                             "Added":  ""}
+        self.changes = []
+        self.change = Change()
+        self.values = []
+        self.waitingData = False
+        self.data = ""
+
+    def parserData(self, data):
+        print data
+        values = data.split('\n')
+
+        init = True
+        changes = []
+        firstBlank = False
+        secondBlank = False
+        who = ""
+        when = ""
+
+        for value in values:
+            if init:
+                change = Change()
+                init = False
+                change.setWho(value)
+
+                continue
+
+
+            if firstBlank and secondBlank:
+                changes.append(change)
+                change = Change()
+                change.setWho(value)
+                firstBlank = False
+                secondBlank = False
+                continue
+
+            if len(value.strip())==0 and not firstBlank:
+                firstBlank = True
+                continue
+
+            if len(value.strip())==0 and firstBlank:
+                secondBlank = True
+                continue
+
+            if value <> "" and firstBlank and change.getWhat()<>"":
+                change.printChange()
+                changes.append(change)
+
+                who = change.getWho()
+                when = change.getWhen()
+
+                change = Change()
+                change.setWho(who)
+                change.setWhen(when)
+                change.setWhat(value)
+                
+                firstBlank = False
+                continue
+
+            if value <> "" and firstBlank and change.getWhat()== "":
+                firstBlank = False
+
+                
+            if change.getWho() == "":
+                change.setWho(value)
+            elif change.getWhen() == "":
+                change.setWhen(value)
+            elif change.getWhat() == "":
+                change.setWhat(value)
+            elif change.getRemoved() == "":
+                change.setRemoved(value)
+            elif change.getAdded() == "":
+                change.setAdded(value)
+                   
+ 
+
+    def statesMachine(self, data, tag, attrs):
+
+        if self.state == ParserBGChanges.INIT_ST:
+           
+            if tag == "<table>":
+                self.state = ParserBGChanges.ST_2
+
+        elif self.state == ParserBGChanges.ST_2:
+            if data=="Who":
+                self.state = ParserBGChanges.ST_3
+
+        elif self.state == ParserBGChanges.ST_3:
+            if tag == "<tr>":
+                self.state = ParserBGChanges.ST_4
+
+        elif self.state == ParserBGChanges.ST_4:
+            if (data == "\n        " or data == "\n            ") and not self.waitingData:
+               
+                self.waitingData = True
+                return
+
+            if tag == "</table>":
+                self.state = ParserBGChanges.ST_5
+                self.parserData(self.data)
+                return
+
+
+            if data <> "":
+                self.values.append(data)
+                self.data = self.data + data
+
+            if len(attrs) > 0:
+                self.values.append(attrs[0][1])
+                self.data = self.data + data
+                #if attrs[0][1] = n, then this the field who or when will
+                #remain the same during the next n iterations
+
+            self.waitingData = False
+                
+
+        elif self.state == ParserBGChanges.ST_5:
+            return
+
 
     def handle_starttag (self, tag, attrs):
-        if tag == "td":
-            self.statesMachine("", "<td>")
+        if tag == "table":
+            self.statesMachine("", "<table>", "")
+
+        elif tag == "tr":
+            self.statesMachine("", "<tr>", "")
+
+        elif tag == "td":
+            self.statesMachine("", "<td>", attrs)
+
+        elif tag == "th":
+            self.statesMachine("", "<th>", "")
 
     def handle_data (self, data):
-        self.statesMachine(data, "")
-
+        self.statesMachine(data, "", "")
+      
     def handle_endtag(self, tag):
-        if tag == "td":
-            self.statesMachine("", "</td>")
+        if tag == "table":
+            self.statesMachine("", "</table>", "")
+        elif tag == "tr":
+            self.statesMachine("", "</tr>", "")
+        elif tag == "td":
+            self.statesMachine("", "</td>", "")
+        elif tag == "th":
+            self.statesMachine("", "</th>", "")
 
     def error (self, msg):
         printerr ("Parsing Error \"%s\", trying to recover..." % (msg))
         pass
 
-    def getDataBug(self):
-        bug = Bug.Bug()
+    def getDataChanges(self):
+        
         #code ...
-        return bug
+        return ""
 
 
 #######################################################
@@ -243,29 +431,39 @@ class BGBackend (Backend):
 
 
 
-    def analyzeBug(self, bug_url):
+    def analyzeBug(self, bug_id, url):
+
+        #Retrieving main bug information
+        bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
 
         print bug_url
 
         handler = BugsHandler()
         parser = xml.sax.make_parser()
         parser.setContentHandler(handler)
-
         f = urllib.urlopen(bug_url)
-
         try:
             parser.feed(f.read())
         except Exception, e:
             print "Error parsing URL: " + bug_url
             raise
-        
         f.close()
         parser.close()
-        
         #handler.printDataBug()
-
         dataBug = handler.getDataBug()
     
+        #Retrieving changes
+        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
+        
+        print bug_activity_url
+
+        parser = ParserBGChanges(bug_activity_url)
+        data_activity = urllib.urlopen(bug_activity_url).read()
+        parser.feed(data_activity)
+        parser.close()
+        print "Getting changes"
+        dataBug.changes = parser.getDataChanges()
+
         return dataBug
 
 
@@ -294,10 +492,11 @@ class BGBackend (Backend):
         for bug in bugs:
             #The URL from bugzilla (so far KDE and GNOME) are like:
             #http://<domain>/show_bug.cgi?id=<bugid>&ctype=xml 
-            bug_url = url + "show_bug.cgi?id=" + bug + "&ctype=xml"
+            
             try:
-                dataBug = self.analyzeBug(bug_url)
+                dataBug = self.analyzeBug(bug, url)
             except:
+                print "ERROR detected"
                 continue
             
             
