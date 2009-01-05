@@ -1,3 +1,10 @@
+2009-01-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/backends/bg.py: Comments data is now stored
+
+	Comments are stored in the database
+
+
 2009-04-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* Bicho/backends/bg.py: Stores information in the database

@@ -119,6 +119,21 @@ class Change():
         print "Added: " + self.added
 
 
+class Comment():
+
+    def __init__():
+        self.IdBug = ""
+        self.DateSubmitted = ""
+        self.SubmittedBy = ""
+        self.Comment = ""
+
+    def __init__ (self, idBug, who, when, the_text):
+        self.IdBug = idBug
+        self.DateSubmitted = when
+        self.SubmittedBy = who
+        self.Comment = the_text
+
+
 class ParserBGChanges(HTMLParser):
 
     (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6) = range(6)
@@ -294,13 +309,6 @@ class ParserBGChanges(HTMLParser):
 #######################################################
 #Parsing XML from each bug
 #######################################################
-class BGComment:
-    def __init__(self):
-        #Common fields in every Bugzilla BTS
-        self.bug_id
-        self.who = None
-        self.bug_when = None
-        self.thetext = None
 
 
 
@@ -339,6 +347,18 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.is_reporter = False
         self.is_assigned_to = False
         self.is_description = False
+
+        #Comments
+        self.comments = []
+        self.comment = Comment("","","","")
+        self.is_long_desc = False
+        self.is_who = False
+        self.is_bug_when = False
+        self.is_the_text = False
+
+        self.who = ""
+        self.bug_when = ""
+        self.the_text = ""
         
 
 
@@ -357,8 +377,17 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_reporter = True
         elif name == 'assigned_to':
             self.is_assigned_to = True
-             
-          
+
+        #parsing comments
+        elif name == 'long_desc':
+            self.is_long_desc = True
+        elif name == 'who':
+            self.is_who = True
+        elif name == 'bug_when':
+            self.is_bug_when = True
+        elif name == 'thetext':
+            self.is_the_text = True
+
 
     def characters (self, ch): 
         if self.is_bug_id:
@@ -381,6 +410,17 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         elif self.is_assigned_to:
             self.assigned_to = str(ch)
+
+        #parsing comments
+        elif self.is_who:
+            self.who = str(ch)
+        elif self.is_bug_when:
+            self.bug_when = str(ch)
+        elif self.is_the_text:
+            self.the_text = str(ch.encode('utf-8'))
+            self.comment = Comment(self.bug_id, self.who, self.bug_when, self.the_text)
+            self.comments.append(self.comment)
+
             
     def endElement(self, name):
         if name == 'bug_id':
@@ -397,6 +437,16 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_reporter = False
         elif name == 'assigned_to':
             self.is_assigned_to = False
+
+        #parsing comments
+        elif name == 'long_desc':
+            self.is_long_desc = False
+        elif name == 'who':
+            self.is_who = False
+        elif name == 'bug_when':
+            self.is_bug_when = False
+        elif name == 'thetext':
+            self.is_the_text = False
 
     def printDataBug(self):
         print ""
@@ -425,6 +475,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         bug.Group = ""
         bug.AssignedTo = self.assigned_to
         bug.SubmittedBy = self.reporter
+        bug.Comments = self.comments
 
         return bug
 
@@ -510,30 +561,26 @@ class BGBackend (Backend):
             #The URL from bugzilla (so far KDE and GNOME) are like:
             #http://<domain>/show_bug.cgi?id=<bugid>&ctype=xml 
             
-            #try:
-            dataBug = self.analyzeBug(bug, url)
-            #except:
-            #    print "ERROR detected"
-            #    continue
+            try:
+                dataBug = self.analyzeBug(bug, url)
+            except:
+                print "ERROR detected"
+                continue
             
-            
-            
+                        
             db = getDatabase()
             dbBug = DBBug(dataBug)
             db.insert_bug(dbBug)
           
-            #work in progress
-#            print ("Adding comments")
-#            for comment in dataBug.Comments:
-#                dbComment = DBComment(comment)
-#                db.insert_comment(dbComment)
+            print ("Adding comments")
+            for comment in dataBug.Comments:
+                dbComment = DBComment(comment)
+                db.insert_comment(dbComment)
 
             print "Adding changes"
-            print dataBug.Changes
             for change in dataBug.Changes:
-                print change
+
                 dbChange = DBChange(change)
-                print dbChange
                 db.insert_change(dbChange)
         
 
