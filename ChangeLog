@@ -1,3 +1,10 @@
+2009-14-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/backends/bg.py: Now it inserts GeneralInfo
+
+	General Info is stored
+
+
 2009-01-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* Bicho/backends/bg.py: Comments data is now stored

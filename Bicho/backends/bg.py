@@ -32,6 +32,7 @@ from xml.sax._exceptions import SAXParseException
 #HTML parser
 from HTMLParser import HTMLParser
 from Bicho.utils import *
+import datetime
 
 
 #######################################################
@@ -534,6 +535,15 @@ class BGBackend (Backend):
 
         return dataBug
 
+    def insert_general_info(self, url):
+
+                            
+        db = getDatabase()
+        #By default, using bugzilla, field tracker=Bugs
+        dbGeneralInfo = DBGeneralInfo("", url, "Bugs", datetime.date.today())
+        db.insert_general_info(dbGeneralInfo)
+
+
 
     def run (self):
         
@@ -555,7 +565,12 @@ class BGBackend (Backend):
             bugs.append(bug_csv.split(',')[0])
         
         url = self.url
+
+        self.insert_general_info(url)
+
         url = self.getDomain(url)
+
+        
 
         for bug in bugs:
             #The URL from bugzilla (so far KDE and GNOME) are like:
