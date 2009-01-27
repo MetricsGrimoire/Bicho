@@ -1,3 +1,10 @@
+2009-27-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/backends/bg.py: Minor bug fixed
+
+	Bicho retrieves comments
+
+
 2009-14-01 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* Bicho/backends/bg.py: Now it inserts GeneralInfo

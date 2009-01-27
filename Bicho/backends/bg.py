@@ -418,9 +418,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif self.is_bug_when:
             self.bug_when = str(ch)
         elif self.is_the_text:
-            self.the_text = str(ch.encode('utf-8'))
-            self.comment = Comment(self.bug_id, self.who, self.bug_when, self.the_text)
-            self.comments.append(self.comment)
+            self.the_text = self.the_text + str(ch.encode('utf-8'))
+            
+            
 
             
     def endElement(self, name):
@@ -447,6 +447,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif name == 'bug_when':
             self.is_bug_when = False
         elif name == 'thetext':
+            self.comment = Comment(self.bug_id, self.who, self.bug_when, self.the_text)
+            self.comments.append(self.comment)
+            self.the_text = ""
             self.is_the_text = False
 
     def printDataBug(self):
