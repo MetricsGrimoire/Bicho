@@ -33,6 +33,7 @@ from xml.sax._exceptions import SAXParseException
 from HTMLParser import HTMLParser
 from Bicho.utils import *
 import datetime
+import random
 
 
 #######################################################
@@ -137,7 +138,7 @@ class Comment():
 
 class ParserBGChanges(HTMLParser):
 
-    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6) = range(6)
+    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10) = range(10)
 
     def __init__(self, bugURL, idBug):
         HTMLParser.__init__(self)
@@ -157,76 +158,9 @@ class ParserBGChanges(HTMLParser):
         self.waitingData = False
         self.data = ""
         self.IdBug = idBug
-
-    def parserData(self, data):
-        #print data
-        values = data.split('\n')
-
-        init = True
-        changes = []
-        firstBlank = False
-        secondBlank = False
-        submittedBy = ""
-        date = ""
-
-        for value in values:
-            if init:
-                change = Change(self.IdBug)
-                init = False
-                change.setSubmittedBy(value)
-
-                continue
-
-
-            if firstBlank and secondBlank:
-                self.changes.append(change)
-                change = Change(self.IdBug)
-                change.setSubmittedBy(value)
-                firstBlank = False
-                secondBlank = False
-                continue
-
-            if len(value.strip())==0 and not firstBlank:
-                firstBlank = True
-                continue
-
-            if len(value.strip())==0 and firstBlank:
-                secondBlank = True
-                continue
-
-            if value <> "" and firstBlank and change.getField()<>"":
-                #change.printChange()
-                self.changes.append(change)
-
-                submittedBy = change.getSubmittedBy()
-                date = change.getDate()
-
-                change = Change(self.IdBug)
-                change.setSubmittedBy(submittedBy)
-                change.setDate(date)
-                change.setField(value)
-                
-                firstBlank = False
-                continue
-
-            if value <> "" and firstBlank and change.getField()== "":
-                firstBlank = False
-
-                
-            if change.getSubmittedBy() == "":
-                change.setSubmittedBy(value)
-            elif change.getDate() == "":
-                change.setDate(value)
-            elif change.getField() == "":
-                change.setField(value)
-            elif change.getOldValue() == "":
-                change.setOldValue(value)
-
-            #Data is stored but not used
-            elif change.getAdded() == "":
-                change.setAdded(value)
-                   
- 
+        #self.change = Change()
+        self.cont = 0
+        self.rowspan = 0
 
     def statesMachine(self, data, tag, attrs):
 
@@ -242,33 +176,101 @@ class ParserBGChanges(HTMLParser):
         elif self.state == ParserBGChanges.ST_3:
             if tag == "<tr>":
                 self.state = ParserBGChanges.ST_4
+            if tag == "</table>":
+                self.state = ParserBGChanges.ST_10
 
         elif self.state == ParserBGChanges.ST_4:
-            if (data == "\n        " or data == "\n            ") and not self.waitingData:
-               
-                self.waitingData = True
-                return
+            #Field Who
+            if tag == "<td>":
+                self.change = Change(self.IdBug)
+                self.data = ""
+                self.cont = 1
 
-            if tag == "</table>":
+            if len(attrs)>0:
+                self.rowspan = int(attrs[0][1])
+                self.cont = 0
+
+            if data <> "":
+                self.data = self.data + data
+                
+            if tag == "</td>":
+                self.change.setSubmittedBy(self.data)
+                self.data = ""
                 self.state = ParserBGChanges.ST_5
-                self.parserData(self.data)
-                return
+
+        elif self.state == ParserBGChanges.ST_5:
+            #Field When
+            if tag == "<td>":
+                pass
+
+            if data <> "":
+                self.data = self.data + data
+                
+            if tag == "</td>":
+                self.change.setDate(self.data)
+                self.data = ""
+                self.state = ParserBGChanges.ST_6
+
+        
+        elif self.state == ParserBGChanges.ST_6:
+            #Field What
+            if tag == "<td>":
+                who = self.change.getSubmittedBy()
+                when = self.change.getDate()
+                self.data = ""
+                
+                self.change = Change(self.IdBug)
+                
+                self.change.setSubmittedBy(who)
+                self.change.setDate(when)
 
 
             if data <> "":
-                self.values.append(data)
                 self.data = self.data + data
-
-            if len(attrs) > 0:
-                self.values.append(attrs[0][1])
-                self.data = self.data + data
-                #if attrs[0][1] = n, then this the field who or when will
-                #remain the same during the next n iterations
-
-            self.waitingData = False
                 
+            if tag == "</td>":
+                self.change.setField(self.data)
+                self.data = ""
+                self.cont = self.cont + 1
+                self.state = ParserBGChanges.ST_7
 
-        elif self.state == ParserBGChanges.ST_5:
+
+        elif self.state == ParserBGChanges.ST_7:
+            #Field Removed
+            if tag == "<td>":
+                pass
+
+            if data <> "":
+                self.data = self.data + data
+                
+            if tag == "</td>":
+                self.change.setOldValue(self.data)
+                self.data = ""
+                self.state = ParserBGChanges.ST_8
+
+
+        elif self.state == ParserBGChanges.ST_8:
+            #Field Added - so far, ignored
+            if tag == "<td>":
+                pass
+                
+            if tag == "</td>":
+                self.state = ParserBGChanges.ST_9
+
+        elif self.state == ParserBGChanges.ST_9:
+            if tag =="</tr>" and not (self.cont==self.rowspan):
+                #Starting another set of values because of rowspan > 1
+                #Going to what field
+                self.state = ParserBGChanges.ST_6
+                self.changes.append(self.change)
+
+            if tag == "</tr>" and self.cont==self.rowspan:
+                self.state = ParserBGChanges.ST_4
+                self.changes.append(self.change)
+             
+
+        elif self.state == ParserBGChanges.ST_10:
+
             return
 
 
@@ -530,10 +532,15 @@ class BGBackend (Backend):
         print bug_activity_url
 
         parser = ParserBGChanges(bug_activity_url, bug_id)
+
+        #FIXME: next line is hardcore data. Introduced 2 february 2009
+        #parser = ParserBGChanges("https://bugs.kde.org/show_activity.cgi?id=151614", "151614")
+
+
         data_activity = urllib.urlopen(bug_activity_url).read()
         parser.feed(data_activity)
         parser.close()
-        print "Getting changes"
+        #print "Getting changes"
         dataBug.Changes = parser.getDataChanges()
 
         return dataBug
@@ -551,7 +558,7 @@ class BGBackend (Backend):
     def run (self):
         
         debug ("Running Bicho")
-
+        print "Running Bicho"
         #retrieving data in csv format
         url = self.url + "&ctype=csv"
 
@@ -573,16 +580,17 @@ class BGBackend (Backend):
 
         url = self.getDomain(url)
 
-        
-
+        random.seed()
         for bug in bugs:
+
             #The URL from bugzilla (so far KDE and GNOME) are like:
             #http://<domain>/show_bug.cgi?id=<bugid>&ctype=xml 
             
             try:
                 dataBug = self.analyzeBug(bug, url)
-            except:
+            except Exception, e:
                 print "ERROR detected"
+                print e
                 continue
             
                         
@@ -590,18 +598,20 @@ class BGBackend (Backend):
             dbBug = DBBug(dataBug)
             db.insert_bug(dbBug)
           
-            print ("Adding comments")
+            #print ("Adding comments")
             for comment in dataBug.Comments:
                 dbComment = DBComment(comment)
                 db.insert_comment(dbComment)
 
-            print "Adding changes"
+            #print "Adding changes"
             for change in dataBug.Changes:
-
+                #print "Se inserta change:"
+                #change.printChange()
+                #print "******************"
                 dbChange = DBChange(change)
                 db.insert_change(dbChange)
         
 
-            time.sleep(10)
+            time.sleep(random.randint(0,20))
 
 register_backend ("bg", BGBackend)   

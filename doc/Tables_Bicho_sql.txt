@@ -1,0 +1,56 @@
+CREATE TABLE  `Attachments` (
+  `id` int(11) NOT NULL auto_increment,
+  `idBug` varchar(128) default NULL,
+  `Name` varchar(256) default NULL,
+  `Description` text,
+  `Url` varchar(256) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `Bugs` (
+  `id` int(11) NOT NULL auto_increment,
+  `idBug` varchar(128) default NULL,
+  `Summary` text,
+  `Description` text,
+  `DateSubmitted` varchar(128) default NULL,
+  `Status` varchar(64) default NULL,
+  `Priority` varchar(64) default NULL,
+  `Category` varchar(128) default NULL,
+  `IGroup` varchar(128) default NULL,
+  `AssignedTo` varchar(128) default NULL,
+  `SubmittedBy` varchar(128) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE  `Changes` (
+  `id` int(11) NOT NULL auto_increment,
+  `idBug` varchar(128) default NULL,
+  `Field` varchar(256) default NULL,
+  `OldValue` varchar(256) default NULL,
+  `Date` varchar(256) default NULL,
+  `SubmittedBy` varchar(256) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `Comments` (
+  `id` int(11) NOT NULL auto_increment,
+  `idBug` varchar(128) default NULL,
+  `DateSubmitted` varchar(128) default NULL,
+  `SubmittedBy` varchar(128) default NULL,
+  `Comment` text,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=182 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE  `GeneralInfo` (
+  `id` int(11) NOT NULL auto_increment,
+  `Project` varchar(256) default NULL,
+  `Url` varchar(256) default NULL,
+  `Tracker` varchar(256) default NULL,
+  `Date` varchar(128) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
