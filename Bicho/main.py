@@ -44,12 +44,12 @@ Database input specific options:
 
 Database output specific options:
 
-  --db-driver_out	Output database driver [sqlite|mysql|postgres] (None)
+  --db-driver_out	Output database driver [sqlite|mysql|postgres] (mysql)
   --db-user_out		Database user name (None)
   --db-password_out	Database user password (None)
   --db-database_out	Database name (None)
-  --db-hostname_out	Name of the host where database server is running (None)
-  --db-port_out		Port where the database is (None)
+  --db-hostname_out	Name of the host where database server is running (localhost)
+  --db-port_out		Port where the database is (3306)
 
 
 Values found in config file 'bicho.conf' are used as default values
@@ -64,6 +64,7 @@ If config file is not found all parameters are required except:
 
 
 def getOptsFromFile ():
+    import os.path
 
     #from utils.py
     options = OptionsStore()
@@ -71,50 +72,51 @@ def getOptsFromFile ():
     config = ConfigParser.ConfigParser()
 
     try:
-        config.read(['Bicho/bicho.conf'])
+        config.read([os.path.join('/etc', 'bicho'), 
+                     os.path.expanduser('~/.bicho')])
     except:
         printerr("Config file not found")
         return options
     
-    for opt,value in config.items('General'):
-        if opt == "type":
-            options.type = value
-        if opt == "url":
-            options.url = value
-        if opt == "path":
-            options.path = value
+    if config.has_section('General'):
+        for opt,value in config.items('General'):
+            if opt == "type":
+                options.type = value
+            if opt == "url":
+                options.url = value
+            if opt == "path":
+                options.path = value
 
-    for opt,value in config.items('DatabaseIn'):
-        if opt == "db_driver_in":
-            options.db_driver_in = value
-        if opt == "db_user_in":
-            options.db_user_in = value
-        if opt == "db_password_in":
-            options.db_password_in = value
-        if opt == "db_database_in":
-            options.db_database_in = value
-        if opt == "db_hostname_in":
-            options.db_hostname_in = value
-        if opt == "db_port_in":
-            options.db_port_in = value
-     
-    for opt,value in config.items('DatabaseOut'):
-        if opt == "db_driver_out":
-            options.db_driver_out = value
-        if opt == "db_user_out":
-            options.db_user_out = value
-        if opt == "db_password_out":
-            options.db_password_out = value
-        if opt == "db_database_out":
-            options.db_database_out = value
-        if opt == "db_hostname_out":
-            options.db_hostname_out = value
-        if opt == "db_port_out":
-            options.db_port_out = value
-
-    #for opt, value in config.items('DatabaseOut'):
-    #    print opt, value
+    if config.has_section('DatabaseIn'):
+        for opt,value in config.items('DatabaseIn'):
+            if opt == "db-driver_in":
+                options.db_driver_in = value
+            if opt == "db-user_in":
+                options.db_user_in = value
+            if opt == "db-password_in":
+                options.db_password_in = value
+            if opt == "db-database_in":
+                options.db_database_in = value
+            if opt == "db-hostname_in":
+                options.db_hostname_in = value
+            if opt == "db-port_in":
+                options.db_port_in = value
     
+    if config.has_section('DatabaseOut'): 
+        for opt,value in config.items('DatabaseOut'):
+            if opt == "db-driver_out":
+                options.db_driver_out = value
+            if opt == "db-user_out":
+                options.db_user_out = value
+            if opt == "db-password_out":
+                options.db_password_out = value
+            if opt == "db-database_out":
+                options.db_database_out = value
+            if opt == "db-hostname_out":
+                options.db_hostname_out = value
+            if opt == "db-port_out":
+                options.db_port_out = value
+
     return options
 
 def areDBOutCorrect(options):
@@ -123,22 +125,22 @@ def areDBOutCorrect(options):
     correct = True
 
     if options.db_driver_out is None:
-        printerr ("Required parameter 'db_driver_out' is missing")
+        printerr ("Required parameter 'db-driver_out' is missing")
         correct = False
     elif options.db_user_out is None:
-        printerr ("Required parameter 'db_user_out' is missing")
+        printerr ("Required parameter 'db-user_out' is missing")
         correct = False
     elif options.db_password_out is None:
-        printerr ("Required parameter 'db_password_out' is missing")
+        printerr ("Required parameter 'db-password_out' is missing")
         correct = False
     elif options.db_database_out is None:
-        printerr ("Required parameter 'db_database_out' is missing")
+        printerr ("Required parameter 'db-database_out' is missing")
         correct = False
     elif options.db_hostname_out is None:
-        printerr ("Required parameter 'db_hostname_out' is missing")
+        printerr ("Required parameter 'db-hostname_out' is missing")
         correct = False
     elif options.db_port_out is None:
-        printerr ("Required parameter 'db_port_out' is missing")
+        printerr ("Required parameter 'db-port_out' is missing")
         correct = False
 
     return correct
@@ -149,22 +151,22 @@ def areDBInCorrect(options):
     correct = True
 
     if options.db_driver_in is None:
-        printerr ("Required parameter (if URL not given) 'db_driver_in' is missing")
+        printerr ("Required parameter (if URL not given) 'db-driver_in' is missing")
         correct = False
     elif options.db_user_in is None:
-        printerr ("Required parameter (if URL not given) 'db_user_in' is missing")
+        printerr ("Required parameter (if URL not given) 'db-user_in' is missing")
         correct = False
     elif options.db_password_in is None:
-        printerr ("Required parameter (if URL not given) 'db_password_in' is missing")
+        printerr ("Required parameter (if URL not given) 'db-password_in' is missing")
         correct = False
     elif options.db_database_in is None:
-        printerr ("Required parameter (if URL not given) 'db_database_in' is missing")
+        printerr ("Required parameter (if URL not given) 'db-database_in' is missing")
         correct = False
     elif options.db_hostname_in is None:
-        printerr ("Required parameter (if URL not given) 'db_hostname_in' is missing")
+        printerr ("Required parameter (if URL not given) 'db-hostname_in' is missing")
         correct = False
     elif options.db_port_in is None:
-        printerr ("Required parameter (if URL not given) 'db_port_in' is missing")
+        printerr ("Required parameter (if URL not given) 'db-port_in' is missing")
         correct = False
 
     return correct
@@ -193,14 +195,13 @@ def areDBCorrect(options):
     return True
 
 
-
 def main (argv):
     import Bicho
 
     #Shared object
     options = getOptsFromFile()
 
-    short_opts = "htp:"
+    short_opts = "ht:p:"
     long_opts = ["help", "type=", "path=", "db-driver_in=", "db-user_in=", "db-password_in=",
                  "db-database_in=", "db-hostname_in=", "db-port_in=",
                  "db-driver_out=", "db-user_out=", "db-password_out=",
@@ -248,8 +249,6 @@ def main (argv):
         else:
             usage()
 
-    
-
     if len(args) > 0:
         options.url = args[0]
         
@@ -270,4 +269,3 @@ def main (argv):
 
 if __name__ == "__main__":
     main(sys.argv)
-        

@@ -35,12 +35,12 @@ class OptionsStore:
                       "db_hostname_in": None,
                       "db_port_in": None,
 
-                      "db_driver_out": None,
+                      "db_driver_out": 'mysql',
                       "db_user_out": None,
                       "db_password_out": None,
                       "db_database_out" : None,
-                      "db_hostname_out": None, 
-                      "db_port_out" : None}
+                      "db_hostname_out": 'localhost', 
+                      "db_port_out" : '3306'}
 
     def __init__ (self):
         self.__dict__ = self.__shared_state
