@@ -1,3 +1,10 @@
+2009-19-02  Santiago Dueñas Domínguez  <sduenas@gsyc.es>
+
+	* Bicho/backends/Makefile.am:
+
+	Added missed file to the makefile.
+
+
 2009-05-02 Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* Bicho/backends/bg.py: KDE bugzilla support added
