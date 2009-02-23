@@ -1,3 +1,10 @@
+2009-23-02  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/backends/bg.py: filtered blank characters
+
+	Data from activity in bugzilla backend improved
+
+
 2009-23-02  Santiago Dueñas Domínguez  <sduenas@gsyc.es>
 
 	* README:

@@ -194,7 +194,7 @@ class ParserBGChanges(HTMLParser):
                 self.data = self.data + data
                 
             if tag == "</td>":
-                self.change.setSubmittedBy(self.data)
+                self.change.setSubmittedBy(self.data.strip())
                 self.data = ""
                 self.state = ParserBGChanges.ST_5
 
@@ -207,7 +207,7 @@ class ParserBGChanges(HTMLParser):
                 self.data = self.data + data
                 
             if tag == "</td>":
-                self.change.setDate(self.data)
+                self.change.setDate(self.data.strip())
                 self.data = ""
                 self.state = ParserBGChanges.ST_6
 
@@ -229,7 +229,7 @@ class ParserBGChanges(HTMLParser):
                 self.data = self.data + data
                 
             if tag == "</td>":
-                self.change.setField(self.data)
+                self.change.setField(self.data.strip())
                 self.data = ""
                 self.cont = self.cont + 1
                 self.state = ParserBGChanges.ST_7
@@ -244,7 +244,7 @@ class ParserBGChanges(HTMLParser):
                 self.data = self.data + data
                 
             if tag == "</td>":
-                self.change.setOldValue(self.data)
+                self.change.setOldValue(self.data.strip())
                 self.data = ""
                 self.state = ParserBGChanges.ST_8
 
@@ -532,10 +532,6 @@ class BGBackend (Backend):
         print bug_activity_url
 
         parser = ParserBGChanges(bug_activity_url, bug_id)
-
-        #FIXME: next line is hardcore data. Introduced 2 february 2009
-        #parser = ParserBGChanges("https://bugs.kde.org/show_activity.cgi?id=151614", "151614")
-
 
         data_activity = urllib.urlopen(bug_activity_url).read()
         parser.feed(data_activity)
