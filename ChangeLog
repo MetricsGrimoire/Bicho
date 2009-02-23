@@ -1,5 +1,12 @@
 2009-23-02  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
+	* configure.in:
+
+	Release 0.3
+
+
+2009-23-02  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
 	* Bicho/backends/bg.py: filtered blank characters
 
 	Data from activity in bugzilla backend improved
