@@ -77,6 +77,10 @@ class DBDatabase:
         self.store.add(dbBug)
         self.store.flush()
 
+    def insert_bugzilla_extra(self, dbBugzilla_extra):
+        self.store.add(dbBugzilla_extra)
+        self.store.flush()
+
     def insert_comment(self, dbComment):
         self.store.add(dbComment)
         self.store.flush()
@@ -123,6 +127,7 @@ class DBMySQL(DBDatabase):
                            "Description text,"+
                            "DateSubmitted varchar(128),"+
                            "Status varchar(64),"+
+                           "Resolution varchar(64)," +
                            "Priority varchar(64),"+
                            "Category varchar(128),"+
                            "IGroup varchar(128),"+
@@ -151,6 +156,24 @@ class DBMySQL(DBDatabase):
                            "Date varchar(256), " +
                            "SubmittedBy varchar(256))")
 
+	self.store.execute("CREATE TABLE IF NOT EXISTS Bugzilla_Data (" +
+                           "id int auto_increment primary key," +
+			   "idBug varchar(128)," + 
+                           "Delta_ts varchar(128)," + 
+                           "Reporter_accessible varchar(128)," + 
+                           "Cclist_accessible varchar(128)," + 
+                           "Classification_id varchar(128)," + 
+                           "Classification varchar(128)," + 
+                           "Product varchar(128)," + 
+                           "Component varchar(128)," + 
+                           "Version varchar(128)," +
+                           "Rep_platform varchar(128)," +
+                           "Op_sys varchar(128)," +
+                           "Bug_severity varchar(128)," +
+                           "Target_milestone varchar(128)," + 
+                           "Cc varchar(128))")
+                           
+
 
 class DBPostGreSQL(DBDatabase):
     def __init__ (self):
@@ -177,6 +200,7 @@ class DBPostGreSQL(DBDatabase):
                            "Description text," + 
                            "Datesubmitted varchar(128),"+
                            "Status varchar(64),"+
+                           "Resolution varchar(64)," +
                            "Priority varchar(64),"+
                            "Category varchar(128),"+
                            "Igroup varchar(128),"+
@@ -205,6 +229,25 @@ class DBPostGreSQL(DBDatabase):
                            "Date varchar(256), " +
                            "SubmittedBy varchar(256))")
 
+	self.store.execute("CREATE TABLE IF NOT EXISTS Bugzilla_Data (" +
+                           "id serial primary key," +
+			   "idBug varchar(128)," + 
+                           "Delta_ts varchar(128)," + 
+                           "Reporter_accessible varchar(128)," + 
+                           "Cclist_accessible varchar(128)," + 
+                           "Classification_id varchar(128)," + 
+                           "Classification varchar(128)," + 
+                           "Product varchar(128)," + 
+                           "Component varchar(128)," + 
+                           "Version varchar(128)," +
+                           "Rep_platform varchar(128)," +
+                           "Op_sys varchar(128)," +
+                           "Bug_severity varchar(128)," +
+                           "Target_milestone varchar(128)," + 
+                           "Cc varchar(128))")
+                           
+
+
 
 
 class SQLite(DBDatabase):
@@ -230,6 +273,7 @@ class SQLite(DBDatabase):
                            "description text," +
                            "datesubmitted varchar,"+
                            "status varchar,"+
+                           "Resolution varchar(64)," +
                            "priority varchar,"+
                            "category varchar,"+
                            "igroup varchar,"+
@@ -258,6 +302,22 @@ class SQLite(DBDatabase):
                            "Date varchar(256), " +
                            "SubmittedBy varchar(256))")
 
+	self.store.execute("CREATE TABLE IF NOT EXISTS Bugzilla_Data (" +
+                           "id integer primary key," +
+			   "idBug varchar(128)," + 
+                           "Delta_ts varchar(128)," + 
+                           "Reporter_accessible varchar(128)," + 
+                           "Cclist_accessible varchar(128)," + 
+                           "Classification_id varchar(128)," + 
+                           "Classification varchar(128)," + 
+                           "Product varchar(128)," + 
+                           "Component varchar(128)," + 
+                           "Version varchar(128)," +
+                           "Rep_platform varchar(128)," +
+                           "Op_sys varchar(128)," +
+                           "Bug_severity varchar(128)," +
+                           "Target_milestone varchar(128)," + 
+                           "Cc varchar(128))")
 
 class DBGeneralInfo(object):
     __storm_table__ = "GeneralInfo"
@@ -400,6 +460,79 @@ class DBChange (object):
 
 
 
+class DBBugzilla_extra(object):
+    __storm_table__ = "Bugzilla_Data"
+
+    id = Int (primary = True)
+    idBug = Unicode ()
+    delta_ts = Unicode()
+    reporter_accessible = Unicode()
+    cclist_accessible = Unicode()
+    classification_id = Unicode()
+    classification = Unicode()
+    product = Unicode()
+    component = Unicode()
+    version = Unicode()
+    rep_platform = Unicode()
+    op_sys = Unicode()
+    bug_severity = Unicode()
+    target_milestone = Unicode()
+    cc = Unicode()
+    def __init__ (self, bug):
+
+        self.idBug = unicode(bug.Id)
+        try:
+            self.delta_ts = unicode(bug.delta_ts)
+        except:
+            pass
+        try:
+            self.reporter_accessible = unicode(bug.reporter_accessible)
+        except:
+            pass
+        try:
+            self.cclist_accessible = unicode(bug.cclist_accessible)
+        except:
+            pass
+        try:
+            self.classification_id = unicode(bug.classification_id)
+        except:
+            pass
+        try:
+            self.classification = unicode(bug.classification)
+        except:
+            pass
+        try:
+            self.product = unicode(bug.product)
+        except:
+            pass
+        try:
+            self.component = unicode(bug.component)
+        except:
+            pass
+        try:
+            self.version = unicode(bug.version)
+        except:
+            pass
+        try:
+            self.rep_platform = unicode(bug.rep_platform)
+        except:
+            pass
+        try:
+            self.op_sys = unicode(bug.op_sys)
+        except:
+            pass
+        try:
+            self.bug_severity = unicode(bug.bug_severity)
+        except:
+            pass
+        try:
+            self.target_milestone = unicode(bug.target_milestone)
+        except:
+            pass
+        try:
+            self.cc = unicode(bug.cc)
+        except:
+            pass
 
 
 #Class necessary to talk to Storm
@@ -412,6 +545,7 @@ class DBBug (object):
     Description = Unicode()
     DateSubmitted = Unicode()
     Status = Unicode ()
+    Resolution = Unicode()
     Priority = Unicode ()
     Category = Unicode ()
     IGroup = Unicode ()
@@ -447,6 +581,12 @@ class DBBug (object):
             self.Status = unicode(bug.Status)
         except:
             pass
+
+        try:
+            self.Resolution = unicode(bug.Resolution)
+        except:
+            pass
+
 
         try:
             self.Priority = unicode(bug.Priority)

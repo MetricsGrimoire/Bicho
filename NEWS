@@ -1,4 +1,24 @@
 ================
+  Bicho    0.3
+================
+
+Changes since version 0.21:
+
+	* Added Bugzilla support for KDE and GNOME. (dizquierdo)
+	* Now, it works using command line and config file properly. (sduenas)
+	* By default, the command line takes mysql as default driver,
+	3306 as default port and localhost as default server. (sduenas)
+	* There is a difference between type of repository, sf for 
+	SourceForge and bg for Bugzilla (GNOME and KDE). (dizquierdo)
+
+Thanks:
+
+	Santiago Dueñas Domínguez
+	Carlos García Campos
+	Liliana Tovar
+
+
+================
   Bicho    0.21
 ================
 

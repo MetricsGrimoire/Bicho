@@ -319,37 +319,52 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     def __init__ (self):
         #Common fields in every Bugzilla BTS
-        #Commented fields are those which are ignored
         self.bug_id = None
         self.creation_ts = None
         self.short_desc = None
-#        self.delta_ts = None
-#        self.reporter_accessible = None
-#        self.cclist_accessible = None
-#        self.classification_id = None
-#        self.classification = None
-#        self.product = None
-#        self.component = None
-#        self.version = None
-#        self.rep_platform = None
-#        self.op_sys = None
+        self.delta_ts = None
+        self.reporter_accessible = None
+        self.cclist_accessible = None
+        self.classification_id = None
+        self.classification = None
+        self.product = None
+        self.component = None
+        self.version = None
+        self.rep_platform = None
+        self.op_sys = None
         self.bug_status = None
+        self.resolution = None
         self.priority = None
-#        self.bug_severity = None
-#        self.target_milestone = None
+        self.bug_severity = None
+        self.target_milestone = None
         self.reporter = None
         self.assigned_to = None
-#        self.cc = []
+        self.cc = []
         self.long_desc = []
 
         self.is_bug_id = False
         self.is_creation_ts = False
         self.is_short_desc = False
         self.is_bug_status = False
+        self.is_resolution = False
         self.is_priority = False
         self.is_reporter = False
         self.is_assigned_to = False
         self.is_description = False
+
+        self.is_delta_ts = False
+        self.is_reporter_accessible = False
+        self.is_cclist_accessible = False
+        self.is_classification_id = False
+        self.is_classification = False
+        self.is_product = False
+        self.is_component = False
+        self.is_version = False
+        self.is_rep_platform = False
+        self.is_op_sys = False
+        self.is_bug_severity = False
+        self.is_target_milestone = False
+        self.is_cc = False
 
         #Comments
         self.comments = []
@@ -366,6 +381,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
 
     def startElement(self, name, attrs): 
+        #Generic information found in other BTSs
         if name == 'bug_id':
             self.is_bug_id = True
         elif name == 'creation_ts':
@@ -374,12 +390,43 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_short_desc = True
         elif name == 'bug_status':
             self.is_bug_status = True
+        elif name == 'resolution':
+            self.resolution = True
         elif name == 'priority':
             self.is_priority = True
         elif name == 'reporter':
             self.is_reporter = True
         elif name == 'assigned_to':
             self.is_assigned_to = True
+        
+        #Specific information just found in Bugzillas
+        elif name == 'delta_ts':
+            self.is_delta_ts = True
+        elif name == 'reporter_accessible':
+            self.is_reporter_accessible = True
+        elif name == 'cclist_accessible':
+            self.is_cclist_accessible = True
+        elif name == 'classification_id':
+            self.is_classification_id = True
+        elif name == 'classification':
+            self.is_classification = True
+        elif name == 'product':
+            self.is_product = True
+        elif name == 'component':
+            self.is_component = True
+        elif name == 'version':
+            self.is_version = True
+        elif name == 'rep_platform':
+            self.is_rep_platform = True
+        elif name == 'op_sys':
+            self.is_op_sys = True
+        elif name == 'bug_severity':
+            self.is_bug_severity = True
+        elif name == 'target_milestone':
+            self.is_target_milestone = True
+        elif name == 'cc':
+            self.is_cc = True
+
 
         #parsing comments
         elif name == 'long_desc':
@@ -393,26 +440,53 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
 
     def characters (self, ch): 
+        #Generic Information
         if self.is_bug_id:
             self.bug_id =  str(ch)
-
+            print "bug_id:" + self.bug_id
         elif self.is_creation_ts:
             self.creation_ts = str(ch)
-
         elif self.is_short_desc:
             self.short_desc = str(ch)
-
         elif self.is_bug_status:
             self.bug_status = str(ch)
-
+        elif self.resolution  :
+            self.resolution  = str(ch)
         elif self.is_priority:
             self.priority = str(ch)
-
         elif self.is_reporter:
             self.reporter = str(ch)
-
         elif self.is_assigned_to:
             self.assigned_to = str(ch)
+        #Specific information just found in Bugzillas
+        elif self.is_delta_ts  :
+            self.delta_ts  = str(ch)
+        elif self.is_reporter_accessible  :
+            self.reporter_accessible  = str(ch)
+        elif self.is_cclist_accessible  :
+            self.cclist_accessible  = str(ch)
+        elif self.is_classification_id  :
+            self.classification_id  = str(ch)
+        elif self.is_classification  :
+            self.classification  = str(ch)
+        elif self.is_product  :
+            self.product  = str(ch)
+        elif self.is_component  :
+            self.component  = str(ch)
+        elif self.is_version  :
+            self.version  = str(ch)
+        elif self.is_rep_platform  :
+            self.rep_platform  = str(ch)
+        elif self.is_op_sys  :
+            self.op_sys  = str(ch)
+        elif self.is_bug_severity  :
+            self.bug_severity  = str(ch)
+        elif self.is_target_milestone  :
+            self.target_milestone  = str(ch)
+        elif self.is_cc  :
+            self.cc  = str(ch)
+
+
 
         #parsing comments
         elif self.is_who:
@@ -426,6 +500,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
             
     def endElement(self, name):
+        #Generic information found in all BTSs
         if name == 'bug_id':
             self.is_bug_id = False
         elif name == 'creation_ts':
@@ -434,12 +509,43 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_short_desc = False
         elif name == 'bug_status':
             self.is_bug_status = False
+        elif name == 'resolution':
+            self.is_resolution = False
         elif name == 'priority':
             self.is_priority = False
         elif name == 'reporter':
             self.is_reporter = False
         elif name == 'assigned_to':
             self.is_assigned_to = False
+
+        #Specific information just found in Bugzillas
+        elif name == 'delta_ts':
+            self.is_delta_ts = False
+        elif name == 'reporter_accessible':
+            self.is_reporter_accessible = False
+        elif name == 'cclist_accessible':
+            self.is_cclist_accessible = False
+        elif name == 'classification_id':
+            self.is_classification_id = False
+        elif name == 'classification':
+            self.is_classification = False
+        elif name == 'product':
+            self.is_product = False
+        elif name == 'component':
+            self.is_component = False
+        elif name == 'version':
+            self.is_version = False
+        elif name == 'rep_platform':
+            self.is_rep_platform = False
+        elif name == 'op_sys':
+            self.is_op_sys = False
+        elif name == 'bug_severity':
+            self.is_bug_severity = False
+        elif name == 'target_milestone':
+            self.is_target_milestone = False
+        elif name == 'cc':
+            self.is_cc = False
+
 
         #parsing comments
         elif name == 'long_desc':
@@ -463,6 +569,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         print "Priority: " + self.priority
         print "Reporter: " + self.reporter
         print "Assigned To: " + self.assigned_to
+        
+        print "Delta_ts: " + self.delta_ts
         print ""
 
     def getIdBug(self):
@@ -476,12 +584,28 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         bug.Description = ""
         bug.DateSubmitted = self.creation_ts
         bug.Status = self.bug_status
+        bug.Resoltion = self.resolution
         bug.Priority = self.priority
         bug.Category = ""
         bug.Group = ""
         bug.AssignedTo = self.assigned_to
         bug.SubmittedBy = self.reporter
         bug.Comments = self.comments
+
+
+        bug.delta_ts = self.delta_ts
+        bug.reporter_accessible  =  self.reporter_accessible
+        bug.cclist_accessible  =  self.cclist_accessible
+        bug.classification_id  =  self.classification_id
+        bug.classification  =  self.classification
+        bug.product  =  self.product
+        bug.component  =  self.component
+        bug.version  =  self.version
+        bug.rep_platform  =  self.rep_platform
+        bug.op_sys  =  self.op_sys
+        bug.bug_severity  =  self.bug_severity
+        bug.target_milestone  =  self.target_milestone
+        bug.cc  =  self.cc
 
         return bug
 
@@ -523,7 +647,7 @@ class BGBackend (Backend):
             raise
         f.close()
         parser.close()
-        #handler.printDataBug()
+        handler.printDataBug()
         dataBug = handler.getDataBug()
     
         #Retrieving changes
@@ -556,7 +680,10 @@ class BGBackend (Backend):
         debug ("Running Bicho")
         print "Running Bicho"
         #retrieving data in csv format
+
         url = self.url + "&ctype=csv"
+
+        print url
 
         f = urllib.urlopen(url)
 
@@ -593,6 +720,9 @@ class BGBackend (Backend):
             db = getDatabase()
             dbBug = DBBug(dataBug)
             db.insert_bug(dbBug)
+
+            dbBugzilla_extra = DBBugzilla_extra(dataBug)
+            db.insert_bugzilla_extra(dbBugzilla_extra)
           
             #print ("Adding comments")
             for comment in dataBug.Comments:

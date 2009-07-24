@@ -1,3 +1,13 @@
+2009-24-07  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/SqlBug.py: Added support for the missed fields in Storm.
+	* Bicho/backends/bg.py: Added support for the missed fields.
+
+	There is a new table in Bugzilla named as Bugzilla_Data
+	where missing fields were added.
+	It has also added the resolution field.
+
+
 2009-23-02  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* configure.in:
