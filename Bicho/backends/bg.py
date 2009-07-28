@@ -443,14 +443,13 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         #Generic Information
         if self.is_bug_id:
             self.bug_id =  str(ch)
-            print "bug_id:" + self.bug_id
         elif self.is_creation_ts:
             self.creation_ts = str(ch)
         elif self.is_short_desc:
             self.short_desc = str(ch)
         elif self.is_bug_status:
             self.bug_status = str(ch)
-        elif self.resolution  :
+        elif self.is_resolution  :
             self.resolution  = str(ch)
         elif self.is_priority:
             self.priority = str(ch)
@@ -567,6 +566,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         print "Short description: " + self.short_desc
         print "Status: " + self.bug_status
         print "Priority: " + self.priority
+        print "Resolution: " + self.resolution
         print "Reporter: " + self.reporter
         print "Assigned To: " + self.assigned_to
         
@@ -584,7 +584,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         bug.Description = ""
         bug.DateSubmitted = self.creation_ts
         bug.Status = self.bug_status
-        bug.Resoltion = self.resolution
+        bug.Resolution = self.resolution
         bug.Priority = self.priority
         bug.Category = ""
         bug.Group = ""
@@ -647,7 +647,7 @@ class BGBackend (Backend):
             raise
         f.close()
         parser.close()
-        handler.printDataBug()
+        #handler.printDataBug()
         dataBug = handler.getDataBug()
     
         #Retrieving changes

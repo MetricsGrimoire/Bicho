@@ -112,6 +112,7 @@ class Bug:
                                 "Description" : None,
                                 "DateSubmitted" : None,
                                 "Status" : None,
+                                "Resolution" : None,
                                 "Priority" : None,
                                 "Category" : None,
                                 "Group" : None,
@@ -135,6 +136,7 @@ class Bug:
                     "Description: " + self.Description + "\n" + \
                     "DateSubmitted: " + self.DateSubmitted + "\n" + \
                     "Status: " + self.Status + "\n" + \
+                    "Resolution: " + self.Resolution + "\n" + \
                     "Priority: " + self.Priority + "\n" + \
                     "Category: " + self.Category + "\n" + \
                     "Group: " + self.Group + "\n" + \
