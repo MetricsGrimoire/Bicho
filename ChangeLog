@@ -1,3 +1,20 @@
+2009-29-07  Daniel Izquierdo Cortazar  <dizquierdo@libresoft.es>
+
+	* Bicho/backends/bg.py: fixing bug #24
+
+	Fixed bug #24
+
+
+2009-29-07  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
+
+	* Bicho/Bug.py: Added field resolution
+	* Bicho/backends/bg.py: Fixed bug #17 - 
+	Bicho fail to concatenate 'str' and 'NoneType' objects
+
+	Fixed bug #17
+	Thanks to Guido Conaldi for his report.
+
+
 2009-24-07  Daniel Izquierdo Cortazar  <dizquierdo@gsyc.es>
 
 	* Bicho/SqlBug.py: Added support for the missed fields in Storm.

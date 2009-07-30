@@ -391,7 +391,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif name == 'bug_status':
             self.is_bug_status = True
         elif name == 'resolution':
-            self.resolution = True
+            self.is_resolution = True
         elif name == 'priority':
             self.is_priority = True
         elif name == 'reporter':
@@ -716,7 +716,6 @@ class BGBackend (Backend):
                 print e
                 continue
             
-                        
             db = getDatabase()
             dbBug = DBBug(dataBug)
             db.insert_bug(dbBug)
