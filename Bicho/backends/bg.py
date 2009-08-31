@@ -703,6 +703,11 @@ class BGBackend (Backend):
 
         url = self.getDomain(url)
 
+
+        if url.find("apache")>0:
+            url =  url + "bugzilla/"
+
+
         random.seed()
         for bug in bugs:
 

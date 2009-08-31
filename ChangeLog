@@ -1,3 +1,10 @@
+2009-31-08  Daniel Izquierdo Cortazar  <dizquierdo@libresoft.es>
+
+	* Bicho/backends/bg.py: added support for Apache bugzilla
+
+	Added support for Apache bugzilla, bug #81
+
+
 2009-29-07  Daniel Izquierdo Cortazar  <dizquierdo@libresoft.es>
 
 	* Bicho/backends/bg.py: fixing bug #24
