@@ -1,0 +1,13 @@
+Source: bicho
+Section: libresoft
+Priority: optional
+Maintainer: Juan Francisco Gato Luis <jfcogato@libresoft.es>
+Build-Depends: debhelper (>= 7), autotools-dev, python-central (>= 0.5.6), python-all-dev (>= 2.4)
+Standards-Version: 3.7.3
+XS-Python-Version: all
+
+Package: bicho
+XB-Python-Version: ${python:Versions}
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python, python-central, python-storm
+Description: Bug trackers analysys tool
