@@ -20,6 +20,8 @@
 
 import sys
 import config
+import urllib
+import cgi
 
 class OptionsStore:
     #Pattern singleton applied
@@ -78,4 +80,41 @@ def debug (str = '\n'):
         return
 
     printout ("DBG: " + str)
-    
+
+def get_domain(url):
+    strings = url.split('/')
+    return strings[0] + "//" + strings[2] + "/"
+
+def url_join(base, *kwargs):
+    retval = [base.strip('/')]
+
+    for comp in kwargs:
+        retval.append(comp.strip('/'))
+
+    return "/".join(retval)
+
+def url_strip_protocol(url):
+    p = url.find("://")
+    if p == -1:
+        return url
+
+    p += 3
+    return url[p:]
+
+def url_get_attr(url, attr=None):
+    query = urllib.splitquery(url)
+    try:
+        if query[1] is None:
+            return None;
+    except IndexError:
+        return None
+
+    attrs = cgi.parse_qsl(query[1])
+    if attr is None:
+        return attrs
+
+    for a in attrs:
+        if attr in a:
+            return a[1]
+
+    return None   
