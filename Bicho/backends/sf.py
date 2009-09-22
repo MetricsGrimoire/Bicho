@@ -93,14 +93,31 @@ class SourceForgeParser():
         try :
           if self.getNumChAttComm('Comment',soup):
             for tg in soup({'h4':True}):
-              for ed in tg.findAllNext({'tr':True},attrs={'class':'artifact_comment'}):
+              for ed in tg.findAllNext({'tr':True},id=re.compile('artifact\_comment\_\d+')):
+                text = ''
+                datesub = ''
+                sender = ''
                 c = Bug.Comment()
                 aux = ed.findAll({'p':True})
                 datesub = aux[0].contents[0].split('Date:')[1]
-                sender = aux[0].contents[3].contents
-                text = ''.join(aux[1].findAll(text=True)[1:-1])
-                c.IdBug = self.get_Id(soup)
-                c.DateSubmitted = self.str_to_date(datesub)  
+                # Some bugs has been sent by a user not registered maybe or a
+                # user who is not in ddbb anymore (I am not sure) why is it
+                # possible to have a "nobody" sender?, so if the user is not
+                # registered we took "nobody" as default because if the user is
+                # registered should have its own user name
+
+                # This bug has "nobody" as sender
+                # http://sourceforge.net/tracker/?func=detail&aid=1711119&group_id=138511&atid=740882
+                try :
+                  sender = aux[0].contents[3].contents[0]
+                except:
+                  sender = "nobody"
+
+                r = re.compile('google\_ad\_section\_(start|end)')
+                text = r.sub('',''.join(aux[1].findAll(text=True))).strip()
+                
+                c.IdBug = self.get_Id(dataBugs,soup)
+                c.DateSubmitted = self.str_to_date(datesub.strip()) 
                 c.SubmittedBy = sender
                 c.Comment = text 
                 dataBugs["Comments:"].append(c)
@@ -161,6 +178,7 @@ class SourceForgeParser():
       attachs = []
       try :
         if self.getNumChAttComm('Attached File',soup):
+          debug("Viendo attachments")
           for tg in soup('h4'):
             for att in soup({'tbody':True})[1].findAll({'tr':True}):
               attach = Bug.Attachment()
@@ -196,16 +214,12 @@ class SourceForgeParser():
       # more than 3 it *has* a number
       # Another way is to find a number inside the string
       try:
-        finald = -1
         for tg in soup({'h4':True}):
           if str(tg.contents).find(which) > 0:
             for l in str(tg.contents):
               if l.isdigit():
-                finald = l
-            if finald > 0:
-              return True
-            else :
-              return False
+                return True
+            return False
       except:
         debug("Error getting ChAttComm")
 
@@ -306,7 +320,7 @@ class SourceForgeParser():
           if tg.parent.name == 'span':
             if 'ID:' in tg.contents[0]:
               summary, idBug = tg.contents[0].split(' - ID: ')
-              dataBugs['IdBugs'] = int(idBug)
+              dataBugs['IdBug'] = int(idBug)
               return int(idBug)
       except:
         debug("Error getting idBug")
@@ -623,7 +637,12 @@ class SourceForgeFrontend():
                 debug('Error retrieving bug %s' % bug_id)
                 #print 'Error retrieving bug %s' % bug_id
                 continue
+            # This can be fixed using an object by now
+            # clean Comments, Attachments and Changes
 
+            self.dataBugs['Comments:'] = []
+            self.dataBugs['Attachments:'] = []
+            self.dataBugs['Changes:'] = []
   # methods to store data from Dani
     def storeData(self, data, idBug):
       opt = OptionsStore()
