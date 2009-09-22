@@ -93,6 +93,7 @@ class SourceForgeParser():
         try :
           if self.getNumChAttComm('Comment',soup):
             for tg in soup({'h4':True}):
+              # This can be done using an if may be a loop is not necessary, but it works
               for ed in tg.findAllNext({'tr':True},id=re.compile('artifact\_comment\_\d+')):
                 text = ''
                 datesub = ''
@@ -145,15 +146,16 @@ class SourceForgeParser():
       try:
         if self.getNumChAttComm('Change',soup):
           for tg in soup('h4'): 
-            for tgg in tg.findNext('tbody').findAllNext({'tr':True}):
-              change = Bug.Change()
-              aux = tgg.findAll('td')
-              change.IdBug = self.get_Id(soup)
-              change.Field = str(aux[0].contents).replace(' ','').split('\\')[1][1:]
-              change.OldValue = str(aux[1].contents).replace(' ','').split('\\')[1][1:]
-              change.Date = str(aux[2].contents).split('\\')[1][-16:]
-              change.SubmittedBy = str(aux[3].contents).replace(' ','').split('\\')[1][1:]
-              dataBugs["Changes:"].append(change)
+            if tg.has_key('id') and tg['id'] == 'changebar':
+              for tgg in tg.findNext({'tbody':True}).findAllNext({'tr':True}):
+                change = Bug.Change()
+                aux = tgg.findAll({'td':True})
+                change.IdBug = self.get_Id(dataBugs,soup)
+                change.Field = str(aux[0].contents[0]).strip()
+                change.OldValue = str(aux[1].contents[0]).strip()
+                change.Date = self.str_to_date(str(aux[2].contents[0]).strip())
+                change.SubmittedBy = str(aux[3].contents[0]).strip()
+                dataBugs["Changes:"].append(change)
               #debug("Changes : %s" % changes)
               #return changes
         else :
