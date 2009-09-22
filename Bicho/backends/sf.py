@@ -582,6 +582,9 @@ class SourceForgeFrontend():
         i = 0
         total = self.get_total_bugs()
         debug("Total number of bugs %s" % total)
+        
+
+        self.insert_general_info(url)
 
         while True:
             bug_id = self.get_next_bug()
@@ -633,6 +636,23 @@ class SourceForgeFrontend():
       file = open(os.path.join(os.path.join(opt.path, opt.db_database_out), str(idBug)), 'w')
       file.write(data)
       file.close
+    
+    def insert_general_info(self, url):
+      project = ""
+      tracker = ""
+      
+      html = self.read_page(url)
+      self.set_html(html)
+      
+      for tg in self.soup({'div':True},attrs={'id':'breadcrumbs'}):
+        project = tg.find({'a':True},href=re.compile('/projects/')).contents[0]
+        tracker = tg.find({'a':True},href=re.compile('/tracker/\?group_id=\d+\&atid=\d+')).contents[0]
+        url = self.domain+tg.find({'a':True},href=re.compile('/tracker/\?group_id=\d+\&atid=\d+'))['href']
+
+      db = getDatabase()
+      dbGeneralInfo = DBGeneralInfo(project, url, tracker, datetime.date.today())
+      db.insert_general_info(dbGeneralInfo) 
+
 
 register_backend("sf", SourceForgeFrontend)
 
