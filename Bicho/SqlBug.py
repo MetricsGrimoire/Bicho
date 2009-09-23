@@ -118,14 +118,14 @@ class DBMySQL(DBDatabase):
                            "Project varchar(256), " +
                            "Url varchar(256), " +
                            "Tracker varchar(256), " +
-                           "Date varchar(128))")
+                           "Date datetime)")
 
         self.store.execute ("CREATE TABLE  IF NOT EXISTS Bugs (" +
                            "id int auto_increment primary key," +
                            "idBug varchar(128)," +
                            "Summary text," +
                            "Description text,"+
-                           "DateSubmitted varchar(128),"+
+                           "DateSubmitted datetime,"+
                            "Status varchar(64),"+
                            "Resolution varchar(64)," +
                            "Priority varchar(64),"+
@@ -137,7 +137,7 @@ class DBMySQL(DBDatabase):
         self.store.execute("CREATE TABLE IF NOT EXISTS Comments (" + 
                            "id int auto_increment primary key," +  
                            "idBug varchar(128)," +
-                           "DateSubmitted varchar(128),"+
+                           "DateSubmitted datetime,"+
                            "SubmittedBy varchar(128), " + 
                            "Comment text)")
 
@@ -153,7 +153,7 @@ class DBMySQL(DBDatabase):
                            "idBug varchar(128)," +
                            "Field varchar(256), " +
                            "OldValue varchar(256), " +
-                           "Date varchar(256), " +
+                           "Date datetime, " +
                            "SubmittedBy varchar(256))")
 
 	self.store.execute("CREATE TABLE IF NOT EXISTS Bugzilla_Data (" +
