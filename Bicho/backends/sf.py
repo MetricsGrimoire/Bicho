@@ -266,7 +266,7 @@ class SourceForgeParser():
             #debug("Resolution : %s" % resolution.findNext('p').contents)
             dataBugs["Resolution: "] = resolution.findNext('p').contents[0]
       except:
-        debug("Error getting Resolultion")
+        debug("Error getting Resolution")
     
     def get_Status(self,dataBugs,soup):
       try:
@@ -331,7 +331,9 @@ class SourceForgeParser():
       try:
         for detail in soup({'label':True}):
           if "Details:" in str(detail.contents):
-            desc = ''.join(detail.findNext({'p':True})(text=True)[1:-1]).strip()
+            
+            r = re.compile('google\_ad\_section\_(start|end)')
+            desc = r.sub('',''.join(detail.findNext({'p':True})(text=True))).strip()
             #debug("Description : %s" % det  )
             dataBugs["Description:"] = desc
       except:
@@ -508,6 +510,7 @@ class SourceForgeFrontend():
         bug.Group = self.dataBugs["Group: "]
         bug.AssignedTo = self.dataBugs["Assigned To: "]
         bug.SubmittedBy = self.dataBugs["Submitted By:"]
+        bug.Resolution = self.dataBugs["Resolution: "]
 
         for comment in self.dataBugs["Comments:"]:
             c = Bug.Comment()
@@ -608,6 +611,7 @@ class SourceForgeFrontend():
                 break
 
             i+=1
+            debug("Analyzing bug # %s" % i)
 
             #from IPython.Shell import IPShellEmbed
             #ipshell = IPShellEmbed("shell")
