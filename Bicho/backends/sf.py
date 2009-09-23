@@ -180,18 +180,18 @@ class SourceForgeParser():
       attachs = []
       try :
         if self.getNumChAttComm('Attached File',soup):
-          debug("Viendo attachments")
           for tg in soup('h4'):
-            for att in soup({'tbody':True})[1].findAll({'tr':True}):
-              attach = Bug.Attachment()
-              aux = att.findAll({'td':True})
-              attach.IdBug = self.get_Id(soup)
-              attach.Name = str(aux[0].contents[2])
-              attach.Description = str(aux[1].contents[2])
-              attach.Url = str(SourceForgeFrontend.domain+aux[2].a['href'])
-              dataBugs["Attachments:"].append(attach)
-              #debug("Attach : %s" % attachs)
-              #return attachs
+            if tg.has_key('id') and tg['id'] == 'filebar':
+              for att in soup({'tbody':True})[1].findAll({'tr':True}):
+                attach = Bug.Attachment()
+                aux = att.findAll({'td':True})
+                attach.IdBug = self.get_Id(dataBugs,soup)
+                attach.Name = str(aux[0].contents[1])
+                attach.Description = str(aux[1].contents[1])
+                attach.Url = str(SourceForgeFrontend.domain+aux[2].a['href'])
+                dataBugs["Attachments:"].append(attach)
+                #debug("Attach : %s" % attachs)
+                #return attachs
         else :
           try:
             #attach = Bug.Attachment()
@@ -620,17 +620,14 @@ class SourceForgeFrontend():
             dbBug = DBBug(dataBug)
             db.insert_bug(dbBug)
             
-            print "Adding comments"
             for comment in dataBug.Comments:
               dbComment = DBComment(comment)
               db.insert_comment(dbComment)
 
-            print "Adding attachments"
             for attach in dataBug.Attachments:
               dbAttachment = DBAttachment(attach)
               db.insert_attachment(dbAttachment)
 
-            print "Adding changes"
             for change in dataBug.Changes:
               dbChange = DBChange(change)
               db.insert_change(dbChange)
@@ -645,6 +642,7 @@ class SourceForgeFrontend():
             self.dataBugs['Comments:'] = []
             self.dataBugs['Attachments:'] = []
             self.dataBugs['Changes:'] = []
+
   # methods to store data from Dani
     def storeData(self, data, idBug):
       opt = OptionsStore()
@@ -691,6 +689,4 @@ if __name__ == "__main__":
     print bug
     for change in bug.changes:
         print change
-
-
-
+ 
