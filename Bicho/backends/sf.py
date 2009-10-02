@@ -353,9 +353,11 @@ class SourceForgeParser():
     @classmethod
     def get_total_bugs(cls, html):
         soup = BeautifulSoup(html)
-        pager = cls.xpath('/html/body/div/div[2]/form/div/div[2]', soup)
-        total_bugs = int(pager.contents[0].split('&nbsp;')[4])
-        return int(total_bugs)
+        aux = soup(text=True)
+        for tg in aux:
+          if "Results" and "Display" in tg:
+            total_bugs = tg.split('&nbsp')[4].split(';')[1]
+            return int(total_bugs)
 
     @classmethod
     def get_bug_links(cls, html):
@@ -385,7 +387,7 @@ class SourceForgeFrontend():
     group_id = url.split('&')[1].split('=')[1]
     atid = url.split('&')[2].split('=')[1]
     sfparser = SourceForgeParser()  # instance used in _get_field method
-
+    total_bugs = 0
     _current_bug = 0
     _cache = {}
     # very important dictionary where all data is going to be sotred
@@ -426,15 +428,15 @@ class SourceForgeFrontend():
                     self.domain, self.group_id, self.atid)
         html = self.read_page(url)
 
-        urls = [url]
-        #total_bugs = SourceForgeParser.get_total_bugs(html)
-        #for i in xrange(0, total_bugs, 100):
-        #    urls.append(url+'&offset=%s' % i)
+        urls = []
+        self.total_bugs = SourceForgeParser.get_total_bugs(html)
+        for i in xrange(0, self.total_bugs, 100):
+            urls.append(url+'&offset=%s' % i)
 
         for url in urls:
             html = self.read_page(url)
             bugs.extend(SourceForgeParser.get_bug_links(html))
-
+            #debug ("Total %s " % len(bugs))
         self.bugs = bugs
     
     def read_page(self, url):
@@ -446,8 +448,8 @@ class SourceForgeFrontend():
 
         return data
 
-    def get_total_bugs(self):
-        return len(self.bugs)
+    #def get_total_bugs(self):
+      #   return len(self.bugs)
 
     def get_next_bug(self):
         try:
@@ -599,8 +601,9 @@ class SourceForgeFrontend():
         db = getDatabase()
 
         i = 0
-        total = self.get_total_bugs()
-        debug("Total number of bugs %s" % total)
+        #total = self.get_total_bugs()
+        #debug("Total number of bugs %s" % total)
+        debug("Total number of bugs %s" % self.total_bugs)
         
 
         self.insert_general_info(url)
@@ -611,7 +614,7 @@ class SourceForgeFrontend():
                 break
 
             i+=1
-            debug("Analyzing bug # %s" % i)
+            debug("Analyzing bug # %s of %s" % (i, self.total_bugs))
 
             #from IPython.Shell import IPShellEmbed
             #ipshell = IPShellEmbed("shell")
@@ -673,7 +676,7 @@ class SourceForgeFrontend():
         url = self.domain+tg.find({'a':True},href=re.compile('/tracker/\?group_id=\d+\&atid=\d+'))['href']
 
       db = getDatabase()
-      dbGeneralInfo = DBGeneralInfo(project, url, tracker, datetime.date.today())
+      dbGeneralInfo = DBGeneralInfo(project, url, tracker, datetime.datetime.now())
       db.insert_general_info(dbGeneralInfo) 
 
 
