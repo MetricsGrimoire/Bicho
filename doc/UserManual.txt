@@ -1,0 +1,216 @@
+This is the Bicho User Manual v1
+
+Content
+*******
+
+1.- About Bicho
+2.- Requirements
+3.- Installation
+4.- Usage
+5.- Credits
+
+
+
+1.- About Bicho :
+		-------------
+
+Bicho is a Bug Tracker System Analyzer, it extracts bug's information
+such as : id, priority, resolution, status, comments, descriptions,
+changes, attachments and so on and put them in a database in order to
+let you use that information to study and analyze it.
+
+Bicho is capable of analyze the following BTS :
+
+* Apache
+* Bugzilla
+* SourceForge
+
+
+
+2.- Requirements :
+		--------------
+
+Bicho needs some libraries such as :
+
+* Storm : Storm is an object-relational mapper (ORM) for Python
+					developed at Canonical. The project was in development for more than a
+ 					year for use in Canonical projects such as Launchpad and Landscape
+ 					before being released as free software on July 9th, 2007
+ 					(https://storm.canonical.com/)
+
+* BeutifulSoup : Beautiful Soup is a Python HTML/XML parser designed for
+ 								 quick turnaround projects like screen-scraping
+								 (http://www.crummy.com/software/BeautifulSoup/)
+* Python (>2.6)
+* python-mysqldb
+
+
+
+3.- Installation  :
+		---------------
+
+Installing Requirements : Storm
+
+Step 1 : Download Storm
+
+The download page of Storm is : 
+https://launchpad.net/storm
+
+$ wget http://launchpad.net/storm/trunk/0.15/+download/storm-0.15.tar.bz2
+
+Step 2 : Decompress and unpack
+
+$ bunzip2 storm-0.15.tar.bz2
+$ tar xvf storm-0.15.tar
+
+Step 3 : Install it
+
+$ sudo python setup.py install
+
+Step 4 (Optional) : Test it
+
+Note : This step is optional because it can be done if you have
+installed ipython.
+
+$ ipython
+Python 2.6.3 (r263:75183, Oct  4 2009, 12:15:47) 
+Type "copyright", "credits" or "license" for more information.
+
+IPython 0.10 -- An enhanced Interactive Python.
+?         -> Introduction and overview of IPython's features.
+%quickref -> Quick reference.
+help      -> Python's own help system.
+object?   -> Details about 'object'. ?object also works, ?? prints more.
+
+In [1]: import storm
+
+If you do not get a message telling you that storm does not exist the
+library was installed succesfully.
+
+
+
+Installing Requirements : BeautifulSoup
+
+Step 1 : Download BeautifulSoup
+
+$ wget http://www.crummy.com/software/BeautifulSoup/download/BeautifulSoup.tar.gz
+
+Step 2 : Decompress and unpack
+
+$ tar xvzf BeautifulSoup.tar.gz
+
+Step 3 : Install it
+
+$ sudo python setup.py install
+
+Step 4 (Optional) : Test it
+
+Note : This step is optional because it can be done if you have
+installed ipython.
+
+$ ipython
+Python 2.6.3 (r263:75183, Oct  4 2009, 12:15:47) 
+Type "copyright", "credits" or "license" for more information.
+
+IPython 0.10 -- An enhanced Interactive Python.
+?         -> Introduction and overview of IPython's features.
+%quickref -> Quick reference.
+help      -> Python's own help system.
+object?   -> Details about 'object'. ?object also works, ?? prints more.
+
+In [1]: import BeautifulSoup
+
+If you do not get a message telling you that storm does not exist the
+library was installed succesfully.
+
+
+
+Installing Bicho :
+
+Step 1 : Download Bicho
+
+$ svn co https://svn.forge.morfeo-project.org/svn/libresoft-tools/bicho/branches/Bicho_0_3
+
+Step 2 : Installing it
+
+$ sudo python setup.py install
+
+Step 3 (Optional) : Test it
+
+$ bicho --help
+Usage: bicho [options] [URL]
+
+It extracts data from bug tracking systems from a project given
+
+Options:
+
+   -h, --helpPrint this usage message.
+   -t, --type           Type optionsf bug tracking system (sf|bg)
+SourceForge or Bugzilla
+   -p, --pathPath where downloaded URLs will be stored (/tmp/bicho/)
+
+Database input specific options:
+   --db-driver_inInput database driver [sqlite|mysql|postgres] (None)
+   --db-user_inDatabase user notame (None)
+   --db-password_inDatabase user password (None)
+   --db-databasetabase_inDatabase name (None)
+   --db-hostname_inName of the host wherere database server is running
+(None)
+   --db-port_inPort where the databasetabase server is running (None)
+
+Database output specific options:
+
+  --db-driver_outOutput database driver [sqlite|mysql|postgres] (mysql)
+  --db-dbuser_outDatabase user name (None)
+  --db-password_outDatabase user postgresassword (None)
+  --db-database_outDatabase name (None)
+  --db-hostname_inName_outName of the host where database server is
+running (localhost)
+  --localhostdb-port_outPort where the database is (3306)
+
+
+Values found in config file 'bicho.conf' are used as default values
+If config file is not found all parameters are required except:
+
+    if url is given:
+        Database input parameters are not required
+    else:
+        Database input parameteres are required.
+
+
+
+4.- Usage :
+		-------
+
+As you can see, if you execute "bicho --help" command, Bicho has several
+parameters, this section is aimed to show you how to use Bicho to
+analyze a Bugzilla and SourceForge BTS.
+
+Analyzing a Bugzilla BTS :
+
+NOTE : It is important to note that you have to create an empty database that
+Bicho is going to use before execute the application.
+
+$ mysqladmin -uuser -ppassword create database_name
+
+$ bicho -t bg --db-user_out="user" --db-password_out="password"
+--db-database_out="database_name" URL_project_BTS
+
+Analyzing a SourceForge BTS :
+
+NOTE : It is important to note that you have to create an empty database that
+Bicho is going to use before execute the application.
+
+$ mysqladmin -uuser -ppassword create database_name
+
+$ bicho -t sf --db-user_out="user" --db-password_out="password"
+--db-database_out="database_name" URL_project_BTS 
+
+
+
+5.- Credits :
+    ---------
+
+Daniel Izquierdo Cortazar <dizquierdo@libresoft.es>
+Francisco Rivas <frivas@libresoft.es>
+
