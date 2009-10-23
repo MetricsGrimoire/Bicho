@@ -1,5 +1,12 @@
 2009-23-10  Francisco Rivas  <frivas@libresoft.es>
 
+	* bicho/trunk/doc/bicho.1 : Bicho man page
+
+		Added a SYNOPSIS section in man page (r-7150)
+ 
+ 
+2009-23-10  Francisco Rivas  <frivas@libresoft.es>
+
 	* bicho/trunk/setup.py : Installer
 
 		Needed modification to installer script to install the man page (r-7148)
