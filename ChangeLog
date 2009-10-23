@@ -1,3 +1,103 @@
+2009-23-10  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/setup.py : Installer
+
+		Needed modification to installer script to install the man page (r-7148)
+ 
+
+2009-23-10  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/doc/bicho.1 : Man page of bicho
+
+		Adding a man page (r-7147)
+ 
+
+2009-23-10  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/doc/UserManual.txt : User manual of bicho
+
+		Adding a basic user manual (r-7146)
+ 
+
+2009-02-10  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/bicho : Launcher
+	*	bicho/trunk/bin/bicho : Launcher
+	* bicho/trunk/setup.py : distutils-based Installer
+
+	 Added installer and needed files (r-7143)
+
+ 
+2009-02-10  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: Fixing bugs #133 #134 and show number of bug
+	analyzed during the process
+
+	 Bug #133 : The number of bugs reported by the application is wrong 
+	 Bug #134 : the amount of bugs analyzed was wrong because it did not
+	 handle well the offset bugs, it means, the links of each page of bugs
+	 (r-7142)
+
+ 
+2009-23-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/SqlBug.py: Fixing Bug #83 : Types of field in ddbb
+
+	 For instance, some of SubmittedDate field should use type Date and
+	 not Varchar(128)(r-7141) 
+
+ 
+2009-23-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: Fixing Bug #129 : First line removed
+
+	 The first line of every description (detail) of a bug is removed.(r-7140) 
+
+ 
+2009-23-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: Fixing Bug #126 : Support for attachments
+
+	 Bicho writes the information in attachments table in a wrong way (r-7139) 
+
+ 
+2009-23-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: Fixing Bug #125 : Support for SF Changes
+
+	 Writes information of a bug whithout taking in account if it has
+	 changes or not in Changes table (r-7138) 
+
+ 
+2009-22-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: Fixing Bug #124 : Support for comments
+
+	 Bicho writes information in Comments table in wrong way (r-7137) 
+
+ 
+2009-22-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: Added GeneralInfo processing and store in db
+	methods
+
+	Added methods to store information in GeneralInfo table (r-7136) 
+
+
+2009-21-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/utils.py: Added some functions used in SF parser
+
+	There are some functions that the new parser use (r-7134)
+ 
+
+2009-21-09  Francisco Rivas  <frivas@libresoft.es>
+
+	* bicho/trunk/Bicho/backends/sf.py: New SF Parser, testing
+
+	New parser for SoureForge, still testing. (r-7133)
+ 
+
 2009-31-08  Daniel Izquierdo Cortazar  <dizquierdo@libresoft.es>
 
 	* Bicho/backends/bg.py: added support for Apache bugzilla
