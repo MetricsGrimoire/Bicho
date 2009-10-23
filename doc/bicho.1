@@ -1,0 +1,209 @@
+.TH Bicho 1 "October 23, 2009" "" "Bug Tracker Systems Analyzer"
+.SH NAME
+\fIbicho\fR - a bug tracker systems analyzer
+.SH DESCRIPTION
+.br
+\fIbicho\fR is a Bug Tracker Systems Analyzer (BTS), it extracts bug's information
+such as : id, priority, resolution, status, comments, descriptions,
+changes, attachments and so on and put them in a database in order to
+let you use that information to study and analyze it.
+.br
+.br 
+\fIbicho\fR is capable of analyze the following BTS :
+
+		* Apache
+.br
+		* Bugzilla
+.br
+		* SourceForge 
+.br
+
+
+.br
+.SH OPTIONS
+.br
+
+.br
+.BI	-h, --help
+.br
+		Print this usage message.
+.br
+   
+.br
+.BI	-t, --type
+.br
+		Type optionsf bug tracking system (sf|bg) SourceForge or 
+.br
+		Bugzilla
+.br
+   
+.br
+.BI	-p, --path
+.br
+		Path where downloaded URLs will be stored (/tmp/\fIbicho\fR/)
+.br
+
+.br
+.br
+.br
+Database input specific options:
+.br
+
+.br
+.BI	--db-driver_in
+.br
+		Input database driver [sqlite|mysql|postgres] (None)
+.br
+   	
+.br
+.BI	--db-user_in
+.br
+		Database user notame (None)
+.br
+  
+.br
+.BI	--db-password_in
+.br
+		Database user password (None)
+.br
+  
+.br
+.BI	--db-databasetabase_in
+.br
+		Database name (None)
+.br
+  
+.br
+.BI	--db-hostname_in
+.br
+		Name of the host wherere database server is running (None)
+.br
+  
+.br
+.BI	--db-port_in
+.br
+ 		Port where the databasetabase server is running (None)
+.br
+
+.br
+.br
+.br
+Database output specific options:
+.br
+
+.br
+.BI	--db-driver_out
+.br
+		Output database driver [sqlite|mysql|postgres] (mysql)
+.br
+  
+.br
+.BI	--db-dbuser_out 
+.br
+		Database user name (None)
+.br
+  
+.br
+.BI	--db-password_out
+.br
+		Database user postgresassword (None)
+.br
+  
+.br
+.BI	--db-database_out
+.br
+		Database name (None)
+.br
+  
+.br
+.BI	--db-hostname_in
+.br
+		Name_outName of the host where database server is running 
+.br
+		(localhost)
+.br
+
+.br
+.BI	--localhostdb-port_out
+.br
+		Port where the database is (3306)
+.br
+
+.br
+
+.br
+Values found in config file '\fIbicho\fR.conf' are used as default values
+.br
+If config file is not found all parameters are required except:
+.br
+
+.br
+    if url is given:
+.br
+        Database input parameters are not required
+.br
+    else:
+.br
+        Database input parameteres are required.
+.br
+
+.br
+.SH EXAMPLES
+
+.br
+.B Analyzing a Bugzilla BTS:
+.br
+
+.br
+NOTE:It is important to note that you have to create an empty database that Bicho is going to use before execute the application.
+.br
+
+.br
+$ mysqladmin -uuser -ppassword create database_name
+.br
+
+.br
+$ \fIbicho\fR -t bg --db-user_out="user" --db-password_out="password"
+.br
+--db-database_out="database_name" URL_project_BTS
+.br
+
+.br
+.B Analyzing a SourceForge BTS:
+.br
+
+.br
+NOTE:It is important to note that you have to create an empty database that Bicho is going to use before execute the application.
+.br
+
+.br
+$ mysqladmin -uuser -ppassword create database_name
+.br
+
+.br
+$ \fIbicho\fR -t sf --db-user_out="user" --db-password_out="password"
+.br
+--db-database_out="database_name" URL_project_BTS 
+.br
+
+.br
+
+.SH MAILINGLIST
+libresoft-tools-devel@lists.morfeo-project.org
+
+.SH BUGS
+Please feel to report a bug in https://bugzilla.libresoft.es/ and thanks
+in advanced.
+
+.SH COPYRIGHT
+
+Copyright © 2009 GSyC/Libresoft.
+.br
+This is free software; see the source for copying conditions. 
+.br
+There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, to the extent permitted by law.
+
+
+.SH AUTHORS
+     \fIL\fRibreSoft: \fIhttp://\fwwww.libresoft.es
+
