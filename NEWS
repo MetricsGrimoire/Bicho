@@ -1,4 +1,17 @@
 ================
+  Bicho    0.4
+================
+
+Changes since version 0.3:
+
+	* SourceForge parser rewritten (frivas)
+	* BeautifulSoup library used to parser HTML (frivas)
+	* Support for Apache BTS (dizquierdo)
+	* Bugs #17, #24, #81, #133, #134 fixed (dizquierdo, frivas)
+	* Added a man page (frivas)
+	* Added a new installer using python distutils (frivas)
+
+================
   Bicho    0.3
 ================
 

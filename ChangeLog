@@ -1,3 +1,26 @@
+2009-12-11  Francisco Rivas  <frivas@libresoft.es>
+
+	* setup.py :
+
+		Release 0.4
+ 
+ 
+2009-12-11  Francisco Rivas  <frivas@libresoft.es>
+
+	* AUTHORS : Updated, added Francisco Rivas
+	* ChangeLog : Updated
+	* NEWS : Updated
+	* autogen.sh : Deleted we do not need it, we use distutils
+	* configure.in : Deleted we do not need it, we use distutils
+	* Makefile.am : Deleted we do not need it, we use distutils
+	* bicho.in : Deleted we do not need it, we use distutils
+  * common/ : Deleted we do not need it, we use distutils 
+	* common/bicho-autogen.sh : Deleted we do not need it, we use distutils 
+
+		Some files deleted because we are using distutils to install and
+		deploy the application. (r-7155) 
+ 
+
 2009-23-10  Francisco Rivas  <frivas@libresoft.es>
 
 	* bicho/trunk/doc/bicho.1 : Bicho man page
