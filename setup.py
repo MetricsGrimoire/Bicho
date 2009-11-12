@@ -37,7 +37,7 @@ except:
   sys.exit(-1) 
 
 setup(name = "Bicho",
-      version = "0.3-1",
+      version = "0.4",
       author =  "LibreSoft",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
       description = "An analysis tool for you Bug Tracker System",

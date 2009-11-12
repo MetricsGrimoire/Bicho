@@ -4,6 +4,13 @@
 
 		Release 0.4
 
+ 
+2009-12-11  Francisco Rivas  <frivas@libresoft.es>
+
+	* setup.py : Change Version
+
+		Changes to this file for change the version (r-7157)
+
 
 2009-12-11  Francisco Rivas  <frivas@libresoft.es>
 
