@@ -1,3 +1,8 @@
+2010-02-17  Daniel Izquierdo Cortázar <dizquierdo@libresoft.es>
+
+	* config.py: File needed for setup (anyway, file to be removed in the future)
+
+
 2009-12-11  Francisco Rivas  <frivas@libresoft.es>
 
 	* setup.py :
