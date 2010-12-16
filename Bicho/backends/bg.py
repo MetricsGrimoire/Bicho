@@ -20,6 +20,9 @@
 
 
 from Bicho.backends import Backend, register_backend
+from BeautifulSoup import BeautifulSoup
+from BeautifulSoup import Comment as BFComment
+
 import urllib
 import time
 #libraries for sql access
@@ -35,6 +38,12 @@ from Bicho.utils import *
 import datetime
 import random
 
+
+def date_from_bz(string):
+        date, time, tz = string.split(' ')
+        params = [int(i) for i in date.split('-') + time.split(':')]
+        full_date = datetime.datetime(*params)
+        return full_date
 
 #######################################################
 #Parsing HTML from each change
@@ -59,68 +68,6 @@ class Change():
         self.OldValue = removed
         self.added = added #This value is stored, but not used
 
-    def __init__(self):
-        self.IdBug = ""
-        self.SubmittedBy = ""
-        self.Date = ""
-        self.Field = ""
-        self.OldValue = ""
-        self.added = "" #This value is stored but not used
-
-    def __init__ (self, idBug):
-        self.IdBug = idBug
-        self.SubmittedBy = ""
-        self.Date = ""
-        self.Field = ""
-        self.OldValue = ""
-        self.added = "" #This value is stored but not used
-
-
-    def setIdBug(self, idBug):
-        self.IdBug = idBug
-
-    def setSubmittedBy(self, who):
-        self.SubmittedBy = who
-
-    def setDate(self, when):
-        self.Date = when
-  
-    def setField(self, what):
-        self.Field = what
-
-    def setOldValue(self, removed):
-        self.OldValue = removed
-
-    def setAdded(self, added):
-        self.added = added
-
-    def getIdBug(self):
-        return self.IdBug
-
-    def getSubmittedBy(self):
-        return self.SubmittedBy
-
-    def getDate(self):
-        return self.Date
- 
-    def getField(self):
-        return self.Field
-
-    def getOldValue(self):
-        return self.OldValue
-
-    def getAdded(self):
-        return self.added
-
-   
-    def printChange(self):
-        print "Who (SubmittedBy): " + self.SubmittedBy
-        print "When (Date): " + self.Date
-        print "What (Field): " + self.Field
-        print "Removed (Old Value): " + self.OldValue
-        print "Added: " + self.added
-
-
 class Comment():
 
     def __init__():
@@ -135,178 +82,6 @@ class Comment():
         self.SubmittedBy = who
         self.Comment = the_text
 
-
-class ParserBGChanges(HTMLParser):
-
-    (INIT_ST, ST_2, ST_3, ST_4, ST_5, ST_6, ST_7, ST_8, ST_9, ST_10) = range(10)
-
-    def __init__(self, bugURL, idBug):
-        HTMLParser.__init__(self)
-        self.data = ""
-        self.state = ParserBGChanges.INIT_ST
-        self.SubmittedBy = ""
-        self.Date = ""
-        self.rows = 0
-        self.dataChanges = {"Who"  :  "",
-                            "When" :  "",
-                            "What" :  "",
-                            "Removed" : "",
-                            "Added":  ""}
-        self.changes = []
-        #self.change = Change()
-        self.values = []
-        self.waitingData = False
-        self.data = ""
-        self.IdBug = idBug
-        #self.change = Change()
-        self.cont = 0
-        self.rowspan = 0
-
-    def statesMachine(self, data, tag, attrs):
-
-        if self.state == ParserBGChanges.INIT_ST:
-           
-            if tag == "<table>":
-                self.state = ParserBGChanges.ST_2
-
-        elif self.state == ParserBGChanges.ST_2:
-            if data=="Who":
-                self.state = ParserBGChanges.ST_3
-
-        elif self.state == ParserBGChanges.ST_3:
-            if tag == "<tr>":
-                self.state = ParserBGChanges.ST_4
-            if tag == "</table>":
-                self.state = ParserBGChanges.ST_10
-
-        elif self.state == ParserBGChanges.ST_4:
-            #Field Who
-            if tag == "<td>":
-                self.change = Change(self.IdBug)
-                self.data = ""
-                self.cont = 1
-
-            if len(attrs)>0:
-                self.rowspan = int(attrs[0][1])
-                self.cont = 0
-
-            if data <> "":
-                self.data = self.data + data
-                
-            if tag == "</td>":
-                self.change.setSubmittedBy(self.data.strip())
-                self.data = ""
-                self.state = ParserBGChanges.ST_5
-
-        elif self.state == ParserBGChanges.ST_5:
-            #Field When
-            if tag == "<td>":
-                pass
-
-            if data <> "":
-                self.data = self.data + data
-                
-            if tag == "</td>":
-                self.change.setDate(self.data.strip())
-                self.data = ""
-                self.state = ParserBGChanges.ST_6
-
-        
-        elif self.state == ParserBGChanges.ST_6:
-            #Field What
-            if tag == "<td>":
-                who = self.change.getSubmittedBy()
-                when = self.change.getDate()
-                self.data = ""
-                
-                self.change = Change(self.IdBug)
-                
-                self.change.setSubmittedBy(who)
-                self.change.setDate(when)
-
-
-            if data <> "":
-                self.data = self.data + data
-                
-            if tag == "</td>":
-                self.change.setField(self.data.strip())
-                self.data = ""
-                self.cont = self.cont + 1
-                self.state = ParserBGChanges.ST_7
-
-
-        elif self.state == ParserBGChanges.ST_7:
-            #Field Removed
-            if tag == "<td>":
-                pass
-
-            if data <> "":
-                self.data = self.data + data
-                
-            if tag == "</td>":
-                self.change.setOldValue(self.data.strip())
-                self.data = ""
-                self.state = ParserBGChanges.ST_8
-
-
-        elif self.state == ParserBGChanges.ST_8:
-            #Field Added - so far, ignored
-            if tag == "<td>":
-                pass
-                
-            if tag == "</td>":
-                self.state = ParserBGChanges.ST_9
-
-        elif self.state == ParserBGChanges.ST_9:
-            if tag =="</tr>" and not (self.cont==self.rowspan):
-                #Starting another set of values because of rowspan > 1
-                #Going to what field
-                self.state = ParserBGChanges.ST_6
-                self.changes.append(self.change)
-
-            if tag == "</tr>" and self.cont==self.rowspan:
-                self.state = ParserBGChanges.ST_4
-                self.changes.append(self.change)
-             
-
-        elif self.state == ParserBGChanges.ST_10:
-
-            return
-
-
-    def handle_starttag (self, tag, attrs):
-        if tag == "table":
-            self.statesMachine("", "<table>", "")
-
-        elif tag == "tr":
-            self.statesMachine("", "<tr>", "")
-
-        elif tag == "td":
-            self.statesMachine("", "<td>", attrs)
-
-        elif tag == "th":
-            self.statesMachine("", "<th>", "")
-
-    def handle_data (self, data):
-        self.statesMachine(data, "", "")
-      
-    def handle_endtag(self, tag):
-        if tag == "table":
-            self.statesMachine("", "</table>", "")
-        elif tag == "tr":
-            self.statesMachine("", "</tr>", "")
-        elif tag == "td":
-            self.statesMachine("", "</td>", "")
-        elif tag == "th":
-            self.statesMachine("", "</th>", "")
-
-    def error (self, msg):
-        printerr ("Parsing Error \"%s\", trying to recover..." % (msg))
-        pass
-
-    def getDataChanges(self):
-        
-        return self.changes
 
 
 #######################################################
@@ -616,6 +391,10 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 #######################################################
 class BGBackend (Backend):
 
+    field_map = {'Status': u'status', 'Resolution': u'resolution',}
+    status_map = {}
+    resolution_map = {}
+
     def __init__ (self):
         Backend.__init__ (self)
         options = OptionsStore()
@@ -625,8 +404,6 @@ class BGBackend (Backend):
         
         strings = url.split('/')
         return strings[0] + "//" + strings[2] + "/"
-        
-
 
 
     def analyzeBug(self, bug_id, url):
@@ -652,18 +429,73 @@ class BGBackend (Backend):
     
         #Retrieving changes
         bug_activity_url = url + "show_activity.cgi?id=" + bug_id
-        
         print bug_activity_url
-
-        parser = ParserBGChanges(bug_activity_url, bug_id)
-
         data_activity = urllib.urlopen(bug_activity_url).read()
-        parser.feed(data_activity)
-        parser.close()
-        #print "Getting changes"
-        dataBug.Changes = parser.getDataChanges()
+        parse = self.parse_changes(data_activity,bug_id) 
+        dataBug.Changes = parse
 
-        return dataBug
+        return dataBug  
+
+    @classmethod
+    def _sanityze_change(self, field, old_value, new_value):
+        field = self.field_map.get(field, field)
+        old_value = old_value.strip()
+        new_value = new_value.strip()
+        if field == 'status':
+            old_value = self.status_map.get(old_value, old_value)
+            new_value = self.status_map.get(new_value, new_value)
+        elif field == 'resolution':
+            old_value = self.resolution_map.get(old_value, old_value)
+            new_value = self.resolution_map.get(new_value, new_value)
+
+        return field, old_value, new_value
+ 
+    @classmethod
+    def remove_comments(cls, soup):
+        cmts = soup.findAll(text=lambda text:isinstance(text,
+                            BFComment))
+        [comment.extract() for comment in cmts]
+ 
+    @classmethod
+    def parse_changes(cls, html, bug_id):
+        soup = BeautifulSoup(html)
+        cls.remove_comments(soup)
+        remove_tags = ['a', 'span']
+        [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
+        changes = []
+
+        tables = soup.findAll('table')
+        # We need the first table with 5 cols in the first line
+        table = None
+        for table in tables:
+            if len(table.tr.findAll('th')) == 5:
+                break
+
+        if table is None:
+            return changes
+
+        rows = list(table.findAll('tr'))
+        for row in rows[1:]:
+            cols = list(row.findAll('td'))
+            if len(cols) == 5:
+                person = cols[0].contents[0].strip()
+                person = person.replace('&#64;', '@')
+                date = date_from_bz(cols[1].contents[0].strip())
+                field = cols[2].contents[0].strip()
+                removed = cols[3].contents[0].strip()
+                added = cols[4].contents[0].strip()
+            else:
+                field = cols[0].contents[0].strip()
+                removed = cols[1].contents[0].strip()
+                added = cols[2].contents[0].strip()
+
+            field, removed, added = cls._sanityze_change(field, removed,
+                                                          added)
+            change = Change(bug_id,person,date,field,removed,added)
+            changes.append(change)
+
+        return changes
+
 
     def insert_general_info(self, url):
 
