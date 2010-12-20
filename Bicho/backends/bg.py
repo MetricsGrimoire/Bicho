@@ -82,6 +82,73 @@ class Comment():
         self.SubmittedBy = who
         self.Comment = the_text
 
+class SoupHtmlParser():
+
+    field_map = {}
+    status_map = {}
+    resolution_map = {}
+
+    def __init__ (self, html, idBug):
+        self.html = html
+        self.idBug = idBug
+        self.field_map = {'Status': u'status', 'Resolution': u'resolution',}
+    
+    def sanityze_change(self, field, old_value, new_value):
+        field = self.field_map.get(field, field)
+        old_value = old_value.strip()
+        new_value = new_value.strip()
+        if field == 'status':
+            old_value = self.status_map.get(old_value, old_value)
+            new_value = self.status_map.get(new_value, new_value)
+        elif field == 'resolution':
+            old_value = self.resolution_map.get(old_value, old_value)
+            new_value = self.resolution_map.get(new_value, new_value)
+
+        return field, old_value, new_value
+
+    def remove_comments(self, soup):
+        cmts = soup.findAll(text=lambda text:isinstance(text,
+                            BFComment))
+        [comment.extract() for comment in cmts]
+
+    def parse_changes(self):
+        soup = BeautifulSoup(self.html)
+        self.remove_comments(soup)
+        remove_tags = ['a', 'span']
+        [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
+        changes = []
+
+        tables = soup.findAll('table')
+        # We need the first table with 5 cols in the first line
+        table = None
+        for table in tables:
+            if len(table.tr.findAll('th')) == 5:
+                break
+
+        if table is None:
+            return changes
+
+        rows = list(table.findAll('tr'))
+        for row in rows[1:]:
+            cols = list(row.findAll('td'))
+            if len(cols) == 5:
+                person = cols[0].contents[0].strip()
+                person = person.replace('&#64;', '@')
+                date = date_from_bz(cols[1].contents[0].strip())
+                field = cols[2].contents[0].strip()
+                removed = cols[3].contents[0].strip()
+                added = cols[4].contents[0].strip()
+            else:
+                field = cols[0].contents[0].strip()
+                removed = cols[1].contents[0].strip()
+                added = cols[2].contents[0].strip()
+
+            field, removed, added = self.sanityze_change(field, removed,
+                                                          added)
+            change = Change(self.idBug,person,date,field,removed,added)
+            changes.append(change)
+
+        return changes
 
 
 #######################################################
@@ -391,10 +458,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 #######################################################
 class BGBackend (Backend):
 
-    field_map = {'Status': u'status', 'Resolution': u'resolution',}
-    status_map = {}
-    resolution_map = {}
-
     def __init__ (self):
         Backend.__init__ (self)
         options = OptionsStore()
@@ -431,71 +494,11 @@ class BGBackend (Backend):
         bug_activity_url = url + "show_activity.cgi?id=" + bug_id
         print bug_activity_url
         data_activity = urllib.urlopen(bug_activity_url).read()
-        parse = self.parse_changes(data_activity,bug_id) 
-        dataBug.Changes = parse
+        parser = SoupHtmlParser(data_activity, bug_id)
+        dataParsed = parser.parse_changes()
+        dataBug.Changes = dataParsed
 
         return dataBug  
-
-    @classmethod
-    def _sanityze_change(self, field, old_value, new_value):
-        field = self.field_map.get(field, field)
-        old_value = old_value.strip()
-        new_value = new_value.strip()
-        if field == 'status':
-            old_value = self.status_map.get(old_value, old_value)
-            new_value = self.status_map.get(new_value, new_value)
-        elif field == 'resolution':
-            old_value = self.resolution_map.get(old_value, old_value)
-            new_value = self.resolution_map.get(new_value, new_value)
-
-        return field, old_value, new_value
- 
-    @classmethod
-    def remove_comments(cls, soup):
-        cmts = soup.findAll(text=lambda text:isinstance(text,
-                            BFComment))
-        [comment.extract() for comment in cmts]
- 
-    @classmethod
-    def parse_changes(cls, html, bug_id):
-        soup = BeautifulSoup(html)
-        cls.remove_comments(soup)
-        remove_tags = ['a', 'span']
-        [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
-        changes = []
-
-        tables = soup.findAll('table')
-        # We need the first table with 5 cols in the first line
-        table = None
-        for table in tables:
-            if len(table.tr.findAll('th')) == 5:
-                break
-
-        if table is None:
-            return changes
-
-        rows = list(table.findAll('tr'))
-        for row in rows[1:]:
-            cols = list(row.findAll('td'))
-            if len(cols) == 5:
-                person = cols[0].contents[0].strip()
-                person = person.replace('&#64;', '@')
-                date = date_from_bz(cols[1].contents[0].strip())
-                field = cols[2].contents[0].strip()
-                removed = cols[3].contents[0].strip()
-                added = cols[4].contents[0].strip()
-            else:
-                field = cols[0].contents[0].strip()
-                removed = cols[1].contents[0].strip()
-                added = cols[2].contents[0].strip()
-
-            field, removed, added = cls._sanityze_change(field, removed,
-                                                          added)
-            change = Change(bug_id,person,date,field,removed,added)
-            changes.append(change)
-
-        return changes
-
 
     def insert_general_info(self, url):
 
