@@ -1,4 +1,5 @@
-# Copyright (C) 2007  GSyC/LibreSoft
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,32 +15,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-# Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
+# Authors:
+#      Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
+#      Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
 import urllib
-from utils import *
 import re
 import time
 import Bug
 from SqlBug import DBBug
-
 from backends import create_backend
+from Config import Config
+from utils import printdbg
+
 
 class Bicho:
     def __init__ (self):
-        options = OptionsStore()
-
-
+        options = Config()
         self.backend = create_backend (options.type)
-        debug ("Bicho object created")
-        
-   
+        printdbg ("Bicho object created, options and backend initialized")
+
     def run(self):
         self.backend.run()
-                
-            
-        
-        
-        
-        

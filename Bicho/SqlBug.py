@@ -17,14 +17,11 @@
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
 #
 
-from utils import *
+from Config import Config
 from storm.locals import *
 #from storm import database
 #database.DEBUG = True
 from storm.exceptions import *
-
-
-
 
 
 #Pattern simple factory.
@@ -32,7 +29,7 @@ from storm.exceptions import *
 #type of database used
 
 def getDatabase ():
-    options = OptionsStore()
+    options = Config()
 
     if options.db_driver_out == "mysql":
         return DBMySQL()
@@ -96,7 +93,7 @@ class DBDatabase:
 class DBMySQL(DBDatabase):
 
     def __init__ (self):
-        options = OptionsStore()
+        options = Config()
          
         try:
             #print options.db_driver_out

@@ -1,4 +1,5 @@
-# Copyright (C) 2008  GSyC/LibreSoft
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,16 +17,18 @@
 #
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.es>
 #          Juan Francisco Gato Luis <jfcogato@libresoft.es>
+#          Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
+import urllib
+import datetime
 
-
-from Bicho.backends import Backend, register_backend
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
+from Bicho.backends import Backend, register_backend
+from Bicho.Config import Config
+from Bicho.utils import *
 
-import urllib
-import time
 #libraries for sql access
 import Bicho.Bug as Bug
 from Bicho.SqlBug import *
@@ -35,16 +38,12 @@ import xml.sax.handler
 from xml.sax._exceptions import SAXParseException
 #HTML parser
 from HTMLParser import HTMLParser
-from Bicho.utils import *
-import datetime
-import random
-
 
 def date_from_bz(string):
-        date, time, tz = string.split(' ')
-        params = [int(i) for i in date.split('-') + time.split(':')]
-        full_date = datetime.datetime(*params)
-        return full_date
+    date, time, tz = string.split(' ')
+    params = [int(i) for i in date.split('-') + time.split(':')]
+    full_date = datetime.datetime(*params)
+    return full_date
 
 #######################################################
 #Parsing HTML from each change
@@ -93,7 +92,7 @@ class SoupHtmlParser():
         self.html = html
         self.idBug = idBug
         self.field_map = {'Status': u'status', 'Resolution': u'resolution',}
-    
+
     def sanityze_change(self, field, old_value, new_value):
         field = self.field_map.get(field, field)
         old_value = old_value.strip()
@@ -461,7 +460,7 @@ class BGBackend (Backend):
 
     def __init__ (self):
         Backend.__init__ (self)
-        options = OptionsStore()
+        options = Config()
         self.url = options.url
 
     def getDomain(self, url):
@@ -474,8 +473,7 @@ class BGBackend (Backend):
 
         #Retrieving main bug information
         bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
-
-        print bug_url
+        printdbg(bug_url)
 
         handler = BugsHandler()
         parser = xml.sax.make_parser()
@@ -484,7 +482,7 @@ class BGBackend (Backend):
         try:
             parser.feed(f.read())
         except Exception, e:
-            print "Error parsing URL: " + bug_url
+            printerr("Error parsing URL: %s" % (bug_url))
             raise
         f.close()
         parser.close()
@@ -493,7 +491,7 @@ class BGBackend (Backend):
     
         #Retrieving changes
         bug_activity_url = url + "show_activity.cgi?id=" + bug_id
-        print bug_activity_url
+        printdbg( bug_activity_url )
         data_activity = urllib.urlopen(bug_activity_url).read()
         parser = SoupHtmlParser(data_activity, bug_id)
         dataParsed = parser.parse_changes()
@@ -502,8 +500,6 @@ class BGBackend (Backend):
         return dataBug  
 
     def insert_general_info(self, url):
-
-                            
         db = getDatabase()
         #By default, using bugzilla, field tracker=Bugs
         dbGeneralInfo = DBGeneralInfo("", url, "Bugs", datetime.date.today())
@@ -512,14 +508,13 @@ class BGBackend (Backend):
 
 
     def run (self):
-        
-        debug ("Running Bicho")
+        printdbg ("Running Bicho")
         print "Running Bicho"
         #retrieving data in csv format
 
         url = self.url + "&ctype=csv"
 
-        print url
+        printdbg(url)
 
         f = urllib.urlopen(url)
 
@@ -532,7 +527,7 @@ class BGBackend (Backend):
             #First field is the id field, necessary to later create the url
             #to retrieve bug information
             bugs.append(bug_csv.split(',')[0])
-        
+
         url = self.url
 
         self.insert_general_info(url)
@@ -544,26 +539,27 @@ class BGBackend (Backend):
             url =  url + "bugzilla/"
 
 
-        random.seed()
         for bug in bugs:
 
             #The URL from bugzilla (so far KDE and GNOME) are like:
             #http://<domain>/show_bug.cgi?id=<bugid>&ctype=xml 
-            
+
             try:
                 dataBug = self.analyzeBug(bug, url)
             except Exception, e:
-                print "ERROR detected"
+                #FIXME it does not handle the e
+                printerr("Error in function analyzeBug with URL: %s and Bug: %s"
+                          % (url,bug))
                 print e
                 continue
-            
+
             db = getDatabase()
             dbBug = DBBug(dataBug)
             db.insert_bug(dbBug)
 
             dbBugzilla_extra = DBBugzilla_extra(dataBug)
             db.insert_bugzilla_extra(dbBugzilla_extra)
-          
+
             #print ("Adding comments")
             for comment in dataBug.Comments:
                 dbComment = DBComment(comment)
@@ -576,8 +572,7 @@ class BGBackend (Backend):
                 #print "******************"
                 dbChange = DBChange(change)
                 db.insert_change(dbChange)
-        
 
-            time.sleep(random.randint(0,20))
+            rdelay()
 
-register_backend ("bg", BGBackend)   
+register_backend ("bg", BGBackend)

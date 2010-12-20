@@ -1,0 +1,13 @@
+##[General]
+type = 'bg'
+url = 'https://bugzilla.libresoft.es/buglist.cgi?product=CVSAnalY'
+debug = False
+delay = True
+
+##[DatabaseOut]
+db_driver_out = 'mysql'
+db_user_out = 'root'
+db_password_out = 'root'
+db_database_out = 'prueba'
+db_hostname_out = 'localhost'
+db_port_out = '3306'

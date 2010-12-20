@@ -1,4 +1,5 @@
-# Copyright (C) 2007  GSyC/LibreSoft
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,48 +15,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-# Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
-#          Added class OptionsStore by: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
+# Authors:
+#       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+#       Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
+#       Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
 import sys
-import config
+import os
+import errno
 import urllib
 import cgi
+import time
+import random
 
-class OptionsStore:
-    #Pattern singleton applied
+from Config import Config
 
-    __shared_state = {"type": None,
-                      "url" : None,
-                      "path" : None,
-
-                      "db_driver_in": None,
-                      "db_user_in": None,
-                      "db_password_in": None,
-                      "db_database_in": None,
-                      "db_hostname_in": None,
-                      "db_port_in": None,
-
-                      "db_driver_out": 'mysql',
-                      "db_user_out": None,
-                      "db_password_out": None,
-                      "db_database_out" : None,
-                      "db_hostname_out": 'localhost', 
-                      "db_port_out" : '3306'}
-
-    def __init__ (self):
-        self.__dict__ = self.__shared_state
-
-
-    def __getattr__(self, attr):
-        return self.__dict__[attr]
-
-
-    def __setattr__(self, attr, value):
-        self.__dict__[attr] = value
-
-
+config = Config ()
 
 def printout (str = '\n'):
     if str != '\n':
@@ -75,7 +51,7 @@ def printwrn (str = '\n'):
 
     printerr ("WRN: " + str)
 
-def debug (str = '\n'):
+def printdbg (str = '\n'):
     if not config.debug:
         return
 
@@ -117,4 +93,33 @@ def url_get_attr(url, attr=None):
         if attr in a:
             return a[1]
 
-    return None   
+    return None
+
+def rdelay():
+    # it adds a random delay
+    random.seed()
+    if config.delay:
+        printdbg("delay")
+        time.sleep(random.randint(0,20))
+
+_dirs = {}
+
+def bicho_dot_dir ():
+    try:
+        return _dirs['dot']
+    except KeyError:
+        pass
+
+    dot_dir = os.path.join (os.environ.get ('HOME'), '.bicho')
+    try:
+        os.mkdir (dot_dir, 0700)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            if not os.path.isdir (dot_dir):
+                raise
+        else:
+            raise
+
+    _dirs['dot'] = dot_dir
+
+    return dot_dir

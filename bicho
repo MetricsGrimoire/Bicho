@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+# Authors:
+#       Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
 
 import sys
 import Bicho.main
@@ -29,4 +30,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print "\n\nReceived Ctrl-C or other break signal. Exiting."
         sys.exit (0)
-

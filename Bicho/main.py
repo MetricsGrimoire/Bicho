@@ -1,4 +1,5 @@
-# Copyright (C) 2007  GSyC/LibreSoft
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,113 +15,62 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-# Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
-#
+# Authors:
+#       Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
+#       Luis Cañas Díaz <lcanas@libresoft.es>
+
+
 
 import getopt
 import sys
-from utils import *
 import ConfigParser
 
+from Config import Config, ErrorLoadingConfig
+from utils import *
+from info import *
 
 def usage ():
+    print "%s %s - %s" % (PACKAGE, VERSION, DESCRIPTION)
+    print COPYRIGHT
+    print
     print "Usage: bicho [options] [URL]"
     print """
-It extracts data from bug tracking systems from a project given
+Analyze the given URI or database to extract information about the bugs in the 
+output database
 
 Options:
 
-   -h, --help		Print this usage message.
-   -t, --type           Type of bug tracking system (sf|bg) SourceForge or Bugzilla
-   -p, --path		Path where downloaded URLs will be stored (/tmp/bicho/)
-
-Database input specific options:
-   --db-driver_in	Input database driver [sqlite|mysql|postgres] (None)
-   --db-user_in		Database user name (None)
-   --db-password_in	Database user password (None)
-   --db-database_in	Database name (None)
-   --db-hostname_in	Name of the host where database server is running (None)
-   --db-port_in		Port where the database server is running (None)
+  -h, --help		Print this usage message.
+  -V, --version         Show version
+  -g, --debug           Enable debug mode
+  -t, --type            Type of bug tracking system (sf|bg) SourceForge or \
+Bugzilla
+  -p, --path		Path where downloaded URLs will be stored (/tmp/bicho/)
+  -d, --delay           Random delay between 0 and 20 seconds to avoid been \
+banned
+  -f, --config-file     Use a custom configuration file
 
 Database output specific options:
 
   --db-driver_out	Output database driver [sqlite|mysql|postgres] (mysql)
-  --db-user_out		Database user name (None)
-  --db-password_out	Database user password (None)
-  --db-database_out	Database name (None)
-  --db-hostname_out	Name of the host where database server is running (localhost)
+  --db-user_out		Database user name (operator)
+  --db-password_out	Database user password
+  --db-database_out	Database name (bicho)
+  --db-hostname_out	Name of the host where database server is running \
+(localhost)
   --db-port_out		Port where the database is (3306)
 
-
-Values found in config file 'bicho.conf' are used as default values
-If config file is not found all parameters are required except:
-
-    if url is given:
-        Database input parameters are not required
-    else:
-        Database input parameteres are required.
+Database input specific options:
+  --db-driver_in	Input database driver [sqlite|mysql|postgres]
+  --db-user_in		Database user name
+  --db-password_in	Database user password
+  --db-database_in	Database name
+  --db-hostname_in	Name of the host where database server is running
+  --db-port_in		Port where the database server is running
 """
-  
 
-
-def getOptsFromFile ():
-    import os.path
-
-    #from utils.py
-    options = OptionsStore()
-
-    config = ConfigParser.ConfigParser()
-
-    try:
-        config.read([os.path.join('/etc', 'bicho'), 
-                     os.path.expanduser('~/.bicho')])
-    except:
-        printerr("Config file not found")
-        return options
-    
-    if config.has_section('General'):
-        for opt,value in config.items('General'):
-            if opt == "type":
-                options.type = value
-            if opt == "url":
-                options.url = value
-            if opt == "path":
-                options.path = value
-
-    if config.has_section('DatabaseIn'):
-        for opt,value in config.items('DatabaseIn'):
-            if opt == "db-driver_in":
-                options.db_driver_in = value
-            if opt == "db-user_in":
-                options.db_user_in = value
-            if opt == "db-password_in":
-                options.db_password_in = value
-            if opt == "db-database_in":
-                options.db_database_in = value
-            if opt == "db-hostname_in":
-                options.db_hostname_in = value
-            if opt == "db-port_in":
-                options.db_port_in = value
-    
-    if config.has_section('DatabaseOut'): 
-        for opt,value in config.items('DatabaseOut'):
-            if opt == "db-driver_out":
-                options.db_driver_out = value
-            if opt == "db-user_out":
-                options.db_user_out = value
-            if opt == "db-password_out":
-                options.db_password_out = value
-            if opt == "db-database_out":
-                options.db_database_out = value
-            if opt == "db-hostname_out":
-                options.db_hostname_out = value
-            if opt == "db-port_out":
-                options.db_port_out = value
-
-    return options
-
-def areDBOutCorrect(options):
-    #Return True if parameters are not None    
+def are_dbout_correct(options):
+    #Return True if parameters are not None
 
     correct = True
 
@@ -145,7 +95,7 @@ def areDBOutCorrect(options):
 
     return correct
 
-def areDBInCorrect(options):
+def are_dbin_correct(options):
 
     #Return True if parameters are not None
     correct = True
@@ -171,9 +121,7 @@ def areDBInCorrect(options):
 
     return correct
 
-
-
-def areOptionsCorrect(options):
+def are_options_correct(options):
     #return False if an error is encountered
     correct = True
 
@@ -181,15 +129,15 @@ def areOptionsCorrect(options):
         printerr ("Required parameter 'type' is missing")
         correct = False
     elif options.url is None:
-        if not areDBInCorrect(options):
+        if not are_dbin_correct(options):
             correct = False
-        debug ("URL was not provided")
-    elif not areDBOutCorrect(options):
+        printdbg ("URL was not provided")
+    elif not are_dbout_correct(options):
         correct = False
 
     return correct
 
-def areDBCorrect(options):
+def are_db_correct(options):
     #return False if some of the connections to DB fail.
     #FIXME: Not implemented 
     return True
@@ -199,29 +147,43 @@ def main (argv):
     import Bicho
 
     #Shared object
-    options = getOptsFromFile()
+    options = Config()
 
-    short_opts = "ht:p:"
-    long_opts = ["help", "type=", "path=", "db-driver_in=", "db-user_in=", "db-password_in=",
-                 "db-database_in=", "db-hostname_in=", "db-port_in=",
-                 "db-driver_out=", "db-user_out=", "db-password_out=",
-                 "db-database_out=", "db-hostname_out=", "db-port_out="]
+    # Short (one letter) options. Those requiring argument followed by :
+    short_opts = "hVgdt:f:p:"
+    # Long options (all started by --). Those requiring argument followed by =
+    long_opts = ["help", "version", "debug", "delay", "type=",
+                 "config-file=", "path=", "db-driver_in=", "db-user_in=",
+                 "db-password_in=", "db-database_in=", "db-hostname_in=",
+                 "db-port_in=", "db-driver_out=", "db-user_out=",
+                 "db-password_out=", "db-database_out=", "db-hostname_out=",
+                 "db-port_out="]
 
-    
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
     except getopt.GetoptError, e:
         print e
         return 1
 
+    options = Config()
+
     for opt, value in opts:
-        if opt in ("-h", "--help"):
+        if opt in ("-h", "--help", "-help"):
             usage ()
             return 0
+        elif opt in ("-V", "--version"):
+            print VERSION
+            return 0
+        elif opt in ("-g", "--debug"):
+            options.debug = True
         elif opt in ("-t", "--type"):
             options.type = value
         elif opt in ("-p", "--path"):
             options.path = value
+        elif opt in ("-d", "--delay"):
+            options.delay = True
+        elif opt in ("-f", "--config-file"):
+            options.config_file = value
         elif opt in ("--db-driver_in"):
             options.db_driver_in = value
         elif opt in ("--db-user_in"):
@@ -249,18 +211,27 @@ def main (argv):
         else:
             usage()
 
+    try:
+        if options.config_file is not None:
+            config.load_from_file (options.config_file)
+        else:
+            config.load ()
+    except ErrorLoadingConfig, e:
+        printerr (e.message)
+        return 1
+
     if len(args) > 0:
         options.url = args[0]
-        
-    if not areOptionsCorrect(options):
+
+    if not are_options_correct(options):
         printerr ("Some options are not correct")
         return 1
 
-    if not  areDBCorrect(options):
+    if not are_db_correct(options):
         printerr ("The connection to database (in/out) has failed")
         #FIXME: Not implemented
         return 1
- 
+
     bich = Bicho.Bicho ()
 
     bich.run ()
