@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.es>
+#          Juan Francisco Gato Luis <jfcogato@libresoft.es>
 #
 
 
