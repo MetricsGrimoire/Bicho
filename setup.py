@@ -38,10 +38,10 @@ except:
 
 setup(name = "Bicho",
       version = "0.4",
-      author =  "LibreSoft",
+      author =  "GSyC/LibreSoft",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
       description = "An analysis tool for you Bug Tracker System",
-      url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
-      packages = ['Bicho', 'Bicho.backends','Bicho.bicho-web'],
+      url = "https://projects.libresoft.es/projects/bicho",      
+      packages = ['Bicho', 'Bicho.backends'],
       data_files = [('share/man/man1/',['doc/bicho.1'])],
       scripts = ["bin/bicho"])
