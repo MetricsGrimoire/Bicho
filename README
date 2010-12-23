@@ -1,20 +1,38 @@
-Dependencies
+Description
+-----------
+
+Bicho is a command line based tool used to analyze bug tracking systems. It
+creates a database with three tables. Bugs, which contains general information
+about bugs; Comments, which contains information about each comment found in
+the BTS; and Attachments, wich contains information about each attachment
+found. Also, each Comment and Attachment are associated with a Bug.
+
+
+How to get Bicho
+----------------
+
+  * git clone http://git.libresoft.es/bicho
+  * git clone git://git.libresoft.es/git/bicho
+
+Requirements
 ------------
 
  * Python >= 2.4
- * Python Storm (optional, required only for database output)
+ * Python Storm. Depending on the database driver to be used you'll also need
+ one of the following python libraries:
+   - mysqldb or psycopg2 or pysqlite2
+ * Beautiful Soup library: error-tolerant HTML parser for Python
 
+Installing bicho
+----------------
 
-Database Output Results
-----------------------
+ You can install bicho running the setup.py script:
 
-Database output device uses storm, which is an object-relational mapper (ORM) for Python, 
-so it has to be installed in order to be able to use it. Depending on the 
-database driver to be used, the following specific libraries will be needed too:
+  # python setup.py install
 
- * MySQL support depends on the MySQLdb module for Python
- * PostgreSQL support depends on the psycopg2 module for Python
- * SQLite support depends on the pysqlite2 module for Python
+ For the impatients:
+
+  $ bicho --help
 
 
 Contact
@@ -22,42 +40,49 @@ Contact
 
  * Website
 
-   https://forge.morfeo-project.org/projects/libresoft-tools/
+   https://projects.libresoft.es/projects/bicho
 
  * Mailing list
 
    http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/
 
+ * IRC
+
+   #libresoft at freenode.net
+
 
 Examples
 --------
 
-Getting information from FreeMind project hosted in SourceForge
+ Getting information from Evince project hosted in bugzilla.gnome.org
 
-1- Configure bicho.conf:
+ 1- Using the command line
 
-[General]
-type=sf
-url=http://sourceforge.net/tracker/index.php?func=browse&group_id=138511&atid=740882&set=any
+ $ bicho -d -t bg --db-user_out [USER] --db-password_out [PASS]
+ --db-database_out bicho_database https://bugzilla.gnome.org/buglist.cgi?product=evince
 
-[DatabaseIn]
-db_driver_in=NotNeeded
-db_user_in=NotNeeded
-db_password_in=NotNeeded
-db_database_in=NotNeeded
-db_hostname_in=NotNeeded
-db_port_in=NotNeeded
+ 2- Using a config file
 
-[DatabaseOut]
-db_driver_out=mysql
-db_user_out=password
-db_password_out=password
-db_database_out=Bicho_FreeMind
-db_hostname_out=localhost
-db_port_out=3306
+  2.1 Content of the configuration file
 
+##[General]
+type = 'bg'
+url = 'https://bugzilla.gnome.org/buglist.cgi?product=evince'
+debug = False
+delay = True
 
-2- Command line options
+##[DatabaseOut]
+db_driver_out = 'mysql'
+db_user_out = [USER]
+db_password_out = [PASSWD]
+db_database_out = 'bicho_database'
+db_hostname_out = 'localhost'
+db_port_out = '3306'
 
-bicho -t sf --db-driver_out mysql --db-user_out password --db-password_out password --db-database_out Bicho_FreeMind --db-hostname_out localhost --db-port_out 3306 "http://sourceforge.net/tracker/index.php?func=browse&group_id=138511&atid=740882&set=any"
+  2.2 Execution
 
+  $ bicho -f config.sample
+
+ 3- help
+
+  $ bicho --help
