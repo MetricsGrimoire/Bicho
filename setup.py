@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2009  GSyC/LibreSoft
+# Copyright (C) 2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
