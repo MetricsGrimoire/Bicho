@@ -1,9 +1,11 @@
-# Copyright (C) 2007  GSyC/LibreSoft
+# -*- coding: utf-8 -*-
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2007-2011  GSyC/LibreSoft, Universidad Rey Juan Carlos
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -12,10 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Authors:  Daniel Izquierdo Cortazar   <dizquierdo@gsyc.escet.urjc.es>
+# Authors:  Daniel Izquierdo Cortazar   <dizquierdo@glibresoft.es>
 #           Ronaldo Maia                <romaia@async.com.br>
+#           Santiago Dueñas <sduenas@libresoft.es>
+#
 #
 
 import re
@@ -29,8 +33,8 @@ from BeautifulSoup import BeautifulSoup
 from Bicho.utils import url_get_attr
 from Bicho.backends import register_backend
 from Bicho.utils import debug, OptionsStore
-import Bicho.Bug as Bug
-from Bicho.SqlBug import *
+from Bicho.database import *
+from Bicho.common import *
 
 # import from baseparser.py BFComment used in remove_comments method
 from BeautifulSoup import Comment as BFComment
@@ -74,22 +78,21 @@ class SourceForgeParser():
         # Remind, Accepted
     }
     
-    
     # str_to_date function convert a string with the form YYYY-MM-DD HH:MM
     # to an accepted (well-formed) date from baseparsers.py
     
     def str_to_date(self,string):
       if not string:
         return
-
-      date, time = string.split(' ')
+      
+      date, time, extra = string.split(' ')
       params = [int(i) for i in date.split('-') + time.split(':')]
       full_date = datetime.datetime(*params)
       return full_date
     
     # In order to use the same name of Dani's code I changed the names of
     # mathods to capital
-    def get_Comments(self,dataBugs,soup):
+    def get_comments(self,dataBugs,soup):
         try :
           if self.getNumChAttComm('Comment',soup):
             for tg in soup({'h4':True}):
@@ -98,7 +101,6 @@ class SourceForgeParser():
                 text = ''
                 datesub = ''
                 sender = ''
-                c = Bug.Comment()
                 aux = ed.findAll({'p':True})
                 datesub = aux[0].contents[0].split('Date:')[1]
                 # Some bugs has been sent by a user not registered maybe or a
@@ -117,10 +119,7 @@ class SourceForgeParser():
                 r = re.compile('google\_ad\_section\_(start|end)')
                 text = r.sub('',''.join(aux[1].findAll(text=True))).strip()
                 
-                c.IdBug = self.get_Id(dataBugs,soup)
-                c.DateSubmitted = self.str_to_date(datesub.strip()) 
-                c.SubmittedBy = sender
-                c.Comment = text 
+                c = Comment(text, sender, self.str_to_date(datesub.strip()))
                 dataBugs["Comments:"].append(c)
                 #debug("Comments : %s" % comments  )
                 #return comments
@@ -141,20 +140,22 @@ class SourceForgeParser():
           debug("Errors getting Comments")
 
     # New change method because the old one does not work at all
-    def get_Changes(self,dataBugs,soup):
+    def get_changes(self,dataBugs,soup):
       changes = []
       try:
         if self.getNumChAttComm('Change',soup):
           for tg in soup('h4'): 
             if tg.has_key('id') and tg['id'] == 'changebar':
               for tgg in tg.findNext({'tbody':True}).findAllNext({'tr':True}):
-                change = Bug.Change()
                 aux = tgg.findAll({'td':True})
-                change.IdBug = self.get_Id(dataBugs,soup)
-                change.Field = str(aux[0].contents[0]).strip()
-                change.OldValue = str(aux[1].contents[0]).strip()
-                change.Date = self.str_to_date(str(aux[2].contents[0]).strip())
-                change.SubmittedBy = str(aux[3].contents[0]).strip()
+                field = str(aux[0].contents[0]).strip()
+                old_value = str(aux[1].contents[0]).strip()
+                new_value = 'unknown' # FIXME
+                changed_on = self.str_to_date(str(aux[2].contents[0]).strip())
+                changed_by = str(aux[3].contents[0]).strip()
+                
+                change = Change(field, old_value, new_value, changed_by, changed_on)
+                
                 dataBugs["Changes:"].append(change)
               #debug("Changes : %s" % changes)
               #return changes
@@ -176,20 +177,23 @@ class SourceForgeParser():
         debug("Errors getting the Changes")
 
     # New attachment method because the old one does not work at all
-    def get_Attachments(self,dataBugs, soup):
+    def get_attachments(self,dataBugs, soup):
       attachs = []
       try :
         if self.getNumChAttComm('Attached File',soup):
           for tg in soup('h4'):
             if tg.has_key('id') and tg['id'] == 'filebar':
               for att in soup({'tbody':True})[1].findAll({'tr':True}):
-                attach = Bug.Attachment()
                 aux = att.findAll({'td':True})
-                attach.IdBug = self.get_Id(dataBugs,soup)
-                attach.Name = str(aux[0].contents[1])
-                attach.Description = str(aux[1].contents[1])
-                attach.Url = str(SourceForgeFrontend.domain+aux[2].a['href'])
-                dataBugs["Attachments:"].append(attach)
+                
+                name = str(aux[0].contents[1])
+                description = str(aux[1].contents[1])
+                url = str(SourceForgeFrontend.domain+aux[2].a['href'])
+                
+                attachment = Attachment(url)
+                attachment.set_name(name)
+                attachment.set_description(description)
+                dataBugs["Attachments:"].append(attachment)
                 #debug("Attach : %s" % attachs)
                 #return attachs
         else :
@@ -226,17 +230,17 @@ class SourceForgeParser():
         debug("Error getting ChAttComm")
 
     
-    def get_SubmittedBy(self,dataBugs, soup):
+    def get_submitted_by(self,dataBugs, soup):
       try:
         for tg in soup.findAll({'a':True}):
           if tg.parent.name == 'p' and "/users/" in tg["href"]:
             #debug("SubmittedBy : %s" % tg.contents[0])
             dataBugs["Submitted By:"] = tg.contents[0]
-      except:
-        debug("Error getting SubmittedBy")
+      except Exception, e:
+        print "Error getting SubmittedBy. %s" % e
 
     
-    def get_DateSubmitted(self,dataBugs, soup):
+    def get_submitted_on(self,dataBugs, soup):
       try:
         for pvc in soup({'label':True}):
           if 'Submitted' in str(pvc.contents):
@@ -245,11 +249,11 @@ class SourceForgeParser():
         final_date = self.str_to_date(submd)
         #debug("DateSubmitted %s " % final_date)
         dataBugs["Date Submitted:"] = final_date
-      except:
-        debug("Error getting DateSubmitted")
+      except Exception, e:
+        print "Error getting submitted_on. %s" % e
     
     
-    def get_Priority(self,dataBugs,soup):
+    def get_priority(self,dataBugs,soup):
       try:
         for priority in soup({'label':True}):
           if 'Priority' in str(priority.contents):
@@ -259,7 +263,7 @@ class SourceForgeParser():
         debug("Error getting Priority")
       
 
-    def get_Resolution(self,dataBugs,soup):
+    def get_resolution(self,dataBugs,soup):
       try:
         for resolution in soup({'label':True}):
           if 'Resolution' in str(resolution.contents):
@@ -268,7 +272,7 @@ class SourceForgeParser():
       except:
         debug("Error getting Resolution")
     
-    def get_Status(self,dataBugs,soup):
+    def get_status(self,dataBugs,soup):
       try:
         for status in soup({'label':True}):
           if 'Status' in str(status.contents):
@@ -277,7 +281,7 @@ class SourceForgeParser():
       except:
         debug("Error getting Status")
     
-    def get_Group(self,dataBugs,soup):
+    def get_group(self,dataBugs,soup):
       try:
         for group in soup({'label':True}):
           if 'Group' in str(group.contents):
@@ -287,7 +291,7 @@ class SourceForgeParser():
         debug("Error getting Group")
 
 
-    def get_Visibility(self,soup): # Not used
+    def get_visibility(self,soup): # Not used
       try:
         for visibility in soup({'label':True}):
           if 'Visibility' in str(visibility.contents):
@@ -296,7 +300,7 @@ class SourceForgeParser():
       except:
         debug("Error getting Visbility")
     
-    def get_Category(self,dataBugs,soup):
+    def get_category(self,dataBugs,soup):
       try:
         for category in soup({'label':True}):
           if 'Category' in str(category.contents):
@@ -305,7 +309,7 @@ class SourceForgeParser():
       except:
         debug("Error getting Category")
 
-    def get_Summary(self,dataBugs, soup):
+    def get_summary(self,dataBugs, soup):
       try:
         for tg in soup.findAll({'strong':True}):
           if tg.parent.name == 'span':
@@ -316,7 +320,7 @@ class SourceForgeParser():
       except:
         debug("Error getting Summary")
 
-    def get_Id(self, dataBugs, soup): # this is the id of the bug
+    def get_id(self, dataBugs, soup): # this is the id of the bug
       try :
         for tg in soup.findAll({'strong':True}):
           if tg.parent.name == 'span':
@@ -327,7 +331,7 @@ class SourceForgeParser():
       except:
         debug("Error getting idBug")
 
-    def get_Description(self,dataBugs, soup):
+    def get_description(self,dataBugs, soup):
       try:
         for detail in soup({'label':True}):
           if "Details:" in str(detail.contents):
@@ -340,7 +344,7 @@ class SourceForgeParser():
         debug("Error getting Description")
 
     
-    def get_AssignedTo(self, dataBugs,soup):
+    def get_assigned_to(self, dataBugs,soup):
       try:
         for pvc in soup({'label':True}):
           if 'Assigned:' in str(pvc.contents):
@@ -384,8 +388,8 @@ class SourceForgeFrontend():
     # getting url from options and extracting group_id and atid
     options = OptionsStore()
     url = options.url
-    group_id = url.split('&')[1].split('=')[1]
-    atid = url.split('&')[2].split('=')[1]
+    group_id = url.split('?')[1].split('=')[1]
+    atid = url.split('&')[1].split('=')[1]
     sfparser = SourceForgeParser()  # instance used in _get_field method
     total_bugs = 0
     _current_bug = 0
@@ -412,6 +416,10 @@ class SourceForgeFrontend():
                 "Attachments:" : [],
                 "Changes:" : []}
     
+    fields = ['comments', 'changes', 'attachments', 'submitted_by', 'submitted_on',
+              'priority', 'status', 'resolution', 'group', 'visibility', 'category',
+              'summary', 'id', 'description', 'assigned_to']
+
     def get_bug_url(self, idBug):
         bug_url = "%s/tracker/?func=detail&aid=%s&group_id=%s&atid=%s" % (
                     self.domain, idBug, self.group_id, self.atid)
@@ -500,46 +508,28 @@ class SourceForgeFrontend():
         [t.extract() for t in soup.findAll(tag)]
     
     def getDataBug(self):
-    
-        bug = Bug.Bug()
-        bug.Id = self.dataBugs["IdBug:"]
-        bug.Summary = self.dataBugs["Summary: "]
-        bug.Description = self.dataBugs["Description:"]
-        bug.DateSubmitted = self.dataBugs["Date Submitted:"]
-        bug.Status = self.dataBugs["Status: "]
-        bug.Priority = self.dataBugs["Priority: "]
-        bug.Category = self.dataBugs["Category: "]
-        bug.Group = self.dataBugs["Group: "]
-        bug.AssignedTo = self.dataBugs["Assigned To: "]
-        bug.SubmittedBy = self.dataBugs["Submitted By:"]
-        bug.Resolution = self.dataBugs["Resolution: "]
+        issue = Issue(self.dataBugs["IdBug:"], 'bug', self.dataBugs["Summary: "], 
+                      self.dataBugs["Description:"], 
+                      People(self.dataBugs["Submitted By:"]),
+                      self.dataBugs["Date Submitted:"])
+        issue.set_priority(self.dataBugs["Priority: "])
+        issue.set_status(self.dataBugs["Status: "], self.dataBugs["Resolution: "])
+        issue.set_assigned(People(self.dataBugs["Assigned To: "]))
+
+        # FIXME: a class is needed to store this fields
+        #bug.Category = self.dataBugs["Category: "]
+        #bug.Group = self.dataBugs["Group: "]
 
         for comment in self.dataBugs["Comments:"]:
-            c = Bug.Comment()
-            c.IdBug = self.dataBugs["IdBug:"]
-            c.DateSubmitted = comment.DateSubmitted
-            c.SubmittedBy = comment.SubmittedBy
-            c.Comment = comment.Comment
-            bug.Comments.append(c)
+            issue.add_comment(comment)
 
-        for attach in self.dataBugs["Attachments:"]:
-            a = Bug.Attachment()
-            a.IdBug = self.dataBugs["IdBug:"]
-            a.Name = attach.Name
-            a.Description = attach.Description
-            a.Url = attach.Url
-            bug.Attachments.append(a)
+        for attachment in self.dataBugs["Attachments:"]:
+            issue.add_attachment(attachment)
 
         for change in self.dataBugs["Changes:"]:
-            ch = Bug.Change()
-            ch.IdBug = self.dataBugs["IdBug:"]
-            ch.Field = change.Field
-            ch.OldValue = change.OldValue
-            ch.Date = change.Date
-            ch.SubmittedBy = change.SubmittedBy
-            bug.Changes.append(ch)
+            issue.add_changes(change)
 
-        return bug
+        return issue
 
     def _get_field(self, dataBugs, field, soup): 
       # object is the SourceForgeParser class because it has get field methods
@@ -548,7 +538,7 @@ class SourceForgeFrontend():
         if hasattr(self.sfparser, 'get_%s' % field):
             method = getattr(self.sfparser, 'get_%s' % field)
             try:
-              method(dataBugs,soup)
+                method(dataBugs,soup)
             except:
               print "Fallo Method %s" % field
         elif field in self.sfparser.paths.keys():
@@ -566,22 +556,17 @@ class SourceForgeFrontend():
             soup = self.soup
         self.remove_comments(soup)
         
-        for field in dir(Bug.Bug()):
-          if not field.startswith('__'):
-            try:
-                self._get_field(self.dataBugs,field,soup)
-            except :
-                debug("Falla %s" % field)
+        for field in self.fields:
+            self._get_field(self.dataBugs, field, soup)
 
-            try:
-                dataBug = self.getDataBug()
-            except :
-                debug("Fallo DataBug")
-                return None
+        #try:
+        issue = self.getDataBug()
+        #except Exception, e:
+        #    print "Fallo DataBug. %s" % e
+        #    return None
 
-        return dataBug 
-    
-    
+        return issue 
+
     def analyze_bug(self, bug_id):
         url = self.get_bug_url(bug_id)
 
@@ -603,10 +588,9 @@ class SourceForgeFrontend():
         i = 0
         #total = self.get_total_bugs()
         #debug("Total number of bugs %s" % total)
-        debug("Total number of bugs %s" % self.total_bugs)
-        
+        print "Total number of bugs %s" % self.total_bugs
 
-        self.insert_general_info(url)
+        db_trk = db.insert_tracker(Tracker(url, 'sf'))
 
         while True:
             bug_id = self.get_next_bug()
@@ -614,41 +598,17 @@ class SourceForgeFrontend():
                 break
 
             i+=1
-            debug("Analyzing bug # %s of %s" % (i, self.total_bugs))
+            print 'Analyzing bug # %s of %s' % (i, self.total_bugs)
 
-            #from IPython.Shell import IPShellEmbed
-            #ipshell = IPShellEmbed("shell")
-            #ipshell()
-            
-            dataBug = self.analyze_bug(bug_id)
-            #url = self.get_bug_url(bug_id)
-            #dataWeb = self.read_page(url)
-            #self.storeData(dataWeb,bug_id)
-            dbBug = DBBug(dataBug)
-            db.insert_bug(dbBug)
-            
-            for comment in dataBug.Comments:
-              dbComment = DBComment(comment)
-              db.insert_comment(dbComment)
+            issue = self.analyze_bug(bug_id)
 
-            for attach in dataBug.Attachments:
-              dbAttachment = DBAttachment(attach)
-              db.insert_attachment(dbAttachment)
-
-            for change in dataBug.Changes:
-              dbChange = DBChange(change)
-              db.insert_change(dbChange)
-            
-            if dataBug is None:
-                debug('Error retrieving bug %s' % bug_id)
+            if issue is None:
+                print 'Error retrieving bug %s' % bug_id
                 #print 'Error retrieving bug %s' % bug_id
                 continue
-            # This can be fixed using an object by now
-            # clean Comments, Attachments and Changes
 
-            self.dataBugs['Comments:'] = []
-            self.dataBugs['Attachments:'] = []
-            self.dataBugs['Changes:'] = []
+            db.insert_issue(issue, db_trk.id)
+            debug('Bug # %s analyzed' % i)         
 
   # methods to store data from Dani
     def storeData(self, data, idBug):
@@ -662,23 +622,6 @@ class SourceForgeFrontend():
       file = open(os.path.join(os.path.join(opt.path, opt.db_database_out), str(idBug)), 'w')
       file.write(data)
       file.close
-    
-    def insert_general_info(self, url):
-      project = ""
-      tracker = ""
-      
-      html = self.read_page(url)
-      self.set_html(html)
-      
-      for tg in self.soup({'div':True},attrs={'id':'breadcrumbs'}):
-        project = tg.find({'a':True},href=re.compile('/projects/')).contents[0]
-        tracker = tg.find({'a':True},href=re.compile('/tracker/\?group_id=\d+\&atid=\d+')).contents[0]
-        url = self.domain+tg.find({'a':True},href=re.compile('/tracker/\?group_id=\d+\&atid=\d+'))['href']
-
-      db = getDatabase()
-      dbGeneralInfo = DBGeneralInfo(project, url, tracker, datetime.datetime.now())
-      db.insert_general_info(dbGeneralInfo) 
-
 
 register_backend("sf", SourceForgeFrontend)
 
