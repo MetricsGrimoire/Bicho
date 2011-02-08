@@ -32,7 +32,7 @@ from BeautifulSoup import BeautifulSoup
 
 from Bicho.utils import url_get_attr
 from Bicho.backends import register_backend
-from Bicho.utils import debug, OptionsStore
+from Bicho.utils import debug, Config
 from Bicho.database import *
 from Bicho.common import *
 
@@ -386,7 +386,7 @@ class SourceForgeFrontend():
     # functionality
     # added for compatibility with dani's bicho
     # getting url from options and extracting group_id and atid
-    options = OptionsStore()
+    options = Config()
     url = options.url
     group_id = url.split('?')[1].split('=')[1]
     atid = url.split('&')[1].split('=')[1]
@@ -612,7 +612,7 @@ class SourceForgeFrontend():
 
   # methods to store data from Dani
     def storeData(self, data, idBug):
-      opt = OptionsStore()
+      opt = Config()
       if not os.path.exists(opt.path):
         os.makedirs(opt.path)
       if not os.path.exists(os.path.join(opt.path, opt.db_database_out)):

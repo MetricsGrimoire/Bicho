@@ -273,7 +273,7 @@ class DBMySQL(DBDatabase):
     """
 
     def __init__(self):       
-        opts = OptionsStore()
+        opts = Config()
         
         self.database = create_database('mysql://' + opts.db_user_out + ':'
                                         + opts.db_password_out + '@'
@@ -775,7 +775,7 @@ class DBChange(object):
 def getDatabase():
     """
     """
-    opts = OptionsStore()
+    opts = Config()
 
     if opts.db_driver_out == "mysql":
         return DBMySQL()
