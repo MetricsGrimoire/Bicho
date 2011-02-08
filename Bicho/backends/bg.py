@@ -30,8 +30,8 @@ from Bicho.Config import Config
 from Bicho.utils import *
 
 #libraries for sql access
-import Bicho.Bug as Bug
-from Bicho.SqlBug import *
+from Bicho.database import getDatabase
+
 from storm.locals import *
 #XML parser
 import xml.sax.handler
