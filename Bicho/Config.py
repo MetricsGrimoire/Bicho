@@ -20,12 +20,19 @@
 #       Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
-class ErrorLoadingConfig (Exception):
+class ErrorLoadingConfig(Exception):
+    """
+    Error loading configuration file.
+    """
+    pass
 
-    def __init__ (self, message = None):
-        Exception.__init__ (self)
 
-        self.message = message
+class InvalidConfig(Exception):
+    """
+    Invalid configuration.
+    """
+    pass
+
 
 class Config:
     #Pattern singleton applied
@@ -37,6 +44,8 @@ class Config:
                       'quiet': False,
                       'delay': False,
                       'config_file': None,
+                      'input': 'url',
+                      'output': 'db',
                       # output database
                       'db_driver_out': 'mysql',
                       'db_user_out': None,
@@ -97,6 +106,14 @@ class Config:
             self.url = config.url
         except:
             pass
+        try:
+            self.input = config.input
+        except:
+            pass
+        try:
+            self.output = config.output
+        except:
+            pass
 
         # output database
         try:
@@ -150,7 +167,6 @@ class Config:
         except:
             pass
 
-
     def load (self):
         import os
         from utils import bicho_dot_dir, printout
@@ -176,3 +192,59 @@ class Config:
 
     def load_from_file (self, path):
         self.__load_from_file (path)
+
+
+def check_config(config):
+    """
+    """
+    if config.type is None:
+        raise InvalidConfig('Configuration parameter ''type'' is required')
+    if config.url is None:
+        raise InvalidConfig('Configuration parameter ''url'' is required')
+
+    if config.input == 'db':
+        check_db_in_config(config)
+    if config.output == 'db':
+        check_db_out_config(config)
+
+def check_db_in_config(config):
+    """
+    """
+    param = None
+
+    if config.db_driver_in is None:
+        param = 'db-driver-in'
+    elif config.db_user_in is None:
+        param = 'db-user-in'
+    elif config.db_password_in is None:
+        param = 'db-password-in'
+    elif config.db_hostname_in is None:
+        param = 'db-hostname-in'
+    elif config.db_port_in is None:
+        param = 'db-port-in'
+    elif config.db_database_in is None:
+        param = 'db-database-in'
+
+    if param is not None:
+        raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
+
+def check_db_out_config(config):
+    """
+    """
+    param = None
+
+    if config.db_driver_out is None:
+        param = 'db-driver-out'
+    elif config.db_user_out is None:
+        param = 'db-user-out'
+    elif config.db_password_out is None:
+        param = 'db-password-out'
+    elif config.db_hostname_out is None:
+        param = 'db-hostname-out'
+    elif config.db_port_out is None:
+        param = 'db-port-out'
+    elif config.db_database_out is None:
+        param = 'db-database-out'
+
+    if param is not None:
+        raise InvalidConfig('Configuration parameter ''%s'' is required' % param)

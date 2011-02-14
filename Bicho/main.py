@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,227 +17,145 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # Authors:
-#       Daniel Izquierdo Cortazar <dizquierdo@gsyc.escet.urjc.es>
+#       Daniel Izquierdo Cortazar <dizquierdo@libresoft.es>
 #       Luis Cañas Díaz <lcanas@libresoft.es>
+#       Santiago Dueñas <sduenas@libresoft.es>
+#
 
-
-
-import getopt
 import sys
-import ConfigParser
+from optparse import OptionError, OptionGroup, OptionParser
 
-from Config import Config, ErrorLoadingConfig
+from Config import check_config, Config, ErrorLoadingConfig, InvalidConfig
+import Bicho
+import info
 from utils import *
-from info import *
 
-def usage ():
-    print "%s %s - %s" % (PACKAGE, VERSION, DESCRIPTION)
-    print COPYRIGHT
-    print
-    print "Usage: bicho [options] [URL]"
-    print """
-Analyze the given URI or database to extract information about the bugs in the 
-output database
+def set_config_options(type, uri, options):
+    """
+    """
+    config = Config()
 
-Options:
+    if options.cfgfile is not None:
+        config.load_from_file(options.cfgfile)
+    else:
+        config.load()
 
-  -h, --help		Print this usage message.
-  -V, --version         Show version
-  -g, --debug           Enable debug mode
-  -t, --type            Type of bug tracking system (sf|bg) SourceForge or \
-Bugzilla
-  -p, --path		Path where downloaded URLs will be stored (/tmp/bicho/)
-  -d, --delay           Random delay between 0 and 20 seconds to avoid been \
-banned
-  -f, --config-file     Use a custom configuration file
+    # Generic options
+    config.type = type
+    config.url = uri
+    if options.debug:
+        config.debug = options.debug
+    if options.delay:
+        config.delay = options.delay
+    if options.path:
+        config.path = options.path
+    if options.input:
+        config.input = options.input
+    if options.output:
+        config.output = options.output
 
-Database output specific options:
+    # Output database options
+    if options.db_driver_out:
+        config.db_driver_out = options.db_driver_out
+    if options.db_user_out:
+        config.db_user_out = options.db_user_out
+    if options.db_password_out:
+        config.db_password_out = options.db_password_out
+    if options.db_hostname_out:
+        config.db_hostname_out = options.db_hostname_out
+    if options.db_port_out:
+        config.db_port_out = options.db_port_out
+    if options.db_database_out:
+        config.db_database_out = options.db_database_out
 
-  --db-driver_out	Output database driver [sqlite|mysql|postgres] (mysql)
-  --db-user_out		Database user name (operator)
-  --db-password_out	Database user password
-  --db-database_out	Database name (bicho)
-  --db-hostname_out	Name of the host where database server is running \
-(localhost)
-  --db-port_out		Port where the database is (3306)
+    # Input database options
+    if options.db_driver_in:
+        config.db_driver_in = options.db_driver_in
+    if options.db_user_in:
+        config.db_user_in = options.db_user_in
+    if options.db_password_in:
+        config.db_password_in = options.db_password_in
+    if options.db_hostname_in:
+        config.db_hostname_in = options.db_hostname_in
+    if options.db_port_in:
+        config.db_port_in = options.db_port_in
+    if options.db_database_in:
+        config.db_database_in = options.db_database_in
 
-Database input specific options:
-  --db-driver_in	Input database driver [sqlite|mysql|postgres]
-  --db-user_in		Database user name
-  --db-password_in	Database user password
-  --db-database_in	Database name
-  --db-hostname_in	Name of the host where database server is running
-  --db-port_in		Port where the database server is running
-"""
+    return config
 
-def are_dbout_correct(options):
-    #Return True if parameters are not None
+def main():
+    """
+    """
+    # Note: Default values for options are defined on
+    # configuration module
+    usage = 'Usage: %prog [options] <type> <URI>'
 
-    correct = True
+    parser = OptionParser(usage=usage, description=info.DESCRIPTION,
+                          version=info.VERSION)
 
-    if options.db_driver_out is None:
-        printerr ("Required parameter 'db-driver_out' is missing")
-        correct = False
-    elif options.db_user_out is None:
-        printerr ("Required parameter 'db-user_out' is missing")
-        correct = False
-    elif options.db_password_out is None:
-        printerr ("Required parameter 'db-password_out' is missing")
-        correct = False
-    elif options.db_database_out is None:
-        printerr ("Required parameter 'db-database_out' is missing")
-        correct = False
-    elif options.db_hostname_out is None:
-        printerr ("Required parameter 'db-hostname_out' is missing")
-        correct = False
-    elif options.db_port_out is None:
-        printerr ("Required parameter 'db-port_out' is missing")
-        correct = False
+    # General options
+    parser.add_option('--cfg', dest='cfgfile', default=None,
+                      help='Use a custom configuration file')
+    parser.add_option('-g', '--debug', action='store_true', dest='debug',
+                      help='Enable debug mode')
+    parser.add_option('-d', '--delay', type='int', dest='delay',
+                      help='Delay between 0 and 20 seconds to avoid been banned')
+    parser.add_option('-i', '--input', choices=['url', 'db'],
+                      dest='input', help='Input format')
+    parser.add_option('-o', '--output', choices=['db'],
+                      dest='output', help='Output format')
+    parser.add_option('-p', '--path', dest='path',
+                      help='Path where downloaded URLs will be stored')
 
-    return correct
+    # Options for output database
+    group = OptionGroup(parser, 'Output database specific options')
+    group.add_option('--db-driver-out',
+                     choices=['sqlite','mysql','postgresql'],
+                     dest='db_driver_out', help='Output database driver')
+    group.add_option('--db-user-out', dest='db_user_out',
+                     help='Database user name')
+    group.add_option('--db-password-out', dest='db_password_out',
+                     help='Database user password')
+    group.add_option('--db-hostname-out', dest='db_hostname_out',
+                     help='Name of the host where database server is running')
+    group.add_option('--db-port-out', dest='db_port_out',
+                     help='Port of the host where database server is running')
+    group.add_option('--db-database-out', dest='db_database_out',
+                     help='Output database name')
+    parser.add_option_group(group)
 
-def are_dbin_correct(options):
+    # Options for input database
+    group = OptionGroup(parser, 'Input database specific options')
+    group.add_option('--db-driver-in',
+                     choices=['sqlite', 'mysql', 'postgresql'],
+                     dest='db_driver_in', help='Input database driver')
+    group.add_option('--db-user-in', dest='db_user_in',
+                     help='Database user name')
+    group.add_option('--db-password-in', dest='db_password_in',
+                     help='Database user password')
+    group.add_option('--db-hostname-in', dest='db_hostname_in',
+                     help='Name of the host where database server is running')
+    group.add_option('--db-port-in', dest='db_port_in',
+                     help='Port of the host where database server is running')
+    group.add_option('--db-database-in', dest='db_database_in',
+                     help='Input database name')
+    parser.add_option_group(group)
 
-    #Return True if parameters are not None
-    correct = True
-
-    if options.db_driver_in is None:
-        printerr ("Required parameter (if URL not given) 'db-driver_in' is missing")
-        correct = False
-    elif options.db_user_in is None:
-        printerr ("Required parameter (if URL not given) 'db-user_in' is missing")
-        correct = False
-    elif options.db_password_in is None:
-        printerr ("Required parameter (if URL not given) 'db-password_in' is missing")
-        correct = False
-    elif options.db_database_in is None:
-        printerr ("Required parameter (if URL not given) 'db-database_in' is missing")
-        correct = False
-    elif options.db_hostname_in is None:
-        printerr ("Required parameter (if URL not given) 'db-hostname_in' is missing")
-        correct = False
-    elif options.db_port_in is None:
-        printerr ("Required parameter (if URL not given) 'db-port_in' is missing")
-        correct = False
-
-    return correct
-
-def are_options_correct(options):
-    #return False if an error is encountered
-    correct = True
-
-    if options.type is None:
-        printerr ("Required parameter 'type' is missing")
-        correct = False
-    elif options.url is None:
-        if not are_dbin_correct(options):
-            correct = False
-        printdbg ("URL was not provided")
-    elif not are_dbout_correct(options):
-        correct = False
-
-    return correct
-
-def are_db_correct(options):
-    #return False if some of the connections to DB fail.
-    #FIXME: Not implemented 
-    return True
-
-
-def main (argv):
-    import Bicho
-
-    #Shared object
-    options = Config()
-
-    # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVgdt:f:p:"
-    # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "debug", "delay", "type=",
-                 "config-file=", "path=", "db-driver_in=", "db-user_in=",
-                 "db-password_in=", "db-database_in=", "db-hostname_in=",
-                 "db-port_in=", "db-driver_out=", "db-user_out=",
-                 "db-password_out=", "db-database_out=", "db-hostname_out=",
-                 "db-port_out="]
+    (options, args) = parser.parse_args()
+    if len(args) != 2:
+        parser.error('Incorrect number of arguments')
 
     try:
-        opts, args = getopt.getopt (argv, short_opts, long_opts)
-    except getopt.GetoptError, e:
-        print e
-        return 1
+        config = set_config_options(args[0], args[1], options)
+        check_config(config)
+    except (ErrorLoadingConfig, InvalidConfig), e:
+        printerr(str(e))
+        sys.exit(2)
 
-    options = Config()
-
-    for opt, value in opts:
-        if opt in ("-h", "--help", "-help"):
-            usage ()
-            return 0
-        elif opt in ("-V", "--version"):
-            print VERSION
-            return 0
-        elif opt in ("-g", "--debug"):
-            options.debug = True
-        elif opt in ("-t", "--type"):
-            options.type = value
-        elif opt in ("-p", "--path"):
-            options.path = value
-        elif opt in ("-d", "--delay"):
-            options.delay = True
-        elif opt in ("-f", "--config-file"):
-            options.config_file = value
-        elif opt in ("--db-driver_in"):
-            options.db_driver_in = value
-        elif opt in ("--db-user_in"):
-            options.db_user_in = value
-        elif opt in ("--db-password_in"):
-            options.db_password_in = value
-        elif opt in ("--db-database_in"):
-            options.db_database_in = value
-        elif opt in ("--db-hostname_in"):
-            options.db_hostname_in = value
-        elif opt in ("--db-port_in"):
-            options.db_port_in = value
-        elif opt in ("--db-driver_out"):
-            options.db_driver_out = value
-        elif opt in ("--db-user_out"):
-            options.db_user_out = value
-        elif opt in ("--db-password_out"):
-            options.db_password_out = value
-        elif opt in ("--db-database_out"):
-            options.db_database_out = value
-        elif opt in ("--db-hostname_out"):
-            options.db_hostname_out = value
-        elif opt in ("--db-port_out"):
-            options.db_port_out = value
-        else:
-            usage()
-
-    try:
-        if options.config_file is not None:
-            config.load_from_file (options.config_file)
-        else:
-            config.load ()
-    except ErrorLoadingConfig, e:
-        printerr (e.message)
-        return 1
-
-    if len(args) > 0:
-        options.url = args[0]
-
-    if not are_options_correct(options):
-        printerr ("Some options are not correct")
-        return 1
-
-    if not are_db_correct(options):
-        printerr ("The connection to database (in/out) has failed")
-        #FIXME: Not implemented
-        return 1
-
-    bich = Bicho.Bicho ()
-
+    bicho = Bicho.Bicho ()
     bich.run ()
 
-    return 0
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
