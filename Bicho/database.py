@@ -385,7 +385,8 @@ class DBMySQL(DBDatabase):
         self.store.execute('CREATE TABLE IF NOT EXISTS comments (' +
                            'id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,' +
                            'issue_id INTEGER UNSIGNED NOT NULL,' +
-                           'comment TEXT NOT NULL,' +
+                           'comment_id INTEGER,'
+                           'text TEXT NOT NULL,' +
                            'submitted_by INTEGER UNSIGNED NOT NULL,' +
                            'submitted_on DATETIME NOT NULL,' +
                            'PRIMARY KEY(id),' +
@@ -772,7 +773,7 @@ class DBChange(object):
         self.issue_id = issue_id
 
 
-def getDatabase():
+def get_database():
     """
     """
     opts = Config()
