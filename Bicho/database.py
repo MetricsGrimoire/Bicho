@@ -52,10 +52,10 @@ class DBDatabase:
     def insert_tracker(self, tracker):
         """
         Insert the given tracker.
-        
+
         @param tracker: tracker to insert
         @type tracker: L{Tracker}
-        
+
         @return: the inserted tracker
         @rtype: L{DBTracker}
         """
@@ -68,14 +68,15 @@ class DBDatabase:
             db_tracker.retrieved_on = datetime.datetime.now()
             self.store.commit()
         return db_tracker
-    
+
+
     def insert_people(self, people, tracker_id):
         """
         Insert the given identity.
-        
+
         @param people: identity to insert
         @type people: L{People}
-        
+
         @return: the inserted identity
         @rtype: L{People}
         """
@@ -97,9 +98,9 @@ class DBDatabase:
         @type issue: L{Issue}
         @param tracker_id: identifier of the tracker
         @type tracker_id: C{int}
-        
+
         @return: the inserted issue
-        @rtype: L{DBIssue} 
+        @rtype: L{DBIssue}
         """
         try:
             db_issue = DBIssue(issue.issue, tracker_id)
@@ -118,9 +119,9 @@ class DBDatabase:
 
             self.store.add(db_issue)
             self.store.flush()
-        
+
             # Insert relationships
-        
+
             # Insert comments
             for comment in issue.comments:
                 self._insert_comment(comment, db_issue.id, tracker_id)
@@ -272,9 +273,9 @@ class DBMySQL(DBDatabase):
     MySQL database.
     """
 
-    def __init__(self):       
+    def __init__(self):
         opts = Config()
-        
+
         self.database = create_database('mysql://' + opts.db_user_out + ':'
                                         + opts.db_password_out + '@'
                                         + opts.db_hostname_out + ':'
@@ -282,14 +283,31 @@ class DBMySQL(DBDatabase):
                                         + opts.db_database_out)
         self.store = Store(self.database)
 
+        # Table 'tracker_types'
+        self.store.execute('CREATE TABLE IF NOT EXISTS tracker_types (' +
+                           'id INTEGER NOT NULL AUTO_INCREMENT,' +
+                           'name VARCHAR(64) NOT NULL,' +
+                           'version VARCHAR(64) NOT NULL,' +
+                           'PRIMARY KEY(id),'+
+                           'UNIQUE KEY(name, version)' +
+                           ')')
+
+        # bugzilla is number 1
+        self.store.execute('INSERT INTO tracker_name (name, version ) '+
+                           'VALUES ("bugzilla","3.2.5")')
+
         # Table 'trackers'
         self.store.execute('CREATE TABLE IF NOT EXISTS trackers (' +
                            'id INTEGER NOT NULL AUTO_INCREMENT,' +
                            'url VARCHAR(255) NOT NULL,' +
-                           'type VARCHAR(64) NOT NULL,' +
+                           'type INTEGER NOT NULL,' +
                            'retrieved_on DATETIME NOT NULL,' +
                            'PRIMARY KEY(id),' +
-                           'UNIQUE KEY(url)' +
+                           'UNIQUE KEY(url),' +
+                           'FOREIGN KEY(type)' +
+                           '  REFERENCES tracker_name (id)'+
+                           '    ON DELETE CASCADE' +
+                           '    ON UPDATE CASCADE' +
                            ')')
 
         # Table 'people'
@@ -306,7 +324,7 @@ class DBMySQL(DBDatabase):
                            '  REFERENCES trackers(id)' +
                            '    ON DELETE CASCADE' +
                            '    ON UPDATE CASCADE' +
-                           ')')                           
+                           ')')
 
         # Table 'issues'
         self.store.execute('CREATE TABLE IF NOT EXISTS issues (' +
@@ -385,7 +403,7 @@ class DBMySQL(DBDatabase):
         self.store.execute('CREATE TABLE IF NOT EXISTS comments (' +
                            'id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,' +
                            'issue_id INTEGER UNSIGNED NOT NULL,' +
-                           'comment_id INTEGER,'
+                           'comment_id INTEGER UNSIGNED,'
                            'text TEXT NOT NULL,' +
                            'submitted_by INTEGER UNSIGNED NOT NULL,' +
                            'submitted_on DATETIME NOT NULL,' +
