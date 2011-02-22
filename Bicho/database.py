@@ -293,7 +293,7 @@ class DBMySQL(DBDatabase):
                            ')')
 
         # bugzilla is number 1
-        self.store.execute('INSERT INTO tracker_name (name, version ) '+
+        self.store.execute('INSERT INTO tracker_types (name, version ) '+
                            'VALUES ("bugzilla","3.2.5")')
 
         # Table 'trackers'
@@ -305,7 +305,7 @@ class DBMySQL(DBDatabase):
                            'PRIMARY KEY(id),' +
                            'UNIQUE KEY(url),' +
                            'FOREIGN KEY(type)' +
-                           '  REFERENCES tracker_name (id)'+
+                           '  REFERENCES tracker_types (id)'+
                            '    ON DELETE CASCADE' +
                            '    ON UPDATE CASCADE' +
                            ')')
