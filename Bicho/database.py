@@ -657,16 +657,16 @@ class DBComment(object):
     __storm_table__ = 'comments'
 
     id = Int(primary=True)
-    comment = Unicode()
+    text = Unicode()
     submitted_by = Int()
     submitted_on = DateTime()
     issue_id = Int()
 
     issue = Reference(issue_id, DBIssue.id)
     submitted = Reference(submitted_by, DBPeople.id)
-    
-    def __init__(self, comment, submitted_by, submitted_on, issue_id):
-        self.comment = unicode(comment)
+
+    def __init__(self, text, submitted_by, submitted_on, issue_id):
+        self.text = unicode(text)
         self.submitted_by = submitted_by
         self.submitted_on = submitted_on
         self.issue_id = issue_id
