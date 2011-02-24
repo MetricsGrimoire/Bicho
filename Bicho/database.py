@@ -176,7 +176,7 @@ class DBDatabase:
         """
         submitted_by = self.insert_people(comment.submitted_by, tracker_id)
 
-        db_comment = DBComment(comment.comment, submitted_by, 
+        db_comment = DBComment(comment.comment, submitted_by.id,
                                comment.submitted_on, issue_id)
         self.store.add(db_comment)
         self.store.flush()
