@@ -222,7 +222,7 @@ class DBDatabase:
         changed_by = self.insert_people(change.changed_by, tracker_id)
         
         db_change = DBChange(change.field, change.old_value, change.new_value, 
-                             changed_by, change.changed_on, issue_id)
+                             changed_by.id, change.changed_on, issue_id)
         self.store.add(db_change)
         self.store.flush()
         return db_change
