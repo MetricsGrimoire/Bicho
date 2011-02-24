@@ -205,7 +205,7 @@ class DBDatabase:
         self.store.flush()
         return db_attachment
 
-    def _insert_change(self, change, issue_id):
+    def _insert_change(self, change, issue_id, tracker_id):
         """
         Insert a change for the issue X{issue_id}
 
