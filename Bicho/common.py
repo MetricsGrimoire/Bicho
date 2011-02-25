@@ -313,9 +313,9 @@ class Change:
     @type changed_on: C{datetime.datetime}
     """
     def __init__(self, field, old_value, new_value, changed_by, changed_on):
-        self.field = None
-        self.old_value = None
-        self.new_value = None
+        self.field = field
+        self.old_value = old_value
+        self.new_value = new_value
         
         if not isinstance(changed_by, People):
             raise ValueError('Parameter "changed_by" should be a %s instance. %s given.' %
