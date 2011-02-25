@@ -196,7 +196,12 @@ class DBDatabase:
         @return: the inserted attachment
         @rtype: L{DBAttachment}
         """
-        submitted_by = self.insert_people(attachment.submitted_by, tracker_id)
+        if attachment.submitted_by is not None:
+            submitter = self.insert_people(attachment.submitted_by,
+                                           tracker_id)
+            submitted_by = submitter.id
+        else:
+            submitted_by = None
 
         db_attachment = DBAttachment(attachment.name, attachment.description,
                                      attachment.url, submitted_by, 
@@ -292,9 +297,10 @@ class DBMySQL(DBDatabase):
                            'UNIQUE KEY(name, version)' +
                            ')')
 
-        # bugzilla is number 1
         self.store.execute('INSERT INTO tracker_types (name, version ) '+
                            'VALUES ("bugzilla","3.2.5")')
+        self.store.execute('INSERT INTO tracker_types (name, version ) '+
+                           'VALUES ("sourceforge","website")')
 
         # Table 'trackers'
         self.store.execute('CREATE TABLE IF NOT EXISTS trackers (' +
@@ -377,6 +383,49 @@ class DBMySQL(DBDatabase):
                            '    ON UPDATE CASCADE' +
                            ')')
 
+        # Table 'comments'
+        self.store.execute('CREATE TABLE IF NOT EXISTS comments (' +
+                           'id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,' +
+                           'issue_id INTEGER UNSIGNED NOT NULL,' +
+                           'comment_id INTEGER UNSIGNED,'
+                           'text TEXT NOT NULL,' +
+                           'submitted_by INTEGER UNSIGNED NOT NULL,' +
+                           'submitted_on DATETIME NOT NULL,' +
+                           'PRIMARY KEY(id),' +
+                           'INDEX comments_submitted_idx(submitted_by),' +
+                           'INDEX comments_issue_idx(issue_id),' +
+                           'FOREIGN KEY(submitted_by)' +
+                           '  REFERENCES people(id)' +
+                           '    ON DELETE SET NULL' +
+                           '    ON UPDATE CASCADE,' +
+                           'FOREIGN KEY(issue_id)' +
+                           '  REFERENCES issues(id)' +
+                           '    ON DELETE CASCADE' +
+                           '    ON UPDATE CASCADE' +
+                           ')')
+
+        # Table 'attachments'
+        self.store.execute('CREATE TABLE IF NOT EXISTS attachments (' +
+                           'id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,' +
+                           'issue_id INTEGER UNSIGNED NOT NULL,' +
+                           'name VARCHAR(64) NOT NULL,' +
+                           'description TEXT NOT NULL,' +
+                           'url VARCHAR(255) NOT NULL,' +
+                           'submitted_by INTEGER UNSIGNED,' +
+                           'submitted_on DATETIME,' +
+                           'PRIMARY KEY(id),' +
+                           'INDEX attachments_submitted_idx(submitted_by),' +
+                           'INDEX attachments_issue_idx(issue_id),' +
+                           'FOREIGN KEY(submitted_by)' +
+                           '  REFERENCES people(id)' +
+                           '    ON DELETE SET NULL' +
+                           '    ON UPDATE CASCADE,' +
+                           'FOREIGN KEY(issue_id)' +
+                           '  REFERENCES issues(id)' +
+                           '    ON DELETE CASCADE' +
+                           '    ON UPDATE CASCADE' +
+                           ')')
+
         # Table 'changes'
         self.store.execute('CREATE TABLE IF NOT EXISTS changes (' +
                            'id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,' +
@@ -396,27 +445,6 @@ class DBMySQL(DBDatabase):
                            'FOREIGN KEY(changed_by)' +
                            '  REFERENCES people(id)' +
                            '    ON DELETE SET NULL' +
-                           '    ON UPDATE CASCADE' +
-                           ')')
-
-        # Table 'comments'
-        self.store.execute('CREATE TABLE IF NOT EXISTS comments (' +
-                           'id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,' +
-                           'issue_id INTEGER UNSIGNED NOT NULL,' +
-                           'comment_id INTEGER UNSIGNED,'
-                           'text TEXT NOT NULL,' +
-                           'submitted_by INTEGER UNSIGNED NOT NULL,' +
-                           'submitted_on DATETIME NOT NULL,' +
-                           'PRIMARY KEY(id),' +
-                           'INDEX comments_submitted_idx(submitted_by),' +
-                           'INDEX comments_issue_idx(issue_id),' +
-                           'FOREIGN KEY(submitted_by)' +
-                           '  REFERENCES people(id)' +
-                           '    ON DELETE SET NULL' +
-                           '    ON UPDATE CASCADE,' +
-                           'FOREIGN KEY(issue_id)' +
-                           '  REFERENCES issues(id)' +
-                           '    ON DELETE CASCADE' +
                            '    ON UPDATE CASCADE' +
                            ')')
 
