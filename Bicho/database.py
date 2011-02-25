@@ -49,6 +49,26 @@ class DBDatabase:
         self.database = None
         self.store = None
 
+    def insert_supported_traker(self, name, version):
+        """
+        Insert a supported type of tracker.
+
+        @param name: name or type of the tracker
+        @type name: C{str}
+        @param version: version of the tracker
+        @type version: C{str}
+
+        @return: the inserted type
+        @rtype: L{DBSupportedTracker}
+        """
+        try:
+            db_sup = DBSupportedTracker(name, version)
+            self.store.add(db_sup)
+            self.store.commit()
+        except:
+            db_sup = self._get_db_supported_tracker(name, version)
+        return db_sup
+
     def insert_tracker(self, tracker):
         """
         Insert the given tracker.
@@ -60,7 +80,13 @@ class DBDatabase:
         @rtype: L{DBTracker}
         """
         try:
-            db_tracker = DBTracker(tracker.url, tracker.type)
+            db_sup = self._get_db_supported_tracker(tracker.name,
+                                                    tracker.version)
+        except:
+            raise
+
+        try:
+            db_tracker = DBTracker(tracker.url, db_sup.id)
             self.store.add(db_tracker)
             self.store.commit()
         except:
@@ -68,7 +94,6 @@ class DBDatabase:
             db_tracker.retrieved_on = datetime.datetime.now()
             self.store.commit()
         return db_tracker
-
 
     def insert_people(self, people, tracker_id):
         """
@@ -232,6 +257,27 @@ class DBDatabase:
         self.store.flush()
         return db_change
 
+    def _get_db_supported_tracker(self, name, version):
+        """
+        Get the supported tracker based on the given name and version.
+
+        @param name: name or type of the tracker
+        @type name: C{str}
+        @param version: version ot the tracker
+        @type version: C{str}
+
+        @return: The selected supported tracker.
+        @rtype: L{DBSupportedTracker}
+
+        @raise NotFoundError: when the supported type of tracker is not found.
+        """
+        db_sup = self.store.find(DBSupportedTracker,
+                                 DBSupportedTracker.name == unicode(name),
+                                 DBSupportedTracker.version == unicode(version)).one()
+        if not db_sup:
+            raise NotFoundError('Supported tracker %s (v. %s) not found' % (name, version))
+        return db_sup
+        
     def _get_db_tracker(self, url):
         """
         Get the tracker based on the given URL.
@@ -249,7 +295,7 @@ class DBDatabase:
         if not db_tracker:
             raise NotFoundError('Tracker %s not found' % url)
         return db_tracker
-    
+
     def _get_db_people(self, user_id, tracker_id):
         """
         Get the identity based on the given id.
@@ -289,18 +335,13 @@ class DBMySQL(DBDatabase):
         self.store = Store(self.database)
 
         # Table 'tracker_types'
-        self.store.execute('CREATE TABLE IF NOT EXISTS tracker_types (' +
+        self.store.execute('CREATE TABLE IF NOT EXISTS supported_trackers (' +
                            'id INTEGER NOT NULL AUTO_INCREMENT,' +
                            'name VARCHAR(64) NOT NULL,' +
                            'version VARCHAR(64) NOT NULL,' +
                            'PRIMARY KEY(id),'+
                            'UNIQUE KEY(name, version)' +
                            ')')
-
-        self.store.execute('INSERT INTO tracker_types (name, version ) '+
-                           'VALUES ("bugzilla","3.2.5")')
-        self.store.execute('INSERT INTO tracker_types (name, version ) '+
-                           'VALUES ("sourceforge","website")')
 
         # Table 'trackers'
         self.store.execute('CREATE TABLE IF NOT EXISTS trackers (' +
@@ -449,13 +490,43 @@ class DBMySQL(DBDatabase):
                            ')')
 
 
+class DBSupportedTracker(object):
+    """
+    Maps elements from X{supported_trackers} table.
+
+    @param name: name or type of the supported tracker
+    @type type: C{str}
+    @param version: version of tracker
+    @type version: C{str}
+
+    @ivar __storm_table__: Name of the database table.
+    @type __storm_table__: C{str}
+
+    @ivar id: Supported tracker identifier.
+    @type id: L{storm.locals.Int}
+    @ivar type: name or type of the supported tracker.
+    @type type: L{storm.locals.Unicode}
+    @ivar version: version of tracker.
+    @type version: L{storm.locals.Unicode}
+    """
+    __storm_table__ = 'supported_trackers'
+
+    id = Int(primary=True)
+    name = Unicode()
+    version = Unicode()
+
+    def __init__(self, name, version):
+        self.name = unicode(name)
+        self.version = unicode(version)
+
+
 class DBTracker(object):
     """
     Maps elements from X{trackers} table.
 
     @param url: URL of the tracker
     @type url: C{str}
-    @param type: type of the tracker
+    @param type: type of tracker
     @type type: C{str}
 
     @ivar __storm_table__: Name of the database table.
@@ -465,21 +536,25 @@ class DBTracker(object):
     @type id: L{storm.locals.Int}
     @ivar url: URL of the tracker.
     @type url: L{storm.locals.Unicode}
-    @ivar type: Type of the tracker.
+    @ivar type: Type of supported tracker.
     @type type: L{storm.locals.Unicode}
     @ivar retrieved_on: Shows when the tracker was retrieved.
     @type retrieved_on: L{storm.locals.DateTime}
+    @ivar trktype: Reference to {DBTrackerType} object.
+    @type trktype: L{storm.locals.Reference}
     """
     __storm_table__ = 'trackers'
 
     id = Int(primary=True)
     url = Unicode()
-    type = Unicode()
+    type = Int()
     retrieved_on = DateTime()
+
+    supported = Reference(type, DBSupportedTracker.id)
 
     def __init__(self, url, type):
         self.url = unicode(url)
-        self.type = unicode(type)
+        self.type = type
         self.retrieved_on = datetime.datetime.now()
 
 

@@ -64,12 +64,15 @@ class Tracker:
 
     @param url: URL of the issue tracker
     @type url: C{str}
-    @param type: type of the issue tracker
-    @type type: C{str}
+    @param name: name or type of the issue tracker
+    @type name: C{str}
+    @param version: version of the issue tracker
+    @type version: C{str}
     """
-    def __init__(self, url, type):
+    def __init__(self, url, name, version):
         self.url = url
-        self.type = type
+        self.name = name
+        self.version = version
 
 
 class Issue:
