@@ -262,7 +262,7 @@ class Attachment:
     @raise ValueError: raised when the type of the parameters
      is not valid.
     """
-    def __init__(self, url, submmitted_by=None, submitted_on=None):
+    def __init__(self, url, submitted_by=None, submitted_on=None):
         self.name = None
         self.description = None
         self.url = url
@@ -294,7 +294,7 @@ class Attachment:
         @param desc: description of the attachment
         @type desc: C{str}
         """
-        self.name = name
+        self.description = desc
 
 
 class Change:
