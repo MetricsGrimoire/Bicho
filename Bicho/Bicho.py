@@ -37,5 +37,5 @@ class Bicho:
         self.backend = create_backend (options.type)
         printdbg ("Bicho object created, options and backend initialized")
 
-    def run(self):
-        self.backend.run()
+    def run(self, url):
+        self.backend.run(url)

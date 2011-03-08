@@ -154,7 +154,7 @@ def main():
         sys.exit(2)
 
     bicho = Bicho.Bicho ()
-    bicho.run ()
+    bicho.run(args[1])
 
 
 if __name__ == "__main__":
