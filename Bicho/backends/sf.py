@@ -16,627 +16,589 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Authors:  Daniel Izquierdo Cortazar   <dizquierdo@glibresoft.es>
-#           Ronaldo Maia                <romaia@async.com.br>
-#           Santiago Dueñas <sduenas@libresoft.es>
-#
+# Authors:  Santiago Dueñas <sduenas@libresoft.es>
+#           Ronaldo Maia <romaia@async.com.br>
+#           Daniel Izquierdo Cortazar <dizquierdo@glibresoft.es>
 #
 
 import re
+import urlparse
 import random
-import urllib
+import urllib2
 import datetime
 import os
 
-from BeautifulSoup import BeautifulSoup
+import BeautifulSoup
+from storm.locals import *
 
-from Bicho.utils import url_get_attr
+from Bicho.common import Issue, People, Tracker, Comment, Attachment, Change
 from Bicho.backends import register_backend
-from Bicho.utils import debug, Config
-from Bicho.database import *
-from Bicho.common import *
+from Bicho.db.database import *
 
-# import from baseparser.py BFComment used in remove_comments method
-from BeautifulSoup import Comment as BFComment
+
+SOURCEFORGE_DOMAIN = 'http://sourceforge.net'
+
+# SourceForge patterns for HTML fields
+NUM_ISSUES_PATTERN = re.compile('Results&nbsp;-&nbsp;Display')
+ISSUE_LINK_PATTERN = re.compile('/tracker/\?func=detail')
+ISSUE_ID_PATTERN = re.compile('.*Detail: ([0-9]+) -')
+ISSUE_SUMMARY_PATTERN = re.compile('.*- (.+)')
+ISSUE_DETAILS_PATTERN = re.compile('Details:')
+ISSUE_SUBMISSION_PATTERN = re.compile('Submitted:')
+ISSUE_SUBMISSION_DATE_PATTERN = re.compile('.*\- ([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} .+)')
+ISSUE_PRIORITY_PATTERN = re.compile('Priority:')
+ISSUE_STATUS_PATTERN = re.compile('Status:')
+ISSUE_RESOLUTION_PATTERN = re.compile('Resolution:')
+ISSUE_ASSIGNED_TO_PATTERN = re.compile('Assigned:')
+ISSUE_CATEGORY_PATTERN = re.compile('Category:')
+ISSUE_GROUP_PATTERN = re.compile('Group:')
+ISSUE_VISIBILITY_PATTERN = re.compile('Visibility:')
+ISSUE_COMMENT_CLASS_PATTERN = re.compile('artifact_comment')
+ISSUE_COMMENT_DATE_PATTERN = re.compile('.*Date: ([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} .+)')
+
+
+class NotValidURLError(Exception):
+    """
+    Not Valid URL
+    """
+    pass
+
+
+class SourceForgeParserError(Exception):
+    """
+    Error parsing SourceForge webpages
+    """
+    pass
+
+
+class SourceForgeIssue(Issue):
+    """
+    """
+    def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
+        """
+        """
+        Issue.__init__(self, issue, type, summary, desc,
+                       submitted_by, submitted_on)
+        self.category = None
+        self.group = None
+    
+    def set_category(self, category):
+        """
+        """
+        self.category = category
+    
+    def set_group(self, group):
+        """
+        """
+        self.group = group
+
+
+class DBSourceForgeIssueExt(object):
+    """
+    Maps elements from X{issues_ext_sf} table.
+
+    @param category: category of the issue
+    @type category: C{str}
+    @param group: group of the issue
+    @type group: C{str}
+    @param issue_id: identifier of the issue
+    @type issue_id: C{int}
+
+    @ivar __storm_table__: Name of the database table.
+    @type __storm_table__: C{str}
+
+    @ivar id: Extra issue fields identifier.
+    @type id: L{storm.locals.Int}
+    @ivar category: Category of the issue.
+    @type category: L{storm.locals.Unicode}
+    @ivar group_sf: Group of the issue.
+    @type group_sf: L{storm.locals.Unicode}
+    @ivar issue_id: Issue identifier.
+    @type issue_id: L{storm.locals.Int}
+    @ivar issue: Reference to L{DBIssue} object.
+    @type issue: L{storm.locals.Reference}
+    """
+    __storm_table__ = 'issues_ext_sf'
+
+    id = Int(primary=True)
+    category = Unicode()
+    group_sf = Unicode()
+    issue_id = Int()
+
+    issue = Reference(issue_id, DBIssue.id)
+    
+    def __init__(self, category, group, issue_id):
+        self.category = unicode(category)
+        self.group_sf = unicode(group)
+        self.issue_id = issue_id
+
+
+class DBSourceForgeIssueExtMySQL(DBSourceForgeIssueExt):
+    """
+    MySQL subclass of L{DBSourceForgeIssueExt}
+    """
+    __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_sf ( \
+                     id INTEGER NOT NULL AUTO_INCREMENT, \
+                     category VARCHAR(32) NOT NULL, \
+                     group_sf VARCHAR(32) NOT NULL, \
+                     issue_id INTEGER UNSIGNED NOT NULL, \
+                     PRIMARY KEY(id), \
+                     UNIQUE KEY(issue_id), \
+                     INDEX ext_issue_idx(issue_id), \
+                     FOREIGN KEY(issue_id) \
+                       REFERENCES issues (id) \
+                         ON DELETE CASCADE \
+                         ON UPDATE CASCADE \
+                     )'
+
+
+class DBSourceForgeBackend(DBBackend):
+    """
+    Adapter for SourceForge backend.
+    """
+    def __init__(self):
+        self.MYSQL_EXT = [DBSourceForgeIssueExtMySQL]
+
+    def insert_issue_ext(self, store, issue, issue_id):
+        """
+        Insert the given extra parameters of issue with id X{issue_id}.
+
+        @param store: database connection
+        @type store: L{storm.locals.Store}
+        @param issue: issue to insert
+        @type issue: L{SourceForgeIssue}
+        @param issue_id: identifier of the issue
+        @type issue_id: C{int}
+
+        @return: the inserted extra parameters issue
+        @rtype: L{DBSourceForgeIssueExt}
+        """
+        try:
+            db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
+            store.add(db_issue_ext)
+            store.flush()
+            return db_issue_ext
+        except:
+            store.rollback()
+            raise
+
+    def insert_comment_ext(self, store, comment, comment_id):
+        """
+        Does nothing
+        """
+        pass
+    
+    def insert_attachment_ext(self, store, attch, attch_id):
+        """
+        Does nothing
+        """
+        pass
+    
+    def insert_change_ext(self, store, change, change_id):
+        """
+        Does nothing
+        """
+        pass
+
 
 class SourceForgeParser():
-    # FIXME: Sourceforge assignee is the full name instead of the username.
-    # All other fields are the username.
+    """
+    """
+    def parse_issues_list(self, html):
+        """
+        """
+        soup = BeautifulSoup.BeautifulSoup(html)
+        hrefs = soup.findAll(href=ISSUE_LINK_PATTERN)
 
-    paths = dict(
-        summary     = '/html/body/div/div[2]/div[4]/div/div/span[2]/strong',
-        description = '/html/body/div/div[2]/div[4]/div[2]/p[1]',
-        datesubmitted    = '/html/body/div/div[2]/div[4]/div[2]/div[1]/p[1]',
-        submittedby    = '/html/body/div/div[2]/div[4]/div[2]/div/p/a',
-        priority    = '/html/body/div/div[2]/div[4]/div[2]/div[1]/p[2]',
-        status      = '/html/body/div/div[2]/div[4]/div[2]/div[1]/p[3]',
-        resolution  = '/html/body/div/div[2]/div[4]/div[2]/div[1]/p[4]',
-        assignedto    = '/html/body/div/div[2]/div[4]/div[2]/div[2]/p[1]',
-        category    = '/html/body/div/div[2]/div[4]/div[2]/div[2]/p[2]',
-        group       = '/html/body/div/div[2]/div[4]/div[2]/div[2]/p[3]',
-    )
+        ids = []
+        for href in hrefs:
+            query = urlparse.urlsplit(href.get('href')).query
+            ids.append(urlparse.parse_qs(query)['aid'][0])
+        return ids
 
-    field_map = {
-        'status_id': u'status',
-        'resolution_id': u'resolution',
-        'assigned_to': u'assignedto',
-    }
+    def parse_issue(self, html):
+        """
+        """
+        soup = BeautifulSoup.BeautifulSoup(html,
+                                           convertEntities=BeautifulSoup.BeautifulSoup.XHTML_ENTITIES)
+        self.__prepare_soup(soup)
 
-    # FIXME: We should have a way to detecte reponened bugs
-    status_map = {
-        'Open': u'OPEN',
-        'Pending': u'RESOLVED', #XXX
-        'Closed': u'RESOLVED',
-        'Deleted': u'RESOLVED',
-    }
-
-    resolution_map = {
-        'Fixed': u'FIXED',
-        'Invalid': u'INVALID',
-        'Duplicate': u'DUPLICATE',
-        "Works For Me": u'INVALID'
-        # Remind, Accepted
-    }
-    
-    # str_to_date function convert a string with the form YYYY-MM-DD HH:MM
-    # to an accepted (well-formed) date from baseparsers.py
-    
-    def str_to_date(self,string):
-      if not string:
-        return
-      
-      date, time, extra = string.split(' ')
-      params = [int(i) for i in date.split('-') + time.split(':')]
-      full_date = datetime.datetime(*params)
-      return full_date
-    
-    # In order to use the same name of Dani's code I changed the names of
-    # mathods to capital
-    def get_comments(self,dataBugs,soup):
-        try :
-          if self.getNumChAttComm('Comment',soup):
-            for tg in soup({'h4':True}):
-              # This can be done using an if may be a loop is not necessary, but it works
-              for ed in tg.findAllNext({'tr':True},id=re.compile('artifact\_comment\_\d+')):
-                text = ''
-                datesub = ''
-                sender = ''
-                aux = ed.findAll({'p':True})
-                datesub = aux[0].contents[0].split('Date:')[1]
-                # Some bugs has been sent by a user not registered maybe or a
-                # user who is not in ddbb anymore (I am not sure) why is it
-                # possible to have a "nobody" sender?, so if the user is not
-                # registered we took "nobody" as default because if the user is
-                # registered should have its own user name
-
-                # This bug has "nobody" as sender
-                # http://sourceforge.net/tracker/?func=detail&aid=1711119&group_id=138511&atid=740882
-                try :
-                  sender = aux[0].contents[3].contents[0]
-                except:
-                  sender = "nobody"
-
-                r = re.compile('google\_ad\_section\_(start|end)')
-                text = r.sub('',''.join(aux[1].findAll(text=True))).strip()
-                
-                c = Comment(text, sender, self.str_to_date(datesub.strip()))
-                dataBugs["Comments:"].append(c)
-                #debug("Comments : %s" % comments  )
-                #return comments
-          else :
-            try:
-              #NoneDate = self.str_to_date("1975-05-18 04:00")
-              #comnt = Bug.Comment()
-              #comnt.IdBug = None
-              #comnt.DateSubmitted = NoneDate
-              #comnt.SubmittedBy = None
-              #comnt.Comment = None
-              #comments.append(comnt)
-              #return comments
-              pass
-            except:
-              debug("Error Comments None")
-        except :
-          debug("Errors getting Comments")
-
-    # New change method because the old one does not work at all
-    def get_changes(self,dataBugs,soup):
-      changes = []
-      try:
-        if self.getNumChAttComm('Change',soup):
-          for tg in soup('h4'): 
-            if tg.has_key('id') and tg['id'] == 'changebar':
-              for tgg in tg.findNext({'tbody':True}).findAllNext({'tr':True}):
-                aux = tgg.findAll({'td':True})
-                field = str(aux[0].contents[0]).strip()
-                old_value = str(aux[1].contents[0]).strip()
-                new_value = 'unknown' # FIXME
-                changed_on = self.str_to_date(str(aux[2].contents[0]).strip())
-                changed_by = str(aux[3].contents[0]).strip()
-                
-                change = Change(field, old_value, new_value, changed_by, changed_on)
-                
-                dataBugs["Changes:"].append(change)
-              #debug("Changes : %s" % changes)
-              #return changes
-        else :
-          try:
-            #NoneDate = self.str_to_date("1975-05-18 04:00")
-            #change = Bug.Change()
-            #change.IdBug = None
-            #change.Field = None
-            #change.OldValue = None
-            #change.Date = NoneDate
-            #change.SubmittedBy = None
-            #changes.append(change)
-            #return changes
-            pass
-          except :
-            debug("Error Changes None")
-      except : 
-        debug("Errors getting the Changes")
-
-    # New attachment method because the old one does not work at all
-    def get_attachments(self,dataBugs, soup):
-      attachs = []
-      try :
-        if self.getNumChAttComm('Attached File',soup):
-          for tg in soup('h4'):
-            if tg.has_key('id') and tg['id'] == 'filebar':
-              for att in soup({'tbody':True})[1].findAll({'tr':True}):
-                aux = att.findAll({'td':True})
-                
-                name = str(aux[0].contents[1])
-                description = str(aux[1].contents[1])
-                url = str(SourceForgeFrontend.domain+aux[2].a['href'])
-                
-                attachment = Attachment(url)
-                attachment.set_name(name)
-                attachment.set_description(description)
-                dataBugs["Attachments:"].append(attachment)
-                #debug("Attach : %s" % attachs)
-                #return attachs
-        else :
-          try:
-            #attach = Bug.Attachment()
-            #attach.IdBug = None
-            #attach.Name = None
-            #attach.Description = None
-            #attach.Url = None
-            #attachs.append(attach) 
-            #return attachs
-            pass
-          except:
-            debug("Error Attachs None")
-      except :
-        debug("Errors getting Attachments") 
-        #return attachs
-
-    def getNumChAttComm(self,which, soup):
-      # This is one way to know if there are info
-      # of comments, changes or attachments
-      # SF has a Changes|Attachments|Comments ( X )
-      # This calculate the length of the line and if it is
-      # more than 3 it *has* a number
-      # Another way is to find a number inside the string
-      try:
-        for tg in soup({'h4':True}):
-          if str(tg.contents).find(which) > 0:
-            for l in str(tg.contents):
-              if l.isdigit():
-                return True
-            return False
-      except:
-        debug("Error getting ChAttComm")
-
-    
-    def get_submitted_by(self,dataBugs, soup):
-      try:
-        for tg in soup.findAll({'a':True}):
-          if tg.parent.name == 'p' and "/users/" in tg["href"]:
-            #debug("SubmittedBy : %s" % tg.contents[0])
-            dataBugs["Submitted By:"] = tg.contents[0]
-      except Exception, e:
-        print "Error getting SubmittedBy. %s" % e
-
-    
-    def get_submitted_on(self,dataBugs, soup):
-      try:
-        for pvc in soup({'label':True}):
-          if 'Submitted' in str(pvc.contents):
-            datex = pvc.findNext({'p':True})
-        submd = str(datex).split(' - ')[1][:-4]
-        final_date = self.str_to_date(submd)
-        #debug("DateSubmitted %s " % final_date)
-        dataBugs["Date Submitted:"] = final_date
-      except Exception, e:
-        print "Error getting submitted_on. %s" % e
-    
-    
-    def get_priority(self,dataBugs,soup):
-      try:
-        for priority in soup({'label':True}):
-          if 'Priority' in str(priority.contents):
-            #debug("Priority : %s" % priority.findNext('p').contents)
-            dataBugs["Priority: "] = priority.findNext('p').contents[0]
-      except:
-        debug("Error getting Priority")
-      
-
-    def get_resolution(self,dataBugs,soup):
-      try:
-        for resolution in soup({'label':True}):
-          if 'Resolution' in str(resolution.contents):
-            #debug("Resolution : %s" % resolution.findNext('p').contents)
-            dataBugs["Resolution: "] = resolution.findNext('p').contents[0]
-      except:
-        debug("Error getting Resolution")
-    
-    def get_status(self,dataBugs,soup):
-      try:
-        for status in soup({'label':True}):
-          if 'Status' in str(status.contents):
-            #debug("Status : %s" % status.findNext('p').contents)
-            dataBugs["Status: "] = status.findNext('p').contents[0]
-      except:
-        debug("Error getting Status")
-    
-    def get_group(self,dataBugs,soup):
-      try:
-        for group in soup({'label':True}):
-          if 'Group' in str(group.contents):
-            #debug("Group : %s" % group.findNext('p').contents)
-            dataBugs["Group: "] = group.findNext('p').contents[0]
-      except:
-        debug("Error getting Group")
-
-
-    def get_visibility(self,soup): # Not used
-      try:
-        for visibility in soup({'label':True}):
-          if 'Visibility' in str(visibility.contents):
-            #debug("Visibility : %s" % visibility.findNext('p').contents)
-            return visibility.findNext('p').contents  
-      except:
-        debug("Error getting Visbility")
-    
-    def get_category(self,dataBugs,soup):
-      try:
-        for category in soup({'label':True}):
-          if 'Category' in str(category.contents):
-            #debug("Category : %s" % category.findNext('p').contents)
-            dataBugs["Category: "] = category.findNext('p').contents[0]
-      except:
-        debug("Error getting Category")
-
-    def get_summary(self,dataBugs, soup):
-      try:
-        for tg in soup.findAll({'strong':True}):
-          if tg.parent.name == 'span':
-            if 'ID:' in tg.contents[0]:
-              summary, idBug = tg.contents[0].split(' - ID: ') 
-              #debug("Summary : %s" % summary  )
-              dataBugs["Summary: "] = summary
-      except:
-        debug("Error getting Summary")
-
-    def get_id(self, dataBugs, soup): # this is the id of the bug
-      try :
-        for tg in soup.findAll({'strong':True}):
-          if tg.parent.name == 'span':
-            if 'ID:' in tg.contents[0]:
-              summary, idBug = tg.contents[0].split(' - ID: ')
-              dataBugs['IdBug'] = int(idBug)
-              return int(idBug)
-      except:
-        debug("Error getting idBug")
-
-    def get_description(self,dataBugs, soup):
-      try:
-        for detail in soup({'label':True}):
-          if "Details:" in str(detail.contents):
-            
-            r = re.compile('google\_ad\_section\_(start|end)')
-            desc = r.sub('',''.join(detail.findNext({'p':True})(text=True))).strip()
-            #debug("Description : %s" % det  )
-            dataBugs["Description:"] = desc
-      except:
-        debug("Error getting Description")
-
-    
-    def get_assigned_to(self, dataBugs,soup):
-      try:
-        for pvc in soup({'label':True}):
-          if 'Assigned:' in str(pvc.contents):
-            aux = pvc.findNext({'p':True})
-            #debug("AssignedTo : %s" % str(aux.contents[0]))
-            dataBugs["Assigned To: "] = str(aux.contents[0])
-      except:
-        debug("Error getting Assigned")
-
-    @classmethod
-    def get_total_bugs(cls, html):
-        soup = BeautifulSoup(html)
-        aux = soup(text=True)
-        for tg in aux:
-          if "Results" and "Display" in tg:
-            total_bugs = tg.split('&nbsp')[4].split(';')[1]
-            return int(total_bugs)
-
-    @classmethod
-    def get_bug_links(cls, html):
-        soup = BeautifulSoup(html)
-        bugs = []
-
-        links = soup.findAll({'a':True})
-        for link in links:
-            url_str = str(link.get('href'))
-
-            # Bugs URLs
-            if re.search("tracker", url_str) and re.search("aid", url_str):
-                bugs.append(url_get_attr(url_str, 'aid'))
-
-        return bugs
-
-
-class SourceForgeFrontend():
-    required_fields = ['project', 'group_id', 'atid']
-    domain = "http://sourceforge.net"
-    # the following are the stuff added because of compatibility and
-    # functionality
-    # added for compatibility with dani's bicho
-    # getting url from options and extracting group_id and atid
-    options = Config()
-    url = options.url
-    group_id = url.split('?')[1].split('=')[1]
-    atid = url.split('&')[1].split('=')[1]
-    sfparser = SourceForgeParser()  # instance used in _get_field method
-    total_bugs = 0
-    _current_bug = 0
-    _cache = {}
-    # very important dictionary where all data is going to be sotred
-    dataBugs = {"Submitted By:" : "",
-                "Date Submitted:" : "",
-                "Last Updated By:" : "", # not used
-                "Date Last Updated:" : "", # not used
-                "Number of Comments:" : "", # not used
-                "Number of Attachments:" : "", # not used
-                "Category: " : "",
-                "Group: " : "",
-                "Assigned To: " : "",
-                "Priority: " : "",
-                "Status: " : "",
-                "Resolution: " : "",
-                "Summary: " : "",
-                "Private: " : "", # not used
-                "Description:" : "",
-                "URL:" : "",
-                "IdBug:" : "",
-                "Comments:" : [],
-                "Attachments:" : [],
-                "Changes:" : []}
-    
-    fields = ['comments', 'changes', 'attachments', 'submitted_by', 'submitted_on',
-              'priority', 'status', 'resolution', 'group', 'visibility', 'category',
-              'summary', 'id', 'description', 'assigned_to']
-
-    def get_bug_url(self, idBug):
-        bug_url = "%s/tracker/?func=detail&aid=%s&group_id=%s&atid=%s" % (
-                    self.domain, idBug, self.group_id, self.atid)
-        return bug_url
-
-    def prepare(self):
-        bugs = []
-        urls = []
-
-        #self.group_id = self.options['group_id']
-        #self.atid = self.options['atid']
-        print self.url
-        url = "%s/tracker/?limit=100&group_id=%s&atid=%s" % (
-                    self.domain, self.group_id, self.atid)
-        html = self.read_page(url)
-
-        urls = []
-        self.total_bugs = SourceForgeParser.get_total_bugs(html)
-        for i in xrange(0, self.total_bugs, 100):
-            urls.append(url+'&offset=%s' % i)
-
-        for url in urls:
-            html = self.read_page(url)
-            bugs.extend(SourceForgeParser.get_bug_links(html))
-            #debug ("Total %s " % len(bugs))
-        self.bugs = bugs
-    
-    def read_page(self, url):
-        debug('Reading page: %s' % url)
-        if url.startswith('http:'):
-            data = urllib.urlopen(url).read()
-        else:
-            data = file(url).read()
-
-        return data
-
-    #def get_total_bugs(self):
-      #   return len(self.bugs)
-
-    def get_next_bug(self):
         try:
-            bug = self.bugs[self._current_bug]
-        except IndexError:
-            return None
-        self._current_bug += 1
-        return bug
-    
-    
-    # methods from baseparser.py
-    def remove_comments(cls, soup):
-        cmts = soup.findAll(text=lambda text:isinstance(text,
-                            BFComment))
-        [comment.extract() for comment in cmts] 
+            id = self.__parse_issue_id(soup)
+            summary = self.__parse_issue_summary(soup)
+            desc = self.__parse_issue_description(soup)
+            submission = self.__parse_issue_submission(soup)
+            priority = self.__parse_issue_priority(soup)
+            status = self.__parse_issue_status(soup)
+            resolution = self.__parse_issue_resolution(soup)
+            asignation = self.__parse_issue_assigned_to(soup)
+            category = self.__parse_issue_category(soup)
+            group = self.__parse_issue_group(soup)
+            visibility = self.__parse_issue_visibility(soup)
+            comments = self.__parse_issue_comments(soup)
+            attachments = self.__parse_issue_attachments(soup)
+            changes = self.__parse_issue_changes(soup)
+        except:
+            raise
 
-    
-    def set_html(self, html):
-      self.soup = BeautifulSoup(html)
-   
-    def xpath(cls, path, soup):
-        elements = path.split('/')
+        submitted_by = People(submission['id'])
+        submitted_by.set_name(submission['name'])
+        submitted_on = submission['date']
+        assigned_to = People(asignation)
 
-        cur = soup
-        for e in elements:
-            if not e:
-                continue
+        issue = SourceForgeIssue(id, 'bug', summary, desc,
+                                 submitted_by, submitted_on)
+        issue.set_priority(priority)
+        issue.set_status(status, resolution)
+        issue.set_assigned(assigned_to)
+        issue.set_category(category)
+        issue.set_group(group)
 
-            index = 0
-            if e.endswith(']'):
-               e, index = e.strip(']').split('[')
-               index = int(index)-1
-            
-            children = cur.findAll(e, recursive=False)
-            try:
-                cur = children[index]
-            except IndexError:
-                # Try to workaround tbody being optional.
-                if e == 'tbody':
-                    continue
-                #return None
-        return cur
-    
-    def remove_br(cls, soup):
-        cls.remove_tag(soup, 'br')
+        for comment in comments:
+            submitted_by = People(comment['by']['id'])
+            submitted_by.set_name(comment['by']['name'])
+            issue.add_comment(Comment(comment['desc'], submitted_by,
+                                      comment['date']))
 
-    def remove_tag(cls, soup, tag):
-        [t.extract() for t in soup.findAll(tag)]
-    
-    def getDataBug(self):
-        issue = Issue(self.dataBugs["IdBug:"], 'bug', self.dataBugs["Summary: "], 
-                      self.dataBugs["Description:"], 
-                      People(self.dataBugs["Submitted By:"]),
-                      self.dataBugs["Date Submitted:"])
-        issue.set_priority(self.dataBugs["Priority: "])
-        issue.set_status(self.dataBugs["Status: "], self.dataBugs["Resolution: "])
-        issue.set_assigned(People(self.dataBugs["Assigned To: "]))
+        for attachment in attachments:
+            a = Attachment(attachment['url'])
+            a.set_name(attachment['filename'])
+            a.set_description(attachment['desc'])
+            issue.add_attachment(a)
 
-        # FIXME: a class is needed to store this fields
-        #bug.Category = self.dataBugs["Category: "]
-        #bug.Group = self.dataBugs["Group: "]
-
-        for comment in self.dataBugs["Comments:"]:
-            issue.add_comment(comment)
-
-        for attachment in self.dataBugs["Attachments:"]:
-            issue.add_attachment(attachment)
-
-        for change in self.dataBugs["Changes:"]:
-            issue.add_changes(change)
+        for change in changes:
+            changed_by = People(change['by']['id'])
+            changed_by.set_name(change['by']['name'])
+            issue.add_change(Change(change['field'], change['old_value'],
+                                    'unknown', changed_by, change['date']))
 
         return issue
 
-    def _get_field(self, dataBugs, field, soup): 
-      # object is the SourceForgeParser class because it has get field methods
+    def get_total_issues(self, html):
+        """
+        """
+        soup = BeautifulSoup.BeautifulSoup(html)
+        text = soup.find(text=NUM_ISSUES_PATTERN)
 
-        value = None
-        if hasattr(self.sfparser, 'get_%s' % field):
-            method = getattr(self.sfparser, 'get_%s' % field)
-            try:
-                method(dataBugs,soup)
-            except:
-              print "Fallo Method %s" % field
-        elif field in self.sfparser.paths.keys():
-            tag = self.xpath(self.sfparser.paths[field], soup)
-            if tag and tag.contents:
-                value = tag.contents[0].strip()
+        if text is None:
+            raise SourceForgeParserError('total of issues not found')
+
+        nissues = text.split('&nbsp')[4].split(';')[1]
+        return int(nissues)
+
+    def __parse_issue_id(self, soup):
+        """
+        """
+        try :
+            m = ISSUE_ID_PATTERN.match(unicode(soup.title.string))
+            return m.group(1)
+        except:
+            print('Error parsing issue id')
+
+    def __parse_issue_summary(self, soup):
+        """
+        """
+        try:
+            m = ISSUE_SUMMARY_PATTERN.match(unicode(soup.title.string))
+            return m.group(1)
+        except:
+            print('Error parsing issue summary')
+
+    def __parse_issue_description(self, soup):
+        """
+        """
+        try:
+            # Details is a list of unicode strings, so the
+            # strings are joined into a string to build the
+            # description field.
+            details = soup.find({'label': True},
+                                text=ISSUE_DETAILS_PATTERN).findNext('p')
+            desc = u''.join(details.contents)
+            return desc
+        except:
+            print('Error parsing issue description')
     
+    def __parse_issue_submission(self, soup):
+        """
+        """
+        try:
+            submission = {}
+
+            submitted = soup.find({'label': True},
+                                  text=ISSUE_SUBMISSION_PATTERN).findNext('p')
+
+            submission['name'] = submitted.a.get('title')
+            submission['id'] = submitted.a.string
+            submission['date'] = self.__str_to_date(ISSUE_SUBMISSION_DATE_PATTERN.match(submitted.contents[2]).group(1))
+            return submission
+        except:
+            print('Error parsing issue submission')
+
+    def __parse_issue_priority(self, soup):
+        """
+        """
+        try:
+            priority = soup.find({'label': True},
+                                 text=ISSUE_PRIORITY_PATTERN).findNext('p')
+            return priority.contents[0]
+        except:
+            print('Error parsing issue priority')
     
-    def parse_bug(self, html=None):
-      #bug = Bug.Bug() # Very important bug object because of the compatibility with
-                # Dani's code, is almost the same as ours but it works different
-        if html:
-            soup = BeautifulSoup(html)
+    def __parse_issue_status(self, soup):
+        """
+        """
+        try:
+            status = soup.find({'label': True},
+                               text=ISSUE_STATUS_PATTERN).findNext('p')
+            return status.contents[0]
+        except:
+            print('Error parsing issue status')
+
+    def __parse_issue_resolution(self, soup):
+        """
+        """
+        try:
+            resolution = soup.find({'label': True},
+                                   text=ISSUE_RESOLUTION_PATTERN).findNext('p')
+            return resolution.contents[0]
+        except:
+            print('Error parsing issue resolution')
+    
+    def __parse_issue_assigned_to(self, soup):
+        """
+        """
+        try:
+            assigned = soup.find({'label': True},
+                                 text=ISSUE_ASSIGNED_TO_PATTERN).findNext('p')
+            return assigned.contents[0]
+        except:
+            print('Error parsing issue assigned to')
+
+    def __parse_issue_category(self, soup):
+        """
+        """
+        try:
+            category = soup.find({'label': True},
+                                 text=ISSUE_CATEGORY_PATTERN).findNext('p')
+            return category.contents[0]
+        except:
+            print('Error parsing issue category')
+    
+    def __parse_issue_group(self, soup):
+        """
+        """
+        try:
+            group = soup.find({'label': True},
+                              text=ISSUE_GROUP_PATTERN).findNext('p')
+            return group.contents[0]
+        except:
+            print('Error parsing issue group')
+    
+    def __parse_issue_visibility(self, soup):
+        """
+        """
+        try:
+            visibility = soup.find({'label': True},
+                                   text=ISSUE_VISIBILITY_PATTERN).findNext('p')
+            return visibility.contents[0]
+        except:
+            print('Error parsing issue visibility')
+    
+    def __parse_issue_comments(self, soup):
+        """
+        """
+        try:
+            comments = []
+
+            artifacts = soup.findAll('tr', {'class': ISSUE_COMMENT_CLASS_PATTERN})
+            for art in artifacts:
+                comment = {}
+
+                rawsub, rawdesc = art.findAll('p')
+                # Date and sender are content on the first 'p'
+                a = rawsub.find('a')
+                comment['by'] = {'name' : a.get('title'), 'id' : a.string}
+
+                # Time stamp is the first value of the 'p' contents
+                d = self.__clean_str(rawsub.contents[0])
+                comment['date'] = self.__str_to_date(ISSUE_COMMENT_DATE_PATTERN.match(d).group(1))
+
+                # Description is content on the second 'p'.
+                comment['desc'] = self.__clean_str(u''.join(rawdesc.contents))
+
+                comments.append(comment)
+            return comments
+        except:
+            print('Errror parsing issue comments')
+    
+    def __parse_issue_attachments(self, soup):
+        """
+        """
+        try:
+            attachments = []
+
+            files = soup.find('h4', {'id': 'filebar'}).findNext('tbody').findAll('tr')
+            for f in files:
+                attch = {}
+                # Each entry contains three fields (td tags) that
+                # follow the next order: filename, description and URL.
+                aux = f.findAll('td')
+                attch['filename'] = self.__clean_str(u''.join(aux[0].contents))
+                attch['desc'] = self.__clean_str(u''.join(aux[1].contents))
+                attch['url'] = SOURCEFORGE_DOMAIN + aux[2].a.get('href')
+
+                attachments.append(attch)
+            return attachments
+        except:
+            print('Errror parsing issue attachments')
+
+    def __parse_issue_changes(self, soup):
+        """
+        """
+        try:
+            changes = []
+
+            entries = soup.find('h4', {'id': 'changebar'}).findNext('tbody').findAll('tr')
+            for e in entries:
+                change = {}
+                # Each change contains four fields (td tags) that
+                # follow the next order: field, old value, date, by.
+                aux = e.findAll('td')
+                change['field'] = self.__clean_str(aux[0].string)
+                change['old_value'] = self.__clean_str(aux[1].string)
+                change['date'] = self.__str_to_date(self.__clean_str(aux[2].string))
+                change['by'] = {'name': self.__clean_str(aux[3].a.get('title')),
+                                'id': self.__clean_str(aux[3].a.string)}
+
+                changes.append(change)
+            return changes
+        except:
+            print('Errror parsing issue changes')
+    
+    def __prepare_soup(self, soup):
+        """
+        """
+        self.__remove_comments(soup)
+        self.__remove_tag(soup, 'br')
+
+    def __remove_comments(self, soup):
+        """
+        """
+        cmts = soup.findAll(text=lambda text:isinstance(text,
+                                                        BeautifulSoup.Comment))
+        [comment.extract() for comment in cmts]
+
+    def __remove_tag(self, soup, tag):
+        """
+        """
+        [t.extract() for t in soup.findAll(tag)]
+
+    def __clean_str(self, s):
+        """
+        """
+        return s.strip(' \n\t')
+
+    def __str_to_date(self, s):
+      """
+      Convert a string with the form YYYY-MM-DD HH:MM to an well-formed
+      datatime type.
+      """
+      from datetime import datetime
+      dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
+      return dt
+
+
+SUPPORTED_SF_TRACKERS = ('sourceforge', 'website')
+
+class SourceForge():
+    """
+    SourceForge backend
+    """
+    URL_REQUIRED_FIELDS = ['atid', 'group_id']
+
+    def run(self, url):
+        """
+        """
+        self.url = url
+        self.__check_tracker_url(self.url)
+
+        self.db = get_database(DBSourceForgeBackend())
+        self.db.insert_supported_traker(SUPPORTED_SF_TRACKERS[0],
+                                        SUPPORTED_SF_TRACKERS[1])
+        self.__insert_tracker(self.url)
+
+        self.parser = SourceForgeParser()
+        ids = self.__get_issues_list(self.url)
+
+        for id in ids:
+            url = self.url + '&func=detail&aid=%s' % id # FIXME:urls!!!
+            issue = self.__get_issue(url)
+            self.__insert_issue(issue)
+
+    def __get_issues_list(self, url):
+        """
+        """
+        # Gets the main HTML page
+        html = self.__get_html(url)
+        nissues = self.parser.get_total_issues(html)
+
+        urls = []
+        for i in xrange(0, nissues, 100):
+            urls.append(url + '&offset=%s&limit=100' % i)
+
+        ids = []
+        for url in urls:
+            html = self.__get_html(url)
+            ids.extend(self.parser.parse_issues_list(html))
+        return ids
+
+    def __get_issue(self, url):
+        """
+        """
+        html = self.__get_html(url)
+        issue = self.parser.parse_issue(html)
+        return issue
+
+    def __insert_tracker(self, url):
+        """
+        """
+        db_trk = self.db.insert_tracker(Tracker(url, SUPPORTED_SF_TRACKERS[0],
+                                                SUPPORTED_SF_TRACKERS[1]))
+        self.tracker_id = db_trk.id
+
+    def __insert_issue(self, issue):
+        """
+        """
+        db_issue = self.db.insert_issue(issue, self.tracker_id)
+
+    def __get_html(self, url):
+        """
+        """
+        html = urllib2.urlopen(url).read()
+        return html
+
+    def __check_tracker_url(self, url):
+        """
+        """
+        query = urlparse.urlsplit(url).query
+        if query is not None:
+            # Get query field names
+            qs = urlparse.parse_qs(query).keys()
+
+            for field in self.URL_REQUIRED_FIELDS:
+                if field not in qs:
+                    raise NotValidURLError('Missing field %s' % field)
         else:
-            soup = self.soup
-        self.remove_comments(soup)
-        
-        for field in self.fields:
-            self._get_field(self.dataBugs, field, soup)
+            raise NotValidURLError('Missing URL query set')
 
-        #try:
-        issue = self.getDataBug()
-        #except Exception, e:
-        #    print "Fallo DataBug. %s" % e
-        #    return None
 
-        return issue 
+register_backend('sf', SourceForge)
 
-    def analyze_bug(self, bug_id):
-        url = self.get_bug_url(bug_id)
-
-        html = self.read_page(url)
-        #self.parser.set_html(html)
-        self.set_html(html)
-        self.dataBugs["URL:"] = url
-        self.dataBugs["IdBug:"] = bug_id
-
-        #return self.parser.parse_bug()
-        return self.parse_bug()
-
-    def run(self):
-        self.prepare()
-        random.seed()
-        url = self.url
-        db = getDatabase()
-
-        i = 0
-        #total = self.get_total_bugs()
-        #debug("Total number of bugs %s" % total)
-        print "Total number of bugs %s" % self.total_bugs
-
-        db_trk = db.insert_tracker(Tracker(url, 'sf'))
-
-        while True:
-            bug_id = self.get_next_bug()
-            if not bug_id:
-                break
-
-            i+=1
-            print 'Analyzing bug # %s of %s' % (i, self.total_bugs)
-
-            issue = self.analyze_bug(bug_id)
-
-            if issue is None:
-                print 'Error retrieving bug %s' % bug_id
-                #print 'Error retrieving bug %s' % bug_id
-                continue
-
-            db.insert_issue(issue, db_trk.id)
-            debug('Bug # %s analyzed' % i)         
-
-  # methods to store data from Dani
-    def storeData(self, data, idBug):
-      opt = Config()
-      if not os.path.exists(opt.path):
-        os.makedirs(opt.path)
-      if not os.path.exists(os.path.join(opt.path, opt.db_database_out)):
-        os.makedirs(os.path.join(opt.path, opt.db_database_out))
-
-      #creating file to store data
-      file = open(os.path.join(os.path.join(opt.path, opt.db_database_out), str(idBug)), 'w')
-      file.write(data)
-      file.close
-
-register_backend("sf", SourceForgeFrontend)
 
 if __name__ == "__main__":
-    #sf = "http://sourceforge.net/tracker/index.php?"
-    #url = "%sfunc=detail&aid=1251682&group_id=2435&atid=102435" % sf
-    #cont = urllib.urlopen(url).read()
+    import urllib2
+    url = "http://sourceforge.net/tracker/?func=detail&aid=3178299&group_id=152568&atid=784665"
+    html = urllib2.urlopen(url)
 
-    fname = 'samples/sf2.html'
-    cont = file(fname).read()
-
-    parser = SourceForgeParser(cont)
-    bug = parser.parse_bug()
-
-    print bug
-    for change in bug.changes:
-        print change
- 
+    parser = SourceForgeParser()
+    parser.parse_issue(html)
