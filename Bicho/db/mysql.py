@@ -30,7 +30,8 @@ class DBMySQL(DBDatabase):
     MySQL database adapter.
     """
 
-    def __init__(self):
+    def __init__(self, backend=None):
+        DBDatabase.__init__(self, backend)
         opts = Config()
 
         self.database = create_database('mysql://' + opts.db_user_out + ':'
@@ -40,9 +41,14 @@ class DBMySQL(DBDatabase):
                                         + opts.db_database_out)
         self.store = Store(self.database)
 
-        self.create_tables([DBSupportedTracker, DBTrackerMySQL, DBPeopleMySQL,
-                            DBIssueMySQL, DBIssueRelationshipMySQL,
-                            DBCommentMySQL, DBAttachmentMySQL, DBChangeMySQL])
+        clsl = [DBSupportedTracker, DBTrackerMySQL, DBPeopleMySQL,
+                DBIssueMySQL, DBIssueRelationshipMySQL,
+                DBCommentMySQL, DBAttachmentMySQL, DBChangeMySQL]
+
+        if backend is not None:
+            clsl.extend([cls for cls in backend.MYSQL_EXT])
+
+        self.create_tables(clsl)
 
 
 class DBSupportedTracker(DBSupportedTracker):

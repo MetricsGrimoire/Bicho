@@ -46,9 +46,10 @@ class NotFoundError(Exception):
 class DBDatabase:
     """
     """
-    def __init__(self):
+    def __init__(self, backend=None):
         self.database = None
         self.store = None
+        self.backend = backend
     
     def create_tables(self, clsl):
         """
@@ -159,20 +160,30 @@ class DBDatabase:
             self.store.add(db_issue)
             self.store.flush()
 
+            # Insert extra data of the issue, if any
+            if self.backend is not None:
+                self.backend.insert_issue_ext(self.store, issue, db_issue.id)
+
             # Insert relationships
 
             # Insert comments
             for comment in issue.comments:
-                self._insert_comment(comment, db_issue.id, tracker_id)
-        
+                db_comment = self._insert_comment(comment, db_issue.id, tracker_id)
+                if self.backend is not None:
+                    self.backend.insert_comment_ext(self.store, comment, db_comment.id)
+
             # Insert attachments
             for attachment in issue.attachments:
-                self._insert_attachment(attachment, db_issue.id, tracker_id)
-        
+                db_attch = self._insert_attachment(attachment, db_issue.id, tracker_id)
+                if self.backend is not None:
+                    self.backend.insert_attachment_ext(self.store, attachment, db_attch.id)
+
             # Insert changes
             for change in issue.changes:
-                self._insert_change(change, db_issue.id, tracker_id)
-        
+                db_change = self._insert_change(change, db_issue.id, tracker_id)
+                if self.backend is not None:
+                    self.backend.insert_change_ext(self.store, change, db_change.id)
+
             self.store.commit()
             
             return db_issue
@@ -737,11 +748,42 @@ class DBChange(object):
         self.issue_id = issue_id
 
 
-def get_database():
+class DBBackend:
+    """
+    """
+    def __init__(self):
+        self.MYSQL_EXT = None
+
+    def insert_issue_ext(self, ext, issue_id):
+        """
+        Abstract method for inserting extra data related to an issue
+        """
+        raise NotImplementedError
+
+    def insert_comment_ext(self, comment, comment_id):
+        """
+        Abstract method for inserting extra data related to a comment
+        """
+        raise NotImplementedError
+
+    def insert_attachment_ext(self, attch, attch_id):
+        """
+        Abstract method for inserting extra data related to an attachment
+        """
+        raise NotImplementedError
+
+    def insert_change_ext(self, change, change_id):
+        """
+        Abstract method for inserting extra data related to a change
+        """
+        raise NotImplementedError
+
+
+def get_database(backend=None):
     """
     """
     opts = Config()
 
     if opts.db_driver_out == "mysql":
         from Bicho.db.mysql import DBMySQL
-        return DBMySQL()
+        return DBMySQL(backend)
