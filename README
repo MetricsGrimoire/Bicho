@@ -58,10 +58,9 @@ Examples
 
  1- Using the command line
 
- $ bicho -d -t bg --db-user_out [USER] --db-password_out [PASS]
- --db-database_out bicho_database https://bugzilla.gnome.org/buglist.cgi?product=evince
+ $ bicho --db-user-out=[USER] --db-password-out=[PASS] --db-database-out=prueba bg https://bugzilla.libresoft.es/buglist.cgi?product=CVSAnalY
 
- 2- Using a config file
+ 2- Using a config file (broken in master version)
 
   2.1 Content of the configuration file
 
@@ -81,7 +80,7 @@ db_port_out = '3306'
 
   2.2 Execution
 
-  $ bicho -f config.sample
+  $ bicho --cfg=config.sample
 
  3- help
 
