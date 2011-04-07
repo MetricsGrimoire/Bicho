@@ -720,7 +720,7 @@ class JiraBackend(Backend):
         project = url.split("/browse/")[1]
         bugs_number = self.bugsNumber(url)
 
-        for i in range(int(bugs_number)):
+        for i in range(int(bugs_number)+1):
             if i != 0:
                 bug_key = project + "-" + str(i)
                 print serverUrl + query + bug_key + "/" + bug_key + ".xml"
