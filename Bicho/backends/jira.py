@@ -276,7 +276,7 @@ class Bug():
     def __init__ (self):
         self.title = None
         self.link = None
-        self.description = None
+        self.description = ""
         self.environment = None
         self.summary = None
         self.bug_type = None
@@ -356,7 +356,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         self.title = None
         self.link = None
-        self.description = None
+        self.description = ""
         self.environment = None
         self.summary = None
         self.bug_type = None
@@ -486,7 +486,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.link = str(ch)
         elif self.is_description:
             #FIXME problems with ascii, not support str() function
-            self.description = ch
+            self.description = self.description + ch.strip()
         elif self.is_environment:
             self.environment = str(ch)
         elif self.is_summary:
@@ -631,7 +631,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.comments = []
             self.attachments = []
             self.customfields = []
-
+            self.description = ""
 
     def getIssue(self):
         #Return the parse data bug into issue object
