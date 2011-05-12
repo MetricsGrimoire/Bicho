@@ -100,7 +100,7 @@ def main():
     parser.add_option('-g', '--debug', action='store_true', dest='debug',
                       help='Enable debug mode')
     parser.add_option('-d', '--delay', type='int', dest='delay',
-                      help='Delay between 0 and 20 seconds to avoid been banned')
+                      help='Delay in seconds betweeen petitions to avoid been banned')
     parser.add_option('-i', '--input', choices=['url', 'db'],
                       dest='input', help='Input format')
     parser.add_option('-o', '--output', choices=['db'],

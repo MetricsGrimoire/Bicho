@@ -879,6 +879,7 @@ class BGBackend (Backend):
         Backend.__init__ (self)
         options = Config()
         self.url = options.url
+        self.delay = options.delay
 
     def get_domain(self, url):
         strings = url.split('/')
@@ -918,8 +919,8 @@ class BGBackend (Backend):
 
 
     def run (self, url):
-        printdbg ("Running Bicho")
-        print "Running Bicho"
+        printdbg ("Running Bicho with delay of %s seconds" % (str(self.delay)))
+        print("Running Bicho with delay of %s seconds" % (str(self.delay)))
         #retrieving data in csv format
 
         if not self.url:
@@ -954,6 +955,10 @@ class BGBackend (Backend):
 
         dbtrk = bugsdb.insert_tracker(trk)
 
+        if len(bugs) == 0:
+            print "No bugs found. Did you provide the correct url?"
+            sys.exit(0)
+
         for bug in bugs:
 
             #The URL from bugzilla (so far KDE and GNOME) are like:
@@ -969,6 +974,7 @@ class BGBackend (Backend):
                 #continue
                 raise
             bugsdb.insert_issue(issue_data, dbtrk.id)
-            #rdelay()
+
+            time.sleep(self.delay)
 
 register_backend ("bg", BGBackend)

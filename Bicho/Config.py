@@ -42,7 +42,7 @@ class Config:
                       'path' : None,
                       'debug': False,
                       'quiet': False,
-                      'delay': False,
+                      'delay': 0,
                       'config_file': None,
                       'input': 'url',
                       'output': 'db',
