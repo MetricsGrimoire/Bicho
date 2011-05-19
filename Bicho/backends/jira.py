@@ -316,7 +316,10 @@ class SoupHtmlParser():
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
         remove_tags = ['a', 'span','i']
-        [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
+        try:
+            [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
+        except Exception, e:
+            None
         changes = []      
         
         #FIXME The id of the changes are not stored
@@ -598,7 +601,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newCustomfield.customfieldvalue = self.customfieldvalue
             self.customfields.append(newCustomfield)           
  
-        elif name == 'customfields':
+        elif name == 'item':
             newbug = Bug()
             newbug.title = self.title
             newbug.link = self.link
@@ -728,10 +731,13 @@ class JiraBackend(Backend):
                 parser = xml.sax.make_parser(  )
                 handler = BugsHandler(  )
                 parser.setContentHandler(handler)
-                parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
-                
-                issue = handler.getIssue()
-                bugsdb.insert_issue(issue, dbtrk.id)
+                try:
+                    parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
+                    issue = handler.getIssue()
+                    bugsdb.insert_issue(issue, dbtrk.id)
+                except Exception, e:
+                    print e
+
         print "End"
 
 register_backend ("jira", JiraBackend)
