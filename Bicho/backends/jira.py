@@ -715,28 +715,46 @@ class JiraBackend(Backend):
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
-        trk = Tracker(url, "jira", "4.1.2")
+        trk = Tracker(url.split("-")[0], "jira", "4.1.2")
         dbtrk = bugsdb.insert_tracker(trk)
 
         serverUrl = url.split("/browse/")[0]
         query = "/si/jira.issueviews:issue-xml/"
         project = url.split("/browse/")[1]
-        bugs_number = self.bugsNumber(url)
+        
+        if (project.split("-").__len__() > 1):
+            bug_key = project
+            project = project.split("-")[0]
 
-        for i in range(int(bugs_number)+1):
-            if i != 0:
-                bug_key = project + "-" + str(i)
-                print serverUrl + query + bug_key + "/" + bug_key + ".xml"
+            print serverUrl + query + bug_key + "/" + bug_key + ".xml"
                 
-                parser = xml.sax.make_parser(  )
-                handler = BugsHandler(  )
-                parser.setContentHandler(handler)
-                try:
-                    parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
-                    issue = handler.getIssue()
-                    bugsdb.insert_issue(issue, dbtrk.id)
-                except Exception, e:
-                    print e
+            parser = xml.sax.make_parser(  )
+            handler = BugsHandler(  )
+            parser.setContentHandler(handler)
+            try:
+                parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
+                issue = handler.getIssue()
+                bugsdb.insert_issue(issue, dbtrk.id)
+            except Exception, e:
+                print e
+
+        else:
+            bugs_number = self.bugsNumber(url)
+
+            for i in range(int(bugs_number)+1):
+                if i != 0:
+                    bug_key = project + "-" + str(i)
+                    print serverUrl + query + bug_key + "/" + bug_key + ".xml"
+                    
+                    parser = xml.sax.make_parser(  )
+                    handler = BugsHandler(  )
+                    parser.setContentHandler(handler)
+                    try:
+                        parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
+                        issue = handler.getIssue()
+                        bugsdb.insert_issue(issue, dbtrk.id)
+                    except Exception, e:
+                        print e
 
         print "End"
 
