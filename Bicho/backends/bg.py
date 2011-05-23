@@ -64,8 +64,8 @@ class DBBugzillaIssueExt(object):
     qa_contact = Unicode()
     estimated_time = Unicode()
     remaining_time = Unicode()
-    actual_time = Unicode()
-    deadline = Unicode()
+    actual_time = DateTime()
+    deadline = DateTime()
     keywords = Unicode()
     cc = Unicode()
     group_bugzilla = Unicode()
@@ -85,32 +85,32 @@ class DBBugzillaIssueExtMySQL(DBBugzillaIssueExt):
 
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_bugzilla ( \
                      id INTEGER NOT NULL AUTO_INCREMENT, \
-                     alias VARCHAR(32) NOT NULL, \
+                     alias VARCHAR(32) default NULL, \
                      delta_ts DATETIME NOT NULL, \
-                     reporter_accessible VARCHAR(32) NOT NULL, \
-                     cclist_accessible VARCHAR(32) NOT NULL, \
-                     classification_id VARCHAR(32) NOT NULL, \
-                     classification VARCHAR(32) NOT NULL, \
-                     product VARCHAR(32) NOT NULL, \
-                     component VARCHAR(32) NOT NULL, \
-                     version VARCHAR(32) NOT NULL, \
-                     rep_platform VARCHAR(32) NOT NULL, \
-                     op_sys VARCHAR(32) NOT NULL, \
-                     dup_id INTEGER UNSIGNED, \
-                     bug_file_loc VARCHAR(32) NOT NULL, \
-                     status_whiteboard VARCHAR(32) NOT NULL, \
-                     target_milestone VARCHAR(32) NOT NULL, \
-                     votes INTEGER UNSIGNED, \
-                     everconfirmed VARCHAR(32) NOT NULL, \
-                     qa_contact VARCHAR(32) NOT NULL, \
-                     estimated_time VARCHAR(32) NOT NULL, \
-                     remaining_time VARCHAR(32) NOT NULL, \
-                     actual_time DATETIME, \
-                     deadline DATETIME, \
-                     keywords VARCHAR(32) NOT NULL, \
-                     flag VARCHAR(32) NOT NULL, \
-                     cc VARCHAR(32) NOT NULL, \
-                     group_bugzilla VARCHAR(32) NOT NULL, \
+                     reporter_accessible VARCHAR(32) default NULL, \
+                     cclist_accessible VARCHAR(32) default NULL, \
+                     classification_id VARCHAR(32) default NULL, \
+                     classification VARCHAR(32) default NULL, \
+                     product VARCHAR(32) default NULL, \
+                     component VARCHAR(32) default NULL, \
+                     version VARCHAR(32) default NULL, \
+                     rep_platform VARCHAR(32) default NULL, \
+                     op_sys VARCHAR(32) default NULL, \
+                     dup_id INTEGER UNSIGNED default NULL, \
+                     bug_file_loc VARCHAR(32) default NULL, \
+                     status_whiteboard VARCHAR(32) default NULL, \
+                     target_milestone VARCHAR(32) default NULL, \
+                     votes INTEGER UNSIGNED default NULL, \
+                     everconfirmed VARCHAR(32) default NULL, \
+                     qa_contact VARCHAR(32) default NULL, \
+                     estimated_time VARCHAR(32) default NULL, \
+                     remaining_time VARCHAR(32) default NULL, \
+                     actual_time DATETIME default NULL, \
+                     deadline DATETIME default NULL, \
+                     keywords VARCHAR(32) default NULL, \
+                     flag VARCHAR(32) default NULL, \
+                     cc VARCHAR(32) default NULL, \
+                     group_bugzilla VARCHAR(32) default NULL, \
                      issue_id INTEGER NOT NULL, \
                      PRIMARY KEY(id), \
                      UNIQUE KEY(issue_id), \
@@ -206,7 +206,7 @@ class DBBugzillaBackend(DBBackend):
         if str:
             return unicode(str)
         else:
-            return unicode('')
+            return None
 
     def insert_comment_ext(self, store, comment, comment_id):
         """
@@ -826,9 +826,12 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.set_estimated_time(self.atags["estimated_time"])
         issue.set_remaining_time(self.atags["remaining_time"])
         issue.set_actual_time(self.atags["actual_time"])
-        issue.set_deadline(self.atags["deadline"])
+        if self.atags["deadline"]:
+            issue.set_deadline(self.atags["deadline"])
         issue.set_keywords(self.btags["keywords"])
-        issue.set_cc(self.btags["cc"])
+        # FIXME issue.set_cc(self.btags["cc"])
+        if self.btags["cc"]:
+            issue.set_cc(self.btags["cc"][0])
         issue.set_group(self.btags["group"])
         issue.set_flag(self.btags["flag"])
 
