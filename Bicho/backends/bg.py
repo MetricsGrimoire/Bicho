@@ -815,7 +815,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.set_version(self.atags["version"])
         issue.set_rep_platform(self.atags["rep_platform"])
         issue.set_op_sys(self.atags["op_sys"])
-        issue.set_dup_id(self.atags["dup_id"])
+        if self.atags["dup_id"]:
+            issue.set_dup_id(int(self.atags["dup_id"]))
         issue.set_bug_file_loc(self.atags["bug_file_loc"])
         issue.set_status_whiteboard(self.atags["status_whiteboard"])
         issue.set_target_milestone(self.atags["target_milestone"])
