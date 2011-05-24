@@ -61,7 +61,7 @@ class People:
 class Tracker:
     """
     Issue tracker instance.
-
+b
     @param url: URL of the issue tracker
     @type url: C{str}
     @param name: name or type of the issue tracker
@@ -103,7 +103,7 @@ class Issue:
         self.resolution = None
         self.priority = None
         self.assigned_to = None
-        
+
         if not isinstance(submitted_by, People):
             raise ValueError('Parameter "submitted_by" should be a %s instance. %s given.' %
                              ('People', submitted_by.__class__.__name__,))
@@ -119,6 +119,7 @@ class Issue:
         self.attachments = []
         self.changes = []
         self.relationships = []
+        self.watchers = []
 
     def set_priority(self, priority):
         """
@@ -220,6 +221,21 @@ class Issue:
         @type resolution: C{str}
         """
         self.resolution = resolution
+
+    def add_watcher(self, watcher):
+        """
+        Set the identity assigned to the issue.
+
+        @param watcher: identity watching the bug
+        @param type: L{People}
+
+        @raise ValueError: raised if the type of X{assigned_to}}
+        is not valid.
+        """
+        if not isinstance(watcher, People):
+            raise ValueError('Parameter "assigned_to" should be a %s instance. %s given.' %
+                             ('People', assigned_to.__class__.__name__,))
+        self.watchers.append(watcher)
 
 
 class Comment:

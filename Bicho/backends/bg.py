@@ -121,26 +121,6 @@ class DBBugzillaIssueExtMySQL(DBBugzillaIssueExt):
                          ON UPDATE CASCADE \
                      );'
 
-    #FIXME it is needed to amend the CC list of mail addresses
-    """
-                     CREATE TABLE IF NOT EXITS cc_issues_bugzilla( \
-                     id INTEGER NOT NULL AUTO_INCREMENT, \
-                     issue_id INTEGER NOT NULL, \
-                     person_id INTEGER NOT NULL, \
-                     PRIMARY KEY(issue_id, person_id), \
-                     FOREIGN KEY(issue_id) \
-                       REFERENCES issues_ext_bugzilla (id) \
-                         ON DELETE CASCADE \
-                         ON UPDATE CASCADE, \
-                     FOREIGN KEY(person_id) \
-                       REFERENCES people (id) \
-                         ON DELETE CASCADE \
-                         ON UPDATE CASCADE \
-                     );
-
-                     """
-
-
 
 class DBBugzillaBackend(DBBackend):
     """
@@ -188,7 +168,6 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.actual_time = self.__return_unicode(issue.actual_time)
             db_issue_ext.deadline = self.__return_unicode(issue.deadline)
             db_issue_ext.keywords = self.__return_unicode(issue.keywords)
-            db_issue_ext.cc = self.__return_unicode(issue.cc)
             db_issue_ext.group = self.__return_unicode(issue.group)
             db_issue_ext.flag = self.__return_unicode(issue.flag)
 
@@ -335,7 +314,6 @@ class BugzillaIssue(Issue):
         self.actual_time = None
         self.deadline = None
         self.keywords = None
-        self.cc = None
         self.group = None
         self.flag = None
 
@@ -549,15 +527,6 @@ class BugzillaIssue(Issue):
         @type keywords: C{str}
         """
         self.keywords = keywords
-
-    def set_cc(self, cc):
-        """
-        Set the CC of the issue
-
-        @param cc: cc of the issue
-        @type cc: C{str}
-        """
-        self.cc = cc
 
     def set_group(self, group):
         """
@@ -829,9 +798,10 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         if self.atags["deadline"]:
             issue.set_deadline(self.atags["deadline"])
         issue.set_keywords(self.btags["keywords"])
-        # FIXME issue.set_cc(self.btags["cc"])
-        if self.btags["cc"]:
-            issue.set_cc(self.btags["cc"][0])
+        # we also store the list of watchers/CC
+        for w in self.btags["cc"]:
+            auxp = People(w)
+            issue.add_watcher(auxp)
         issue.set_group(self.btags["group"])
         issue.set_flag(self.btags["flag"])
 

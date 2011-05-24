@@ -43,7 +43,8 @@ class DBMySQL(DBDatabase):
 
         clsl = [DBSupportedTracker, DBTrackerMySQL, DBPeopleMySQL,
                 DBIssueMySQL, DBIssueRelationshipMySQL,
-                DBCommentMySQL, DBAttachmentMySQL, DBChangeMySQL]
+                DBCommentMySQL, DBAttachmentMySQL, DBChangeMySQL,
+                DBIssuesWatchersMySQL]
 
         if backend is not None:
             clsl.extend([cls for cls in backend.MYSQL_EXT])
@@ -104,7 +105,7 @@ class DBPeopleMySQL(DBPeople):
 
 class DBIssueMySQL(DBIssue):
     """
-    MySQL subclass of L{DBIssue}.   
+    MySQL subclass of L{DBIssue}.
     """
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues ( \
                      id INTEGER NOT NULL AUTO_INCREMENT, \
@@ -138,16 +139,39 @@ class DBIssueMySQL(DBIssue):
                          ON UPDATE CASCADE \
                      )'
 
+class DBIssuesWatchersMySQL(DBIssuesWatchers):
+    """
+    MySQL subclass of L{DBIssuesWatchers}
+    """
+    __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_watchers ( \
+                     id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, \
+                     issue_id INTEGER UNSIGNED NOT NULL, \
+                     person_id INTEGER UNSIGNED NOT NULL, \
+                     PRIMARY KEY(id), \
+                     UNIQUE KEY(issue_id, person_id), \
+                     INDEX issue_person_idx1(issue_id), \
+                     INDEX issue_person_idx2(person_id), \
+                     FOREIGN KEY(issue_id) \
+                       REFERENCES issues(id) \
+                         ON DELETE CASCADE \
+                         ON UPDATE CASCADE, \
+                     FOREIGN KEY(person_id) \
+                       REFERENCES people(id) \
+                         ON DELETE CASCADE \
+                         ON UPDATE CASCADE \
+                     )'
 
 class DBIssueRelationshipMySQL(DBIssueRelationship):
     """
     MySQL subclass of L{DBIssueRelationship}.
     """
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS related_to ( \
+                     id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, \
                      issue_id INTEGER UNSIGNED NOT NULL, \
                      related_to INTEGER UNSIGNED NOT NULL, \
                      type INTEGER UNSIGNED NOT NULL, \
-                     PRIMARY KEY(issue_id, related_to), \
+                     PRIMARY KEY(id), \
+                     UNIQUE KEY(issue_id, related_to), \
                      INDEX issues_related_idx1(issue_id), \
                      INDEX issues_related_idx2(related_to), \
                      FOREIGN KEY(issue_id) \

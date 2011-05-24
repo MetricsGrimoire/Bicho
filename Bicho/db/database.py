@@ -50,7 +50,7 @@ class DBDatabase:
         self.database = None
         self.store = None
         self.backend = backend
-    
+
     def create_tables(self, clsl):
         """
         Create the database tables.
@@ -184,8 +184,13 @@ class DBDatabase:
                 if self.backend is not None:
                     self.backend.insert_change_ext(self.store, change, db_change.id)
 
+            # Insert CC/watchers
+            for person in issue.watchers:
+                db_issues_watchers = self._insert_issues_watchers(person, db_issue.id,
+                                                                  tracker_id)
+
             self.store.commit()
-            
+
             return db_issue
         except:
             self.store.rollback()
@@ -199,7 +204,7 @@ class DBDatabase:
         @type rel_id: C{int}
         @param type: type of the relationship
         @type type: C{str}
-        @param issue_id: issue identifier 
+        @param issue_id: issue identifier
         @type issue_id: C{int}
 
         @return: the inserted relationship
@@ -216,7 +221,7 @@ class DBDatabase:
 
         @param comment: comment to insert
         @type comment: L{Comment}
-        @param issue_id: issue identifier 
+        @param issue_id: issue identifier
         @type issue_id: C{int}
         @param tracker_id: identifier of the tracker
         @type tracker_id: C{int}
@@ -275,12 +280,28 @@ class DBDatabase:
         @rtype: L{DBChange}
         """
         changed_by = self.insert_people(change.changed_by, tracker_id)
-        
+
         db_change = DBChange(change.field, change.old_value, change.new_value, 
                              changed_by.id, change.changed_on, issue_id)
         self.store.add(db_change)
         self.store.flush()
         return db_change
+
+    def _insert_issues_watchers(self, people, issue_id, tracker_id):
+        """
+        Insert watchers for the issue X{issue_id}
+
+        @return: the inserted comment
+        @rtype: L{DBComment}
+        """
+        watcher = self.insert_people(people, tracker_id)
+
+        db_issues_watchers = DBIssuesWatchers(issue_id, watcher.id)
+
+        self.store.add(db_issues_watchers)
+        self.store.flush()
+        return db_issues_watchers
+
 
     def _get_db_supported_tracker(self, name, version):
         """
@@ -302,7 +323,7 @@ class DBDatabase:
         if not db_sup:
             raise NotFoundError('Supported tracker %s (v. %s) not found' % (name, version))
         return db_sup
-        
+
     def _get_db_tracker(self, url):
         """
         Get the tracker based on the given URL.
@@ -454,7 +475,7 @@ class DBPeople(object):
     def set_name(self, name):
         """
         Set the name of the identity.
-        
+
         @param name: name of the identity
         @type name: C{str}
         """
@@ -463,7 +484,7 @@ class DBPeople(object):
     def set_email(self, email):
         """
         Set the email of the identity.
-        
+
         @param email: email of the identity
         @type email: C{str}
         """
@@ -527,14 +548,31 @@ class DBIssue(object):
     submitted_on = DateTime()
     assigned_to = Int()
     tracker_id = Int()
-    
+
     tracker = Reference(tracker_id, DBTracker.id)
     submitted = Reference(submitted_by, DBPeople.id)
     assigned = Reference(assigned_to, DBPeople.id)
-    
+
     def __init__(self, issue, tracker_id):
         self.issue = unicode(issue)
         self.tracker_id = tracker_id
+
+class DBIssuesWatchers(object):
+    """
+    Relates elements from X{People} and X{Issues} tables
+
+    """
+    __storm_table__ = 'issues_watchers'
+
+    id = Int(primary=True)
+    issue_id = Int()
+    person_id = Int()
+    issue = Reference(issue_id, DBIssue.id)
+    person = Reference(person_id, DBPeople.id)
+
+    def __init__(self, issue_id, person_id):
+        self.issue_id = issue_id
+        self.person_id = person_id
 
 
 class DBIssueRelationship(object):
@@ -598,7 +636,7 @@ class DBComment(object):
 
     @ivar id: Comment identifier.
     @type id: L{storm.locals.Int}
-    @ivar comment: Comment of the issue. 
+    @ivar comment: Comment of the issue.
     @type comment: L{storm.locals.Unicode}
     @ivar submitted_by: Identifier of the submitter.
     @type submitted_by: L{storm.locals.Int}
@@ -609,7 +647,7 @@ class DBComment(object):
     @ivar submitted: Reference to L{DBPeople} object.
     @type submitted: L{storm.locals.Reference}
     @ivar issue_id: Issue identifier.
-    @type issue_id: L{storm.locals.Int}   
+    @type issue_id: L{storm.locals.Int}
     """
     __storm_table__ = 'comments'
 
