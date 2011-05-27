@@ -23,12 +23,12 @@
 #
 
 import sys
-from optparse import OptionError, OptionGroup, OptionParser
+from optparse import OptionGroup, OptionParser
 
 from Config import check_config, Config, ErrorLoadingConfig, InvalidConfig
 import Bicho
 import info
-from utils import *
+from utils import printerr
 
 def set_config_options(type, uri, options):
     """

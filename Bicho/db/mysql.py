@@ -23,7 +23,11 @@
 MySQL database module
 """
 
-from Bicho.db.database import *
+from storm.locals import Store, create_database
+from Bicho.Config import Config
+from Bicho.db.database import DBDatabase, DBTracker, DBPeople, \
+    DBIssue, DBIssuesWatchers, DBIssueRelationship, DBComment, DBAttachment, \
+    DBChange, DBSupportedTracker
 
 class DBMySQL(DBDatabase):
     """

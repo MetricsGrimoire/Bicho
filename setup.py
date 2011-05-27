@@ -18,26 +18,12 @@
 #
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.es>
 #          Francisco Rivas <frivas@libresoft.es>
+#          Luis Cañas Díaz <lcanas@libresoft.es>
 #
-import commands
-import os
-import sys
 from distutils.core import setup
 
-try:
-  import BeautifulSoup
-except:
-  print "BeautifulSoup is not installed please install it..."
-  sys.exit(-1)
-
-try:
-  import storm
-except:
-  print "Storm is not installed please install it..."
-  sys.exit(-1) 
-
 setup(name = "Bicho",
-      version = "0.4",
+      version = "0.7beta",
       author =  "GSyC/LibreSoft",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
       description = "An analysis tool for you Bug Tracker System",

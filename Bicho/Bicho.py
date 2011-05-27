@@ -22,10 +22,6 @@
 #      Santiago Dueñas <sduenas@libresoft.es>
 #
 
-import urllib
-import re
-import time
-
 from backends import create_backend
 from Config import Config
 from utils import printdbg
