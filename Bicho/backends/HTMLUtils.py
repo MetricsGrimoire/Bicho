@@ -15,14 +15,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+#          Luis Cañas Díaz <lcanas@libresoft.es>
 #
-
-from HTMLParser import HTMLParser
 
 import urllib
 import cgi
-
-from Bicho.utils import *
 
 def url_join (base, *p):
     retval = [base.strip ('/')]
@@ -60,7 +57,6 @@ def url_get_attr (url, attr = None):
 
 
 
-    
 
 
 

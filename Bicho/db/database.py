@@ -25,7 +25,7 @@ Database module
 """
 
 import datetime
-from storm.locals import *
+from storm.locals import DateTime, Int, Reference, Unicode
 
 from Bicho.Config import Config
 
@@ -186,8 +186,9 @@ class DBDatabase:
 
             # Insert CC/watchers
             for person in issue.watchers:
-                db_issues_watchers = self._insert_issues_watchers(person, db_issue.id,
-                                                                  tracker_id)
+                #db_issues_watchers = self._insert_issues_watchers(person, db_issue.id,
+                #                                                  tracker_id)
+                self._insert_issues_watchers(person, db_issue.id, tracker_id)
 
             self.store.commit()
 

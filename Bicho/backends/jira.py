@@ -20,32 +20,23 @@
 #          Luis Cañas Díaz <lcanas@libresoft.es>
 #          Santiago Dueñas <sduenas@libresoft.es>
 
-import sys
-import re
-import urlparse
-import random
-import urllib2
 import datetime
-import os
+import urllib
 
-import BeautifulSoup
-from storm.locals import *
+from storm.locals import Int, DateTime, Unicode, Reference
 
-from Bicho.common import Issue, People, Tracker, Comment, Attachment, Change
-from Bicho.backends import register_backend
-from Bicho.db.database import *
+from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
+from Bicho.backends import Backend, register_backend
+from Bicho.db.database import DBIssue, DBBackend, get_database
 
 from BeautifulSoup import BeautifulSoup
-from BeautifulSoup import NavigableString
+#from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
-from Bicho.backends import Backend, register_backend
-from Bicho.Config import Config
-from Bicho.utils import *
-from Bicho.common import Tracker, People, Issue, Comment, Change
-from Bicho.db.database import *
+#from Bicho.Config import Config
+#from Bicho.utils import *
 
 import xml.sax.handler
-from xml.sax._exceptions import SAXParseException
+#from xml.sax._exceptions import SAXParseException
 
 
 
@@ -318,7 +309,7 @@ class SoupHtmlParser():
         remove_tags = ['a', 'span','i']
         try:
             [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
-        except Exception, e:
+        except Exception:
             None
         changes = []      
         

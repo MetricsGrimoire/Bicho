@@ -18,22 +18,20 @@
 #
 # Authors:  Santiago Dueñas <sduenas@libresoft.es>
 #           Ronaldo Maia <romaia@async.com.br>
-#           Daniel Izquierdo Cortazar <dizquierdo@glibresoft.es>
+#           Daniel Izquierdo Cortazar <dizquierdo@libresoft.es>
+#           Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
 import re
 import urlparse
-import random
 import urllib2
-import datetime
-import os
 
 import BeautifulSoup
-from storm.locals import *
+from storm.locals import Int, Unicode, Reference
 
 from Bicho.common import Issue, People, Tracker, Comment, Attachment, Change
 from Bicho.backends import register_backend
-from Bicho.db.database import *
+from Bicho.db.database import DBIssue, DBBackend, get_database
 
 
 SOURCEFORGE_DOMAIN = 'http://sourceforge.net'
@@ -234,7 +232,10 @@ class SourceForgeParser():
             asignation = self.__parse_issue_assigned_to(soup)
             category = self.__parse_issue_category(soup)
             group = self.__parse_issue_group(soup)
-            visibility = self.__parse_issue_visibility(soup)
+
+            # FIXME the visibility var below is never used!!
+            #visibility = self.__parse_issue_visibility(soup)
+
             comments = self.__parse_issue_comments(soup)
             attachments = self.__parse_issue_attachments(soup)
             changes = self.__parse_issue_changes(soup)
@@ -596,7 +597,6 @@ register_backend('sf', SourceForge)
 
 
 if __name__ == "__main__":
-    import urllib2
     url = "http://sourceforge.net/tracker/?func=detail&aid=3178299&group_id=152568&atid=784665"
     html = urllib2.urlopen(url)
 

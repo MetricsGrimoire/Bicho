@@ -171,7 +171,7 @@ class Issue:
         """
         if not isinstance(comment, Comment):
             raise ValueError('Parameter "comment" should be a %s instance. %s given.' %
-                             ('Comment', submitted_by.__class__.__name__,))
+                             ('Comment', comment.__class__.__name__,))
         self.comments.append(comment)
 
     def add_attachment(self, attachment):
@@ -185,7 +185,7 @@ class Issue:
         """
         if not isinstance(attachment, Attachment):
             raise ValueError('Parameter "attachment" should be a %s instance. %s given.' %
-                             ('Attachment', submitted_by.__class__.__name__,))
+                             ('Attachment', attachment.__class__.__name__,))
         self.attachments.append(attachment)
 
     def add_change(self, change):
@@ -199,7 +199,7 @@ class Issue:
         """
         if not isinstance(change, Change):
             raise ValueError('Parameter "change" should be a %s instance. %s given.' %
-                             ('Change', submitted_by.__class__.__name__,))
+                             ('Change', change.__class__.__name__,))
         self.changes.append(change)
 
     def add_relationship(self, issue, type):
@@ -234,7 +234,7 @@ class Issue:
         """
         if not isinstance(watcher, People):
             raise ValueError('Parameter "assigned_to" should be a %s instance. %s given.' %
-                             ('People', assigned_to.__class__.__name__,))
+                             ('People', watcher.__class__.__name__,))
         self.watchers.append(watcher)
 
 
@@ -335,10 +335,10 @@ class Change:
         self.field = field
         self.old_value = old_value
         self.new_value = new_value
-        
+
         if not isinstance(changed_by, People):
             raise ValueError('Parameter "changed_by" should be a %s instance. %s given.' %
-                             ('People', submitted_by.__class__.__name__,))
+                             ('People', changed_by.__class__.__name__,))
 
         if not isinstance(changed_on, datetime.datetime):
             raise ValueError('Parameter "changed_on" should be a %s instance. %s given.' %

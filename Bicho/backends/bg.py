@@ -21,21 +21,21 @@
 #          Santiago Dueñas <sduenas@libresoft.es>
 
 import urllib
-import datetime
 import string
+import sys
+import time
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
 from Bicho.backends import Backend, register_backend
 from Bicho.Config import Config
-from Bicho.utils import *
+from Bicho.utils import printerr, printdbg
 from Bicho.common import Tracker, People, Issue, Comment, Change
-from Bicho.db.database import *
+from Bicho.db.database import DBIssue, DBBackend, get_database
 
-from storm.locals import *
+from storm.locals import DateTime, Int, Reference, Unicode
 import xml.sax.handler
-from xml.sax._exceptions import SAXParseException
-from HTMLParser import HTMLParser
+#from xml.sax._exceptions import SAXParseException
 from datetime import datetime
 
 class DBBugzillaIssueExt(object):
@@ -872,7 +872,7 @@ class BGBackend (Backend):
 
         try:
             parser.feed(f.read())
-        except Exception, e:
+        except Exception:
             printerr("Error parsing URL: %s" % (bug_url))
             raise
 
@@ -940,7 +940,7 @@ class BGBackend (Backend):
 
             try:
                 issue_data = self.analyze_bug(bug, url)
-            except Exception, e:
+            except Exception:
                 #FIXME it does not handle the e
                 printerr("Error in function analyzeBug with URL: %s and Bug: %s"
                          % (url,bug))
@@ -951,7 +951,7 @@ class BGBackend (Backend):
             try:
                 bugsdb.insert_issue(issue_data, dbtrk.id)
             except UnicodeEncodeError:
-                print("UnicodeEncodeError: the issue %s couldn't be stored"
+                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                       % (issue_data.issue))
 
             time.sleep(self.delay)
