@@ -22,12 +22,15 @@
 
 import datetime
 import urllib
+import time
 
 from storm.locals import Int, DateTime, Unicode, Reference
 
 from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
 from Bicho.backends import Backend, register_backend
 from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.Config import Config
+from Bicho.utils import printout, printerr, printdbg
 
 from BeautifulSoup import BeautifulSoup
 #from BeautifulSoup import NavigableString
@@ -60,7 +63,6 @@ class DBJiraIssueExt(object):
     project_key = Unicode()
     status = Unicode()
     resolution = Unicode()
-    assigned_to = Int()
 
     issue_id = Int()
 
@@ -78,8 +80,8 @@ class DBJiraIssueExtMySQL(DBJiraIssueExt):
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_jira ( \
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      issue_key VARCHAR(32) NOT NULL, \
-                     link VARCHAR(32) NOT NULL, \
-                     title VARCHAR(32) NOT NULL, \
+                     link VARCHAR(100) NOT NULL, \
+                     title VARCHAR(100) NOT NULL, \
                      environment VARCHAR(35) NOT NULL, \
                      security VARCHAR(35) NOT NULL, \
                      updated DATETIME NOT NULL, \
@@ -692,6 +694,10 @@ class JiraBackend(Backend):
     """
     Jira Backend
     """
+
+    def __init__(self):
+        options = Config()
+        self.delay = options.delay
    
     def bugsNumber(self,url):
         serverUrl = url.split("/browse/")[0]
@@ -701,8 +707,8 @@ class JiraBackend(Backend):
         return bugs
  
     def run(self,url):
-        print "Running bicho with Jira backend..."
-        
+        printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
+
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
@@ -712,13 +718,13 @@ class JiraBackend(Backend):
         serverUrl = url.split("/browse/")[0]
         query = "/si/jira.issueviews:issue-xml/"
         project = url.split("/browse/")[1]
-        
+
         if (project.split("-").__len__() > 1):
             bug_key = project
             project = project.split("-")[0]
 
-            print serverUrl + query + bug_key + "/" + bug_key + ".xml"
-                
+            printdbg(serverUrl + query + bug_key + "/" + bug_key + ".xml")
+
             parser = xml.sax.make_parser(  )
             handler = BugsHandler(  )
             parser.setContentHandler(handler)
@@ -727,7 +733,7 @@ class JiraBackend(Backend):
                 issue = handler.getIssue()
                 bugsdb.insert_issue(issue, dbtrk.id)
             except Exception, e:
-                print e
+                print(e)
 
         else:
             bugs_number = self.bugsNumber(url)
@@ -735,8 +741,8 @@ class JiraBackend(Backend):
             for i in range(int(bugs_number)+1):
                 if i != 0:
                     bug_key = project + "-" + str(i)
-                    print serverUrl + query + bug_key + "/" + bug_key + ".xml"
-                    
+                    printdbg(serverUrl + query + bug_key + "/" + bug_key + ".xml")
+
                     parser = xml.sax.make_parser(  )
                     handler = BugsHandler(  )
                     parser.setContentHandler(handler)
@@ -745,9 +751,10 @@ class JiraBackend(Backend):
                         issue = handler.getIssue()
                         bugsdb.insert_issue(issue, dbtrk.id)
                     except Exception, e:
-                        print e
+                        print(e)
 
-        print "End"
+                    time.sleep(self.delay)
+
+        printout("Done. %s bugs analyzed" % (bugs_number))
 
 register_backend ("jira", JiraBackend)
- 
