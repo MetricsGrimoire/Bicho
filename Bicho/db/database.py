@@ -234,7 +234,11 @@ class DBDatabase:
         db_comment = DBComment(comment.comment, submitted_by.id,
                                comment.submitted_on, issue_id)
         self.store.add(db_comment)
-        self.store.flush()
+        try:
+            self.store.flush()
+        except UnicodeEncodeError:
+            print("UnicodeEncodeError: one of the comments of the issue_id " + \
+                  "%s couldn't be stored" % (issue_id))
         return db_comment
 
     def _insert_attachment(self, attachment, issue_id, tracker_id):
