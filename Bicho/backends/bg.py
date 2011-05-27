@@ -29,7 +29,7 @@ from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
 from Bicho.backends import Backend, register_backend
 from Bicho.Config import Config
-from Bicho.utils import printerr, printdbg
+from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
@@ -863,7 +863,6 @@ class BGBackend (Backend):
         #Retrieving main bug information
         bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
         printdbg(bug_url)
-        print(bug_url)
 
         handler = BugsHandler()
         parser = xml.sax.make_parser()
@@ -893,7 +892,6 @@ class BGBackend (Backend):
 
 
     def run (self, url):
-        printdbg ("Running Bicho with delay of %s seconds" % (str(self.delay)))
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
         #retrieving data in csv format
 
@@ -918,6 +916,8 @@ class BGBackend (Backend):
             #to retrieve bug information
             bugs.append(bug_csv.split(',')[0])
 
+        nbugs = len(bugs)
+
         url = self.url
         url = self.get_domain(url)
         if url.find("apache")>0:
@@ -929,8 +929,8 @@ class BGBackend (Backend):
 
         dbtrk = bugsdb.insert_tracker(trk)
 
-        if len(bugs) == 0:
-            print "No bugs found. Did you provide the correct url?"
+        if nbugs == 0:
+            printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
 
         for bug in bugs:
@@ -955,5 +955,7 @@ class BGBackend (Backend):
                       % (issue_data.issue))
 
             time.sleep(self.delay)
+
+        printout("Done. %s bugs analyzed" % (nbugs))
 
 register_backend ("bg", BGBackend)
