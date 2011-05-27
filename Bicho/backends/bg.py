@@ -947,7 +947,12 @@ class BGBackend (Backend):
                 #print e
                 #continue
                 raise
-            bugsdb.insert_issue(issue_data, dbtrk.id)
+
+            try:
+                bugsdb.insert_issue(issue_data, dbtrk.id)
+            except UnicodeEncodeError:
+                print("UnicodeEncodeError: the issue %s couldn't be stored"
+                      % (issue_data.issue))
 
             time.sleep(self.delay)
 
