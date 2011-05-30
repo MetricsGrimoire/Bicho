@@ -25,6 +25,8 @@
 import re
 import urlparse
 import urllib2
+import sys
+import time
 
 import BeautifulSoup
 from storm.locals import Int, Unicode, Reference
@@ -32,6 +34,8 @@ from storm.locals import Int, Unicode, Reference
 from Bicho.common import Issue, People, Tracker, Comment, Attachment, Change
 from Bicho.backends import register_backend
 from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.Config import Config
+from Bicho.utils import printdbg, printout, printerr
 
 
 SOURCEFORGE_DOMAIN = 'http://sourceforge.net'
@@ -66,8 +70,11 @@ class SourceForgeParserError(Exception):
     """
     Error parsing SourceForge webpages
     """
-    pass
+    def __init__(self, value):
+        self.value = value
 
+    def __str__(self):
+        return repr(self.value)
 
 class SourceForgeIssue(Issue):
     """
@@ -79,12 +86,12 @@ class SourceForgeIssue(Issue):
                        submitted_by, submitted_on)
         self.category = None
         self.group = None
-    
+
     def set_category(self, category):
         """
         """
         self.category = category
-    
+
     def set_group(self, group):
         """
         """
@@ -236,16 +243,36 @@ class SourceForgeParser():
             # FIXME the visibility var below is never used!!
             #visibility = self.__parse_issue_visibility(soup)
 
-            comments = self.__parse_issue_comments(soup)
-            attachments = self.__parse_issue_attachments(soup)
-            changes = self.__parse_issue_changes(soup)
+            try:
+                comments = self.__parse_issue_comments(soup)
+            except SourceForgeParserError:
+                printerr("Error parsing issue's comments")
+                comments = None
+                pass
+
+            try:
+                attachments = self.__parse_issue_attachments(soup)
+            except SourceForgeParserError:
+                printerr("Error parsing issue's attachments")
+                attachments = None
+                pass
+
+            try:
+                changes = self.__parse_issue_changes(soup)
+            except SourceForgeParserError:
+                printerr("Error parsing issue's changes")
+                changes = None
+                pass
+
         except:
             raise
 
         submitted_by = People(submission['id'])
         submitted_by.set_name(submission['name'])
         submitted_on = submission['date']
-        assigned_to = People(asignation)
+        #assigned_to = People(asignation)
+        assigned_to = People('')
+        assigned_to.set_name(asignation)
 
         issue = SourceForgeIssue(id, 'bug', summary, desc,
                                  submitted_by, submitted_on)
@@ -255,23 +282,26 @@ class SourceForgeParser():
         issue.set_category(category)
         issue.set_group(group)
 
-        for comment in comments:
-            submitted_by = People(comment['by']['id'])
-            submitted_by.set_name(comment['by']['name'])
-            issue.add_comment(Comment(comment['desc'], submitted_by,
-                                      comment['date']))
+        if comments:
+            for comment in comments:
+                submitted_by = People(comment['by']['id'])
+                submitted_by.set_name(comment['by']['name'])
+                issue.add_comment(Comment(comment['desc'], submitted_by,
+                                          comment['date']))
 
-        for attachment in attachments:
-            a = Attachment(attachment['url'])
-            a.set_name(attachment['filename'])
-            a.set_description(attachment['desc'])
-            issue.add_attachment(a)
+        if attachments:
+            for attachment in attachments:
+                a = Attachment(attachment['url'])
+                a.set_name(attachment['filename'])
+                a.set_description(attachment['desc'])
+                issue.add_attachment(a)
 
-        for change in changes:
-            changed_by = People(change['by']['id'])
-            changed_by.set_name(change['by']['name'])
-            issue.add_change(Change(change['field'], change['old_value'],
-                                    'unknown', changed_by, change['date']))
+        if changes:
+            for change in changes:
+                changed_by = People(change['by']['id'])
+                changed_by.set_name(change['by']['name'])
+                issue.add_change(Change(change['field'], change['old_value'],
+                                        'unknown', changed_by, change['date']))
 
         return issue
 
@@ -294,7 +324,8 @@ class SourceForgeParser():
             m = ISSUE_ID_PATTERN.match(unicode(soup.title.string))
             return m.group(1)
         except:
-            print('Error parsing issue id')
+            printerr('Error parsing issue id')
+            raise SourceForgeParserError('Error parsing issue id')
 
     def __parse_issue_summary(self, soup):
         """
@@ -303,7 +334,8 @@ class SourceForgeParser():
             m = ISSUE_SUMMARY_PATTERN.match(unicode(soup.title.string))
             return m.group(1)
         except:
-            print('Error parsing issue summary')
+            printerr('Error parsing issue summary')
+            raise SourceForgeParserError('Error parsing issue summary')
 
     def __parse_issue_description(self, soup):
         """
@@ -317,8 +349,9 @@ class SourceForgeParser():
             desc = u''.join(details.contents)
             return desc
         except:
-            print('Error parsing issue description')
-    
+            printerr('Error parsing issue description')
+            raise SourceForgeParserError('Error parsing issue description')
+
     def __parse_issue_submission(self, soup):
         """
         """
@@ -328,12 +361,22 @@ class SourceForgeParser():
             submitted = soup.find({'label': True},
                                   text=ISSUE_SUBMISSION_PATTERN).findNext('p')
 
-            submission['name'] = submitted.a.get('title')
-            submission['id'] = submitted.a.string
-            submission['date'] = self.__str_to_date(ISSUE_SUBMISSION_DATE_PATTERN.match(submitted.contents[2]).group(1))
+            # in case we find
+            # <label>Submitted:</label>
+            # <p>Nobody/Anonymous ( nobody  ) - 2010-01-24 14:18:45 UTC</p>
+            if submitted.a:
+                submission['name'] = submitted.a.get('title')
+                submission['id'] = submitted.a.string
+                submission['date'] = self.__str_to_date(ISSUE_SUBMISSION_DATE_PATTERN.match(submitted.contents[2]).group(1))
+            else:
+                submission['name'] = 'nobody'
+                submission['id'] = 'nobody'
+                aux1 = submitted.contents[0]
+                aux2 = aux1[aux1.find(' - '):]
+                submission['date'] = self.__str_to_date(ISSUE_SUBMISSION_DATE_PATTERN.match(aux2).group(1))
             return submission
         except:
-            print('Error parsing issue submission')
+            raise SourceForgeParserError('Error parsing issue submission')
 
     def __parse_issue_priority(self, soup):
         """
@@ -343,8 +386,9 @@ class SourceForgeParser():
                                  text=ISSUE_PRIORITY_PATTERN).findNext('p')
             return priority.contents[0]
         except:
-            print('Error parsing issue priority')
-    
+            printerr('Error parsing issue priority')
+            raise SourceForgeParserError('Error parsing issue priority')
+
     def __parse_issue_status(self, soup):
         """
         """
@@ -353,7 +397,8 @@ class SourceForgeParser():
                                text=ISSUE_STATUS_PATTERN).findNext('p')
             return status.contents[0]
         except:
-            print('Error parsing issue status')
+            printerr('Error parsing issue status')
+            raise SourceForgeParserError('Error parsing issue status')
 
     def __parse_issue_resolution(self, soup):
         """
@@ -363,8 +408,9 @@ class SourceForgeParser():
                                    text=ISSUE_RESOLUTION_PATTERN).findNext('p')
             return resolution.contents[0]
         except:
-            print('Error parsing issue resolution')
-    
+            printerr('Error parsing issue resolution')
+            raise SourceForgeParserError('Error parsing issue resolution')
+
     def __parse_issue_assigned_to(self, soup):
         """
         """
@@ -373,7 +419,8 @@ class SourceForgeParser():
                                  text=ISSUE_ASSIGNED_TO_PATTERN).findNext('p')
             return assigned.contents[0]
         except:
-            print('Error parsing issue assigned to')
+            printerr('Error parsing issue assigned to')
+            raise SourceForgeParserError('Error parsing issue assigned to')
 
     def __parse_issue_category(self, soup):
         """
@@ -383,8 +430,9 @@ class SourceForgeParser():
                                  text=ISSUE_CATEGORY_PATTERN).findNext('p')
             return category.contents[0]
         except:
-            print('Error parsing issue category')
-    
+            printerr('Error parsing issue category')
+            raise SourceForgeParserError('Error parsing issue category')
+
     def __parse_issue_group(self, soup):
         """
         """
@@ -393,8 +441,9 @@ class SourceForgeParser():
                               text=ISSUE_GROUP_PATTERN).findNext('p')
             return group.contents[0]
         except:
-            print('Error parsing issue group')
-    
+            printerr('Error parsing issue group')
+            raise SourceForgeParserError('Error parsing issue group')
+
     def __parse_issue_visibility(self, soup):
         """
         """
@@ -403,14 +452,14 @@ class SourceForgeParser():
                                    text=ISSUE_VISIBILITY_PATTERN).findNext('p')
             return visibility.contents[0]
         except:
-            print('Error parsing issue visibility')
-    
+            printerr('Error parsing issue visibility')
+            raise SourceForgeParserError('Error parsing issue visibility')
+
     def __parse_issue_comments(self, soup):
         """
         """
+        comments = []
         try:
-            comments = []
-
             artifacts = soup.findAll('tr', {'class': ISSUE_COMMENT_CLASS_PATTERN})
             for art in artifacts:
                 comment = {}
@@ -418,7 +467,10 @@ class SourceForgeParser():
                 rawsub, rawdesc = art.findAll('p')
                 # Date and sender are content on the first 'p'
                 a = rawsub.find('a')
-                comment['by'] = {'name' : a.get('title'), 'id' : a.string}
+                if a:
+                    comment['by'] = {'name' : a.get('title'), 'id' : a.string}
+                else:
+                    comment['by'] = {'name':'nobody', 'id':'nobody'}
 
                 # Time stamp is the first value of the 'p' contents
                 d = self.__clean_str(rawsub.contents[0])
@@ -428,16 +480,16 @@ class SourceForgeParser():
                 comment['desc'] = self.__clean_str(u''.join(rawdesc.contents))
 
                 comments.append(comment)
-            return comments
         except:
-            print('Errror parsing issue comments')
-    
+            SourceForgeParserError('Errror parsing issue comments')
+        printdbg("%s comments" % (str(len(comments))))
+        return comments
+
     def __parse_issue_attachments(self, soup):
         """
         """
+        attachments = []
         try:
-            attachments = []
-
             files = soup.find('h4', {'id': 'filebar'}).findNext('tbody').findAll('tr')
             for f in files:
                 attch = {}
@@ -447,18 +499,21 @@ class SourceForgeParser():
                 attch['filename'] = self.__clean_str(u''.join(aux[0].contents))
                 attch['desc'] = self.__clean_str(u''.join(aux[1].contents))
                 attch['url'] = SOURCEFORGE_DOMAIN + aux[2].a.get('href')
-
                 attachments.append(attch)
-            return attachments
+        except AttributeError:
+            # there is no attachment
+            pass
         except:
-            print('Errror parsing issue attachments')
+            raise SourceForgeParserError("Error parsing issue's attachments")
+
+        printdbg("%s attachments" % (str(len(attachments))))
+        return attachments
 
     def __parse_issue_changes(self, soup):
         """
         """
+        changes = []
         try:
-            changes = []
-
             entries = soup.find('h4', {'id': 'changebar'}).findNext('tbody').findAll('tr')
             for e in entries:
                 change = {}
@@ -468,14 +523,21 @@ class SourceForgeParser():
                 change['field'] = self.__clean_str(aux[0].string)
                 change['old_value'] = self.__clean_str(aux[1].string)
                 change['date'] = self.__str_to_date(self.__clean_str(aux[2].string))
-                change['by'] = {'name': self.__clean_str(aux[3].a.get('title')),
-                                'id': self.__clean_str(aux[3].a.string)}
+                if aux[3].a:
+                    change['by'] = {'name': self.__clean_str(aux[3].a.get('title')),
+                                    'id': self.__clean_str(aux[3].a.string)}
+                else:
+                    change['by'] = {'name':'nobody', 'id':'nobody'}
 
                 changes.append(change)
-            return changes
+        except AttributeError:
+            # there are no changes
+            pass
         except:
-            print('Errror parsing issue changes')
-    
+            raise SourceForgeParserError('Errror parsing issue changes')
+        printdbg("%s changes" % (str(len(changes))))
+        return changes
+
     def __prepare_soup(self, soup):
         """
         """
@@ -517,9 +579,15 @@ class SourceForge():
     """
     URL_REQUIRED_FIELDS = ['atid', 'group_id']
 
+    def __init__(self):
+        options = Config()
+        self.delay = options.delay
+
     def run(self, url):
         """
         """
+        printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
+
         self.url = url
         self.__check_tracker_url(self.url)
 
@@ -531,10 +599,20 @@ class SourceForge():
         self.parser = SourceForgeParser()
         ids = self.__get_issues_list(self.url)
 
+        nbugs = len(ids)
+        if nbugs == 0:
+            printout("No bugs found. Did you provide the correct url?")
+            sys.exit(0)
+
         for id in ids:
             url = self.url + '&func=detail&aid=%s' % id # FIXME:urls!!!
+            printdbg(url)
             issue = self.__get_issue(url)
             self.__insert_issue(issue)
+
+            time.sleep(self.delay)
+
+        printout("Done. %s bugs analyzed" % (nbugs))
 
     def __get_issues_list(self, url):
         """
@@ -570,7 +648,8 @@ class SourceForge():
     def __insert_issue(self, issue):
         """
         """
-        db_issue = self.db.insert_issue(issue, self.tracker_id)
+        #db_issue = self.db.insert_issue(issue, self.tracker_id)
+        self.db.insert_issue(issue, self.tracker_id)
 
     def __get_html(self, url):
         """
