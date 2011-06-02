@@ -733,7 +733,7 @@ class JiraBackend(Backend):
                 issue = handler.getIssue()
                 bugsdb.insert_issue(issue, dbtrk.id)
             except Exception, e:
-                print(e)
+                printerr(e)
 
         else:
             bugs_number = self.bugsNumber(url)
@@ -751,7 +751,7 @@ class JiraBackend(Backend):
                         issue = handler.getIssue()
                         bugsdb.insert_issue(issue, dbtrk.id)
                     except Exception, e:
-                        print(e)
+                        printerr(e)
 
                     time.sleep(self.delay)
 
