@@ -143,8 +143,16 @@ class DBBugzillaBackend(DBBackend):
         @return: the inserted extra parameters issue
         @rtype: L{DBSourceForgeIssueExt}
         """
+
+        newIssue = False;
+
         try:
-            db_issue_ext = DBBugzillaIssueExt(issue_id)
+            db_issue_ext = store.find(DBBugzillaIssueExt,
+                                    DBBugzillaIssueExt.issue_id == issue_id).one()
+            if not db_issue_ext:
+                newIssue = True
+                db_issue_ext = DBBugzillaIssueExt(issue_id)
+
             db_issue_ext.alias = self.__return_unicode(issue.alias)
             db_issue_ext.delta_ts = issue.delta_ts
             db_issue_ext.reporter_accessible = issue.reporter_accessible
@@ -171,7 +179,9 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.group = self.__return_unicode(issue.group)
             db_issue_ext.flag = self.__return_unicode(issue.flag)
 
-            store.add(db_issue_ext)
+            if newIssue == True:
+                store.add(db_issue_ext)
+
             store.flush()
             return db_issue_ext
         except:
@@ -904,17 +914,23 @@ class BGBackend (Backend):
 
         printdbg(url)
 
-        f = urllib.urlopen(url)
+        #The url is a bug            
+        if url.find("show_bug.cgi")>0:
+            bugs = []
+            bugs.append(self.url.split("show_bug.cgi?id=")[1])
 
-        #Problems using csv library, not all the fields are delimited by
-        # '"' character. Easier using split.
-        bugList_csv = f.read().split('\n')
-        bugs = []
-        #Ignoring first row
-        for bug_csv in bugList_csv[1:]:
-            #First field is the id field, necessary to later create the url
-            #to retrieve bug information
-            bugs.append(bug_csv.split(',')[0])
+        else:
+            f = urllib.urlopen(url)
+
+            #Problems using csv library, not all the fields are delimited by
+            # '"' character. Easier using split.
+            bugList_csv = f.read().split('\n')
+            bugs = []
+            #Ignoring first row
+            for bug_csv in bugList_csv[1:]:
+                #First field is the id field, necessary to later create the url
+                #to retrieve bug information
+                bugs.append(bug_csv.split(',')[0])
 
         nbugs = len(bugs)
 

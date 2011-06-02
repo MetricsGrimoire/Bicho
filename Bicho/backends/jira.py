@@ -125,8 +125,16 @@ class DBJiraBackend(DBBackend):
         @return: the inserted extra parameters issue
         @rtype: L{DBJiraIssueExt}
         """
+        
+        newIssue = False;
+
         try:
-            db_issue_ext = DBJiraIssueExt(issue_id)
+            db_issue_ext = store.find(DBJiraIssueExt,
+                                    DBJiraIssueExt.issue_id == issue_id).one()
+            if not db_issue_ext:
+                newIssue = True
+                db_issue_ext = DBJiraIssueExt(issue_id)
+            
             db_issue_ext.title = self.__return_unicode(issue.title)
             db_issue_ext.issue_key = self.__return_unicode(issue.issue_key)
             db_issue_ext.link = self.__return_unicode(issue.link)
@@ -142,7 +150,9 @@ class DBJiraBackend(DBBackend):
             db_issue_ext.status = self.__return_unicode(issue.status)
             db_issue_ext.resolution = self.__return_unicode(issue.resolution)
 
-            store.add(db_issue_ext)
+            if newIssue == True:
+                store.add(db_issue_ext)
+
             store.flush()
             return db_issue_ext
         except:
@@ -722,6 +732,7 @@ class JiraBackend(Backend):
         if (project.split("-").__len__() > 1):
             bug_key = project
             project = project.split("-")[0]
+            bugs_number = 1
 
             printdbg(serverUrl + query + bug_key + "/" + bug_key + ".xml")
 
