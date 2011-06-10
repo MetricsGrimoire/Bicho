@@ -1,20 +1,29 @@
-Description
+ Description
 -----------
 
-Bicho is a command line based tool used to analyze bug tracking systems. It
-creates a database with three tables. Bugs, which contains general information
-about bugs; Comments, which contains information about each comment found in
-the BTS; and Attachments, wich contains information about each attachment
-found. Also, each Comment and Attachment are associated with a Bug.
+Bicho is a command line based tool used to parse bug/issue tracking systems. It
+gets all the information associated to issues and store them in a relation
+database.
 
 
-How to get Bicho
+ License
+---------
+
+Bicho is licensed under GNU General Public License (GPL), version 2 or later.
+
+
+ How to get Bicho
 ----------------
 
+Releases:
+  * http://projects.libresoft.es/projects/bicho/files
+
+Latest version:
   * git clone http://git.libresoft.es/bicho
   * git clone git://git.libresoft.es/git/bicho
 
-Requirements
+
+ Requirements
 ------------
 
  * Python >= 2.4
@@ -23,7 +32,8 @@ Requirements
    - mysqldb or psycopg2 or pysqlite2
  * Beautiful Soup library: error-tolerant HTML parser for Python
 
-Installing bicho
+
+ Installing bicho
 ----------------
 
  You can install bicho running the setup.py script:
@@ -35,12 +45,12 @@ Installing bicho
   $ bicho --help
 
 
-Contact
+ Contact
 -------
 
  * Website
 
-   https://projects.libresoft.es/projects/bicho
+   http://projects.libresoft.es/projects/bicho
 
  * Mailing list
 
@@ -51,37 +61,39 @@ Contact
    #libresoft at freenode.net
 
 
-Examples
+ Examples
 --------
 
- Getting information from Evince project hosted in bugzilla.gnome.org
+It is very important to use a delay, if you run Bicho against big sites with a
+delay between bug petitions your IP address could be banned!
 
- 1- Using the command line
+E1. Getting information from a project that uses Bugzilla, like Bicho ;)
 
- $ bicho --db-user-out=[USER] --db-password-out=[PASS] --db-database-out=prueba bg https://bugzilla.libresoft.es/buglist.cgi?product=CVSAnalY
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] bg https://bugzilla.libresoft.es/buglist.cgi?product=bicho
 
- 2- Using a config file (broken in master version)
+E2. Getting information from a project hosted in sourceforge.net
 
-  2.1 Content of the configuration file
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 sf "http://sourceforge.net/tracker/?atid=516295&group_id=66938"
 
-##[General]
-type = 'bg'
-url = 'https://bugzilla.gnome.org/buglist.cgi?product=evince'
-debug = False
-delay = True
+E3. Getting information from a project using JIRA
 
-##[DatabaseOut]
-db_driver_out = 'mysql'
-db_user_out = [USER]
-db_password_out = [PASSWD]
-db_database_out = 'bicho_database'
-db_hostname_out = 'localhost'
-db_port_out = '3306'
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 jira http://support.petalslink.com/browse/PETALSMASTER
 
-  2.2 Execution
 
-  $ bicho --cfg=config.sample
+ FAQ
+----
 
- 3- help
+F1. Bicho crashed with 'UnicodeEncodeError' exception
 
-  $ bicho --help
+UnicodeEncodeError appears when it is not possible to write the data in the
+database with the encoding used by this one, to avoid that set your database to
+use UTF-8
+
+F2. What is the database schema?
+
+There is a nice PNG schema in the directory /doc/database
+
+F3. How can I create a new backend?
+
+Tell us through the contact information above that you want to create a new
+backend, we'll try to give you as much information as possible.
