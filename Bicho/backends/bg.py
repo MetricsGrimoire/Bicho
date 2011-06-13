@@ -169,7 +169,7 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.bug_file_loc = self.__return_unicode(issue.bug_file_loc)
             db_issue_ext.status_whiteboard = self.__return_unicode(issue.status_whiteboard)
             db_issue_ext.target_milestone = self.__return_unicode(issue.target_milestone)
-            db_issue_ext.votes = issue.votes
+            db_issue_ext.votes = self.__return_int(issue.votes)
             db_issue_ext.everconfirmed = self.__return_unicode(issue.everconfirmed)
             db_issue_ext.qa_contact = self.__return_unicode(issue.qa_contact)
             db_issue_ext.estimated_time = self.__return_unicode(issue.estimated_time)
@@ -188,6 +188,15 @@ class DBBugzillaBackend(DBBackend):
         except:
             store.rollback()
             raise
+
+    def __return_int(self, str):
+        """
+        Decodes into int, and pays attention to empty ones
+        """ 
+        if str is None:
+            return str
+        else:
+            return int(str) 
 
     def __return_unicode(self, str):
         """
