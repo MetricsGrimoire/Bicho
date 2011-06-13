@@ -1,6 +1,5 @@
-bicho (0.3.0-1) unstable; urgency=low
+bicho (0.7beta-1) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Initial release (Closes: #123456)
 
- -- Juan Francisco Gato Luis <jfcogato@libresoft.es>  Wed, 26 Aug 2009 12:53:14 +0200
-
+ -- Luis Cañas Díaz <lcanas@libresoft.es>  Tue, 14 Jun 2011 08:13:45 +0200

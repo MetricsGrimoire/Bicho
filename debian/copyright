@@ -1,24 +1,38 @@
-This package was debianized by Juan Francisco Gato Luis <jfcogato@libresoft.es> on
-Wed, 26 Aug 2009 12:53:14 +0200.
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: bicho
+Upstream-Contact: Luis Cañas Díaz <lcanas@libresoft.es>
+Source: <http://projects.libresoft.es/projects/bicho>
 
-It was downloaded from <url://example.com>
+Files: *
+Copyright: 2007-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
+License: GPL-2+
 
-Upstream Author(s):
+Files: debian/*
+Copyright: 2007-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
+License: GPL-2+
 
-    <put author's name and email here>
-    <likewise for another author>
+License: GPL-2+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".  
 
-Copyright:
+# Please choose a license for your packaging work. If the program you package
+# uses a mainstream license, using the same license is the safest choice.
+# Please avoid to pick license terms that are more restrictive than the
+# packaged work, as it may make Debian's contributions unacceptable upstream.
+# If you just want it to be GPL version 2, leave the following line in.
 
-    <Copyright (C) YYYY Name OfAuthor>
-    <likewise for another author>
-
-License:
-
-    <Put the license of the package here indented by 4 spaces>
-
-The Debian packaging is (C) 2009, Juan Francisco Gato Luis <jfcogato@libresoft.es> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
-
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
+and is licensed under the GPL version 2, or (at your option) any later version, see above.

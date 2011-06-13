@@ -1,5 +1,6 @@
 #!/usr/bin/python
-
+# -*- coding: utf-8 -*-
+#
 # Copyright (C) 2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
@@ -24,9 +25,9 @@ from distutils.core import setup
 
 setup(name = "Bicho",
       version = "0.7beta",
-      author =  "GSyC/LibreSoft",
+      author =  "GSyC/LibreSoft, Universidad Rey Juan Carlos",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
-      description = "An analysis tool for you Bug Tracker System",
+      description = "Analysis tool for Issue/Bug Tracking Systems",
       url = "https://projects.libresoft.es/projects/bicho",      
       packages = ['Bicho', 'Bicho.backends', 'Bicho.db'],
       data_files = [('share/man/man1/',['doc/bicho.1'])],
