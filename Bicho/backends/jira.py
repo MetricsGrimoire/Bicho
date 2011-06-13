@@ -323,20 +323,23 @@ class SoupHtmlParser():
             [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
         except Exception:
             None
-        changes = []      
         
+        changes = []      
         #FIXME The id of the changes are not stored
         tables = soup.findAll("div", {"class": "actionContainer"})
         table = None
+    
         for table in tables:
             change_author = table.find("div", {"class": "action-details"})
             
             if change_author == None:
                 break
-            
             author = People(change_author.contents[2].strip())
-            date = datetime.datetime.strptime(change_author.contents[4].split(" +")[0],"%a, %d %b %Y - %H:%M:%S")
-            
+            try:
+                date = datetime.datetime.strptime(change_author.contents[4].split(" +")[0],"%a, %d %b %Y - %H:%M:%S")
+            except:
+                date = datetime.datetime.strptime(change_author.contents[4].split(" +")[0],"%d/%b/%y %H:%M %p")
+ 
             rows = list(table.findAll('tr'))
             for row in rows:
                 cols = list(row.findAll('td'))
@@ -347,7 +350,6 @@ class SoupHtmlParser():
                     
                     change = Change(field, old, new, author, date)
                     changes.append(change)
-            
         return changes
 
 class BugsHandler(xml.sax.handler.ContentHandler):
@@ -677,7 +679,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             issue.setStatus(status)
             issue.setResolution(resolution)
             
-            bug_activity_url = bug.link + '?page=com.atlassian.jira.plugin.system.issuetabpanels%3Achangehistory-tabpanel#issue-tabs'
+            bug_activity_url = bug.link + '?page=com.atlassian.jira.plugin.system.issuetabpanels%3Achangehistory-tabpanel'
             data_activity = urllib.urlopen(bug_activity_url).read()
             parser = SoupHtmlParser(data_activity, bug.key_id)
             changes = parser.parse_changes()
@@ -744,7 +746,8 @@ class JiraBackend(Backend):
                 issue = handler.getIssue()
                 bugsdb.insert_issue(issue, dbtrk.id)
             except Exception, e:
-                printerr(e)
+                #printerr(e)
+                print(e)
 
         else:
             bugs_number = self.bugsNumber(url)
@@ -763,7 +766,7 @@ class JiraBackend(Backend):
                         bugsdb.insert_issue(issue, dbtrk.id)
                     except Exception, e:
                         printerr(e)
-
+                        print(e)
                     time.sleep(self.delay)
 
         printout("Done. %s bugs analyzed" % (bugs_number))
