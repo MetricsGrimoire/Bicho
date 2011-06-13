@@ -36,6 +36,7 @@ from Bicho.db.database import DBIssue, DBBackend, get_database
 from storm.locals import DateTime, Int, Reference, Unicode
 import xml.sax.handler
 #from xml.sax._exceptions import SAXParseException
+from dateutil.parser import parse
 from datetime import datetime
 
 class DBBugzillaIssueExt(object):
@@ -251,7 +252,7 @@ class SoupHtmlParser():
         """
         Returns datetime object from string
         """
-        return datetime.strptime(str_date,"%Y-%m-%d %H:%M:%S")
+        return parse(str_date)
 
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
@@ -728,13 +729,13 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         """
         Returns datetime object from string
         """
-        return datetime.strptime(str_date,"%Y-%m-%d %H:%M")
+        return parse(str_date)
 
     def _to_datetime_with_secs(self,str_date):
         """
         Returns datetime object from string with seconds
         """
-        return datetime.strptime(str_date,"%Y-%m-%d %H:%M:%S")
+        return parse(str_date)
 
 
     def get_issue(self):

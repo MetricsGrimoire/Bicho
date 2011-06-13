@@ -26,6 +26,8 @@ import time
 
 from storm.locals import Int, DateTime, Unicode, Reference
 
+from dateutil.parser import parse
+
 from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
 from Bicho.backends import Backend, register_backend
 from Bicho.db.database import DBIssue, DBBackend, get_database
@@ -335,10 +337,7 @@ class SoupHtmlParser():
             if change_author == None:
                 break
             author = People(change_author.contents[2].strip())
-            try:
-                date = datetime.datetime.strptime(change_author.contents[4].split(" +")[0],"%a, %d %b %Y - %H:%M:%S")
-            except:
-                date = datetime.datetime.strptime(change_author.contents[4].split(" +")[0],"%d/%b/%y %H:%M %p")
+            date = parse(change_author.contents[4])
  
             rows = list(table.findAll('tr'))
             for row in rows:
@@ -658,9 +657,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             assigned_by = People(bug.reporter_username)
             assigned_by.set_name(bug.reporter)
             
-            #FIXME we erase the +0000          
-            submitted_on = datetime.datetime.strptime(bug.created.split(" +")[0],"%a, %d %b %Y %H:%M:%S") 
-            
+            submitted_on = parse(bug.created)
+
             issue = JiraIssue(issue_id, issue_type, summary, description, submitted_by, submitted_on)
             issue.set_assigned(assigned_by)
             issue.setIssue_key(bug.issue_key)
@@ -668,8 +666,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             issue.setLink(bug.link)
             issue.setEnvironment(bug.environment)
             issue.setSecurity(bug.security)
-            #FIXME we erase the +0000          
-            issue.setUpdated(datetime.datetime.strptime(bug.updated.split(" +")[0],"%a, %d %b %Y %H:%M:%S"))
+            issue.setUpdated(parse(bug.updated))
             issue.setVersion(bug.version)
             issue.setComponent(bug.component)
             issue.setVotes(bug.votes)
@@ -688,14 +685,14 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
             for comment in bug.comments:
                 comment_by = People(comment.comment_author)
-                comment_on = datetime.datetime.strptime(comment.comment_created.split(" +")[0],"%a, %d %b %Y %H:%M:%S")
+                comment_on = parse(comment.comment_created)
                 com = Comment(comment.comment, comment_by, comment_on)
                 issue.add_comment(com)
 
             for attachment in bug.attachments:
                 url = "/secure/attachment/" + attachment.attachment_id + "/" + attachment.attachment_name
                 attachment_by = People(attachment.attachment_author)
-                attachment_on = datetime.datetime.strptime(attachment.attachment_created.split(" +")[0],"%a, %d %b %Y %H:%M:%S")
+                attachment_on = parse(attachment.attachment_created)
                 attach = Attachment(url, attachment_by, attachment_on)
                 issue.add_attachment(attach)
             #FIXME customfield are not stored in db because is the fields has the same in all the bugs

@@ -37,7 +37,6 @@ from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.Config import Config
 from Bicho.utils import printdbg, printout, printerr
 
-
 SOURCEFORGE_DOMAIN = 'http://sourceforge.net'
 
 # SourceForge patterns for HTML fields
@@ -581,8 +580,9 @@ class SourceForgeParser():
       Convert a string with the form YYYY-MM-DD HH:MM to an well-formed
       datatime type.
       """
-      from datetime import datetime
-      dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
+      from dateutil.parser import parse
+      #dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
+      dt = parse(s)
       return dt
 
 
