@@ -582,7 +582,7 @@ class SourceForgeParser():
       """
       from dateutil.parser import parse
       #dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
-      dt = parse(s)
+      dt = parse(s).replace(tzinfo=None)
       return dt
 
 

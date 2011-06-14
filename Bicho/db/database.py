@@ -163,6 +163,7 @@ class DBDatabase:
             db_issue.priority = unicode(issue.priority)
             db_issue.submitted_by = self.insert_people(issue.submitted_by, 
                                                        tracker_id).id
+
             db_issue.submitted_on = issue.submitted_on
             db_issue.assigned_to = self.insert_people(issue.assigned_to, 
                                                       tracker_id).id

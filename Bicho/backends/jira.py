@@ -337,7 +337,7 @@ class SoupHtmlParser():
             if change_author == None:
                 break
             author = People(change_author.contents[2].strip())
-            date = parse(change_author.contents[4])
+            date = parse(change_author.contents[4]).replace(tzinfo=None)
  
             rows = list(table.findAll('tr'))
             for row in rows:
@@ -657,7 +657,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             assigned_by = People(bug.reporter_username)
             assigned_by.set_name(bug.reporter)
             
-            submitted_on = parse(bug.created)
+            submitted_on = parse(bug.created).replace(tzinfo=None)
 
             issue = JiraIssue(issue_id, issue_type, summary, description, submitted_by, submitted_on)
             issue.set_assigned(assigned_by)
@@ -666,7 +666,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             issue.setLink(bug.link)
             issue.setEnvironment(bug.environment)
             issue.setSecurity(bug.security)
-            issue.setUpdated(parse(bug.updated))
+            issue.setUpdated(parse(bug.updated).replace(tzinfo=None))
             issue.setVersion(bug.version)
             issue.setComponent(bug.component)
             issue.setVotes(bug.votes)
@@ -685,14 +685,14 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
             for comment in bug.comments:
                 comment_by = People(comment.comment_author)
-                comment_on = parse(comment.comment_created)
+                comment_on = parse(comment.comment_created).replace(tzinfo=None)
                 com = Comment(comment.comment, comment_by, comment_on)
                 issue.add_comment(com)
 
             for attachment in bug.attachments:
                 url = "/secure/attachment/" + attachment.attachment_id + "/" + attachment.attachment_name
                 attachment_by = People(attachment.attachment_author)
-                attachment_on = parse(attachment.attachment_created)
+                attachment_on = parse(attachment.attachment_created).replace(tzinfo=None)
                 attach = Attachment(url, attachment_by, attachment_on)
                 issue.add_attachment(attach)
             #FIXME customfield are not stored in db because is the fields has the same in all the bugs

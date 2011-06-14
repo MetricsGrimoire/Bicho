@@ -261,7 +261,7 @@ class SoupHtmlParser():
         """
         Returns datetime object from string
         """
-        return parse(str_date)
+        return parse(str_date).replace(tzinfo=None)
 
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
@@ -738,13 +738,13 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         """
         Returns datetime object from string
         """
-        return parse(str_date)
+        return parse(str_date).replace(tzinfo=None)
 
     def _to_datetime_with_secs(self,str_date):
         """
         Returns datetime object from string with seconds
         """
-        return parse(str_date)
+        return parse(str_date).replace(tzinfo=None)
 
 
     def get_issue(self):
