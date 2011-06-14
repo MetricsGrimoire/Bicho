@@ -182,30 +182,27 @@ class DBDatabase:
 
             # Insert comments
             for comment in issue.comments:
-                try:
+                db_comment = self._get_db_comment(comment, db_issue.id, tracker_id)
+                if db_comment == -1:
                     db_comment = self._insert_comment(comment, db_issue.id, tracker_id)
                     if self.backend is not None:
                         self.backend.insert_comment_ext(self.store, comment, db_comment.id)
-                except:
-                    None
 
             # Insert attachments
             for attachment in issue.attachments:
-                try:
+                db_attch = self._get_db_attachment(attachment, db_issue.id, tracker_id)
+                if db_attch == -1:
                     db_attch = self._insert_attachment(attachment, db_issue.id, tracker_id)
                     if self.backend is not None:
                         self.backend.insert_attachment_ext(self.store, attachment, db_attch.id)
-                except:
-                    None
 
             # Insert changes
             for change in issue.changes:
-                try:
+                db_change = self._get_db_change(change, db_issue.id, tracker_id)
+                if db_change == -1:
                     db_change = self._insert_change(change, db_issue.id, tracker_id)
                     if self.backend is not None:
                         self.backend.insert_change_ext(self.store, change, db_change.id)
-                except:
-                    None
 
             # Insert CC/watchers
             for person in issue.watchers:
@@ -417,6 +414,80 @@ class DBDatabase:
             db_issue = -1
 
         return db_issue
+
+    def _get_db_comment(self,comment, issue_id, tracker_id):
+        """
+        Search a comment for the issue X{issue_id}
+
+        @param comment: comment to insert
+        @type comment: L{Comment}
+        @param issue_id: issue identifier
+        @type issue_id: C{int}
+        @param tracker_id: identifier of the tracker
+        @type tracker_id: C{int}
+
+        """
+        db_comment = self.store.find(DBComment,
+                                    DBComment.issue_id == issue_id,
+                                    DBComment.text == comment.comment,
+                                    DBComment.submitted_on == comment.submitted_on).one()
+        if not db_comment:
+            #if comment is not stored, return -1 to know it's a new one
+            db_comment = -1
+
+        return db_comment
+
+    def _get_db_change(self,change, issue_id, tracker_id):
+        """
+        Search a change for the issue X{issue_id}
+
+        @param change: change to insert
+        @type change: L{Change}
+        @param issue_id: issue identifier 
+        @type issue_id: C{int}
+        @param tracker_id: identifier of the tracker
+        @type tracker_id: C{int}
+
+        """
+        #source forge don't have new_value so we recived
+        #a string that must be unicode
+        if change.new_value == "unknown":
+            change.new_value = unicode(change.new_value)
+
+        db_change = self.store.find(DBChange,
+                                    DBChange.issue_id == issue_id,
+                                    DBChange.field == change.field,
+                                    DBChange.changed_on == change.changed_on,
+                                    DBChange.old_value == change.old_value,
+                                    DBChange.new_value == change.new_value).one()
+        if not db_change:
+            #if change is not stored, return -1 to know it's a new one
+            db_change = -1
+
+        return db_change
+
+    def _get_db_attachment(self, attachment, issue_id, tracker_id):
+        """
+        Search an attachment for the issue X{issue_id}
+
+        @param attachment: attachment to insert
+        @type attachment: L{Attachment}
+        @param issue_id: issue identifier 
+        @type issue_id: C{int}
+        @param tracker_id: identifier of the tracker
+        @type tracker_id: C{int}
+
+        """
+        db_attachment = self.store.find(DBAttachment,
+                                    DBAttachment.issue_id == issue_id,
+                                    DBAttachment.url == attachment.url,
+                                    DBAttachment.submitted_on == attachment.submitted_on).one()
+        if not db_attachment:
+            #if attachment is not stored, return -1 to know it's a new one
+            db_attachment = -1
+
+        return db_attachment
+
 
 class DBSupportedTracker(object):
     """
