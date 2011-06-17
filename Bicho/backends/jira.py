@@ -364,7 +364,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.title = None
         self.link = None
         self.description = ""
-        self.environment = None
+        self.environment = ""
         self.summary = None
         self.bug_type = None
         self.status = None
@@ -499,7 +499,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             else:
                 self.description = self.description + ch.strip()
         elif self.is_environment:
-            self.environment = str(ch)
+            self.environment = self.environment + str(ch)
         elif self.is_summary:
             self.summary = str(ch)
         elif self.is_bug_type:
@@ -509,6 +509,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif self.is_resolution:
             self.resolution = str(ch)
         elif self.is_security:
+            print str(ch)
             self.security = str(ch)
         elif self.is_assignee:
             #FIXME problems with ascii, not support str() function
@@ -644,6 +645,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.customfields = []
             self.first_desc = True
             self.description = ""
+            self.environment = ""
 
     def getIssue(self):
         #Return the parse data bug into issue object
