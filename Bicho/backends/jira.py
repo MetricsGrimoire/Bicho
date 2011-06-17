@@ -400,6 +400,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.customfieldvalue = None
 
         #control data
+        self.first_desc = True
         self.is_title = False
         self.is_link = False
         self.is_description = False
@@ -493,7 +494,10 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.link = str(ch)
         elif self.is_description:
             #FIXME problems with ascii, not support str() function
-            self.description = self.description + ch.strip()
+            if (self.first_desc == True):
+                self.first_desc = False
+            else:
+                self.description = self.description + ch.strip()
         elif self.is_environment:
             self.environment = str(ch)
         elif self.is_summary:
@@ -638,6 +642,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.comments = []
             self.attachments = []
             self.customfields = []
+            self.first_desc = True
             self.description = ""
 
     def getIssue(self):
