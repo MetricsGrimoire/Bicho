@@ -37,7 +37,6 @@ from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.Config import Config
 from Bicho.utils import printdbg, printout, printerr
 
-
 SOURCEFORGE_DOMAIN = 'http://sourceforge.net'
 
 # SourceForge patterns for HTML fields
@@ -131,10 +130,11 @@ class DBSourceForgeIssueExt(object):
     issue_id = Int()
 
     issue = Reference(issue_id, DBIssue.id)
-    
-    def __init__(self, category, group, issue_id):
-        self.category = unicode(category)
-        self.group_sf = unicode(group)
+
+    #def __init__(self, category, group, issue_id):
+    def __init__(self, issue_id):
+        #self.category = unicode(category)
+        #self.group_sf = unicode(group)
         self.issue_id = issue_id
 
 
@@ -178,9 +178,23 @@ class DBSourceForgeBackend(DBBackend):
         @return: the inserted extra parameters issue
         @rtype: L{DBSourceForgeIssueExt}
         """
+
+        newIssue = False;
+
         try:
-            db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
-            store.add(db_issue_ext)
+            db_issue_ext = store.find(DBSourceForgeIssueExt,
+                                    DBSourceForgeIssueExt.issue_id == issue_id).one()
+            if not db_issue_ext:
+                newIssue = True
+                db_issue_ext = DBSourceForgeIssueExt(issue_id)
+                #db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
+
+            db_issue_ext.category = unicode(issue.category) 
+            db_issue_ext.group = unicode(issue.group)
+
+            if newIssue == True:
+                store.add(db_issue_ext)
+            
             store.flush()
             return db_issue_ext
         except:
@@ -566,8 +580,9 @@ class SourceForgeParser():
       Convert a string with the form YYYY-MM-DD HH:MM to an well-formed
       datatime type.
       """
-      from datetime import datetime
-      dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
+      from dateutil.parser import parse
+      #dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
+      dt = parse(s).replace(tzinfo=None)
       return dt
 
 
@@ -589,15 +604,31 @@ class SourceForge():
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
         self.url = url
+        ids = []
+        self.parser = SourceForgeParser()
+
+        #first we take the bugs ids
+        if url.find("aid=")>0:
+            aux = url.split("aid=")[1].split("&")[0]
+            ids.append(aux)
+        else:
+            ids = self.__get_issues_list(self.url)
+
         self.__check_tracker_url(self.url)
+
+        #order the parameters in the url to add the same tracker url
+        #to data base without aid parameter
+        self.__order_query(self.url)
 
         self.db = get_database(DBSourceForgeBackend())
         self.db.insert_supported_traker(SUPPORTED_SF_TRACKERS[0],
                                         SUPPORTED_SF_TRACKERS[1])
         self.__insert_tracker(self.url)
-
-        self.parser = SourceForgeParser()
-        ids = self.__get_issues_list(self.url)
+        
+        nbugs = len(ids)
+        if nbugs == 0:
+            printout("No bugs found. Did you provide the correct url?")
+            sys.exit(0)
 
         nbugs = len(ids)
         if nbugs == 0:
@@ -664,13 +695,27 @@ class SourceForge():
         if query is not None:
             # Get query field names
             qs = urlparse.parse_qs(query).keys()
-
             for field in self.URL_REQUIRED_FIELDS:
                 if field not in qs:
                     raise NotValidURLError('Missing field %s' % field)
         else:
             raise NotValidURLError('Missing URL query set')
 
+    def __order_query(self, url):
+        """
+        """
+        query = urlparse.urlsplit(url).query
+        query = query.split("&") 
+        query.sort()
+        parameter = ""
+        for q in query:
+            if q.find("atid")>-1:
+                parameter = parameter + "&" + q
+            if q.find("group_id")>-1:    
+                parameter = parameter + "&" + q
+        
+        aux_url = (url.split("/?")[0] + "/?" + parameter).replace("?&","?")
+        self.url = aux_url
 
 register_backend('sf', SourceForge)
 

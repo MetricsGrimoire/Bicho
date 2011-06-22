@@ -36,6 +36,7 @@ from Bicho.db.database import DBIssue, DBBackend, get_database
 from storm.locals import DateTime, Int, Reference, Unicode
 import xml.sax.handler
 #from xml.sax._exceptions import SAXParseException
+from dateutil.parser import parse
 from datetime import datetime
 
 class DBBugzillaIssueExt(object):
@@ -143,8 +144,16 @@ class DBBugzillaBackend(DBBackend):
         @return: the inserted extra parameters issue
         @rtype: L{DBSourceForgeIssueExt}
         """
+
+        newIssue = False;
+
         try:
-            db_issue_ext = DBBugzillaIssueExt(issue_id)
+            db_issue_ext = store.find(DBBugzillaIssueExt,
+                                    DBBugzillaIssueExt.issue_id == issue_id).one()
+            if not db_issue_ext:
+                newIssue = True
+                db_issue_ext = DBBugzillaIssueExt(issue_id)
+
             db_issue_ext.alias = self.__return_unicode(issue.alias)
             db_issue_ext.delta_ts = issue.delta_ts
             db_issue_ext.reporter_accessible = issue.reporter_accessible
@@ -160,7 +169,7 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.bug_file_loc = self.__return_unicode(issue.bug_file_loc)
             db_issue_ext.status_whiteboard = self.__return_unicode(issue.status_whiteboard)
             db_issue_ext.target_milestone = self.__return_unicode(issue.target_milestone)
-            db_issue_ext.votes = issue.votes
+            db_issue_ext.votes = self.__return_int(issue.votes)
             db_issue_ext.everconfirmed = self.__return_unicode(issue.everconfirmed)
             db_issue_ext.qa_contact = self.__return_unicode(issue.qa_contact)
             db_issue_ext.estimated_time = self.__return_unicode(issue.estimated_time)
@@ -171,12 +180,23 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.group = self.__return_unicode(issue.group)
             db_issue_ext.flag = self.__return_unicode(issue.flag)
 
-            store.add(db_issue_ext)
+            if newIssue == True:
+                store.add(db_issue_ext)
+
             store.flush()
             return db_issue_ext
         except:
             store.rollback()
             raise
+
+    def __return_int(self, str):
+        """
+        Decodes into int, and pays attention to empty ones
+        """ 
+        if str is None:
+            return str
+        else:
+            return int(str) 
 
     def __return_unicode(self, str):
         """
@@ -241,7 +261,7 @@ class SoupHtmlParser():
         """
         Returns datetime object from string
         """
-        return datetime.strptime(str_date,"%Y-%m-%d %H:%M:%S")
+        return parse(str_date).replace(tzinfo=None)
 
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
@@ -718,13 +738,13 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         """
         Returns datetime object from string
         """
-        return datetime.strptime(str_date,"%Y-%m-%d %H:%M")
+        return parse(str_date).replace(tzinfo=None)
 
     def _to_datetime_with_secs(self,str_date):
         """
         Returns datetime object from string with seconds
         """
-        return datetime.strptime(str_date,"%Y-%m-%d %H:%M:%S")
+        return parse(str_date).replace(tzinfo=None)
 
 
     def get_issue(self):
@@ -904,17 +924,25 @@ class BGBackend (Backend):
 
         printdbg(url)
 
-        f = urllib.urlopen(url)
+        #The url is a bug            
+        if url.find("show_bug.cgi")>0:
+            bugs = []
+            bugs.append(self.url.split("show_bug.cgi?id=")[1])
 
-        #Problems using csv library, not all the fields are delimited by
-        # '"' character. Easier using split.
-        bugList_csv = f.read().split('\n')
-        bugs = []
-        #Ignoring first row
-        for bug_csv in bugList_csv[1:]:
-            #First field is the id field, necessary to later create the url
-            #to retrieve bug information
-            bugs.append(bug_csv.split(',')[0])
+        else:
+            f = urllib.urlopen(url)
+
+            #Problems using csv library, not all the fields are delimited by
+            # '"' character. Easier using split.
+            bugList_csv = f.read().split('\n')
+            bugs = []
+            #Ignoring first row
+            for bug_csv in bugList_csv[1:]:
+                #First field is the id field, necessary to later create the url
+                #to retrieve bug information
+                bugs.append(bug_csv.split(',')[0])
+
+        nbugs = len(bugs)
 
         nbugs = len(bugs)
 
