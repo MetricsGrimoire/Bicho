@@ -1,4 +1,23 @@
 ================
+  Bicho    0.9
+================
+
+Changes since version 0.4:
+	
+	* JIRA parser added (jfcogato)
+	* SourceForge backend refactorized (sduenas)
+	* Bugzilla backend refactorized (lcanas)
+	* Incremental support added (jfcogato)
+	* Database model redesigned (sduenas)
+	* A lot of bugs fixed
+	* Man page updated (lcanas)
+	* Bugs in Debian package fixed (lcanas)
+
+Thanks:
+	Pedro García
+	Daniel Izquierdo
+
+================
   Bicho    0.4
 ================
 

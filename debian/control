@@ -11,7 +11,7 @@ XS-Python-Version: >= 2.6
 
 Package: bicho
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-beautifulsoup, python-storm
+Depends: ${misc:Depends}, ${python:Depends}, python-beautifulsoup, python-storm, python-dateutil
 Description: Command line based tool used to parse bug/issue tracking systems
  Bicho is a command line based tool used to parse bug/issue tracking systems,
  it gets all the information associated to issues and store them in a relational

@@ -1,5 +1,5 @@
-bicho (0.7beta-1) unstable; urgency=low
+bicho (0.9beta-1) unstable; urgency=low
 
   * Initial release (Closes: #123456)
 
- -- Luis Cañas Díaz <lcanas@libresoft.es>  Tue, 14 Jun 2011 08:13:45 +0200
+ -- Luis Cañas Díaz <lcanas@libresoft.es>  Tue, 24 Jun 2011 16:23:45 +0200
