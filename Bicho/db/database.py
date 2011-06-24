@@ -213,12 +213,6 @@ class DBDatabase:
                 except:
                     None
 
-            # Insert CC/watchers
-            for person in issue.watchers:
-                #db_issues_watchers = self._insert_issues_watchers(person, db_issue.id,
-                #                                                  tracker_id)
-                self._insert_issues_watchers(person, db_issue.id, tracker_id)
-
             self.store.commit()
 
             return db_issue
