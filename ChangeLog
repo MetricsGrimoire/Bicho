@@ -1,3 +1,317 @@
+2011-06-27  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/sf.py: Fix #296  Import statement for dateutils moved to
+  top.
+
+2011-06-24  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/info.py, NEWS, debian/changelog, debian/control, setup.py: Update
+  information about project in Debian files and NEWS
+
+  * Bicho/db/database.py: Fix #294 - Duplicate entry in issues_watchers
+
+2011-06-17  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/jira.py: fixed bug parsing security in extra data for jira
+
+  * Bicho/backends/jira.py: fixed bug with description tags
+
+2011-06-14  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/db/database.py: fixed bugs about incremental support, now we control
+  if data is stored or not to add new one
+
+2011-06-13  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * debian/bicho.1, debian/changelog, debian/control, debian/copyright,
+  debian/rules, doc/bicho.1, setup.py: Fix the errors in the Debian files  Fix
+  the Debian packaging bugs: #181, #182, #183, #184, #185, #186, #187, #188
+  ,#189, #190, #191, #192
+
+2011-06-14  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/bg.py, Bicho/backends/jira.py, Bicho/backends/sf.py,
+  Bicho/db/database.py: fixed datetime bug with timezone, now we don't store
+  the timezone. next features will fix that.
+
+2011-06-13  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/bg.py: fixed bug parsing votes, now control the int value or
+  None data
+
+  * Bicho/backends/bg.py, Bicho/backends/jira.py, Bicho/backends/sf.py: added
+  python-dateutil library support to parse dates and fix the formats bugs
+
+  * Bicho/backends/jira.py: fixed bug #5988 errors in parse datetimes
+
+2011-06-10  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * README, doc/database/bicho.png, doc/database/database_schema.png: Improve
+  the README file and rename the database image schema
+
+  * README, doc/database/bicho.png, doc/database/database_schema.png: Improve
+  the README file and rename the database image schema
+
+2011-06-02  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/jira.py: Replace print with printerr when printing errors in
+  Jira backend
+
+2011-06-03  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/sf.py: added incremental support to sf backend
+
+2011-06-02  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/jira.py: Replace print with printerr when printing errors in
+  Jira backend
+
+2011-06-02  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/bg.py, Bicho/backends/jira.py, Bicho/db/database.py: added
+  incremental support for bugzilla and jira
+
+2011-05-30  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/sf.py: Improve the exception handling, sanitizing the output
+  and fix parse errors.  The exception handling is now more useful. The output
+  has been rewritten to be similar to the rest of backends. The whole backend
+  has been improved with little changes. This backend is still unstable.
+
+  * Bicho/backends/sf.py: Improve the exception handling, sanitizing the output
+  and fix parse errors.  The exception handling is now more useful. The output
+  has been rewritten to be similar to the rest of backends. The whole backend
+  has been improved with little changes. This backend is still unstable.
+
+2011-05-27  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/jira.py: Sanitize output for jira backend
+
+  * Bicho/backends/bg.py: Sanitize output for bugzilla backend
+
+  * Bicho/Bicho.py, Bicho/backends/HTMLUtils.py, Bicho/backends/bg.py,
+  Bicho/backends/jira.py, Bicho/backends/sf.py, Bicho/common.py,
+  Bicho/db/database.py, Bicho/db/mysql.py, Bicho/main.py, setup.py: Fix #285 -
+  removed unused libraries
+
+  * Bicho/backends/bg.py, Bicho/db/database.py: Handle the exception thrown by
+  the error #287  The bug #287 is not fixed yet, this workaround avoids bicho
+  to crash with Unicode encoding errors.
+
+  * Bicho/backends/jira.py: Sanitize output for jira backend
+
+  * Bicho/backends/bg.py: Sanitize output for bugzilla backend
+
+  * Bicho/Bicho.py, Bicho/backends/HTMLUtils.py, Bicho/backends/bg.py,
+  Bicho/backends/jira.py, Bicho/backends/sf.py, Bicho/common.py,
+  Bicho/db/database.py, Bicho/db/mysql.py, Bicho/main.py, setup.py: Fix #285 -
+  removed unused libraries
+
+  * Bicho/backends/bg.py, Bicho/db/database.py: Handle the exception thrown by
+  the error #287  The bug #287 is not fixed yet, this workaround avoids bicho
+  to crash with Unicode encoding errors.
+
+2011-05-24  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/bg.py, Bicho/common.py, Bicho/db/database.py,
+  Bicho/db/mysql.py: Fix #82 Add a table to relate issues and watchers/CC  The
+  changes allow to store all the people who is watching the issue/bug for each
+  bug. The new table's name is 'issues_watchers'
+
+  * Bicho/backends/bg.py, Bicho/common.py, Bicho/db/database.py,
+  Bicho/db/mysql.py: Fix #82 Add a table to relate issues and watchers/CC  The
+  changes allow to store all the people who is watching the issue/bug for each
+  bug. The new table's name is 'issues_watchers'
+
+2011-05-23  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/bg.py: Fix #286 in the Bugzilla backend.  The extra database
+  fields remain with NULL when no data is extracted.
+
+  * Bicho/backends/bg.py: Fix error with the dup_id parameter for the Bugzilla
+  backend  The dup_id parameter was not converted to integer. Now it is.
+
+2011-05-19  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/jira.py: added incremental support, if you use a bug url,
+  this bug is loaded in the project/tracker database
+
+  * Bicho/backends/jira.py: fixed bugs catching exceptions: when there are no
+  html tags or when a bug is deleted and try parse it
+
+2011-05-12  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/Config.py, Bicho/backends/bg.py, Bicho/main.py: Add delay support in
+  the Bugzilla backend  The delay parameter has been fixed to be 0 by default,
+  the bugzilla backend waits this interval of time between petitions.
+
+  * bin/bicho: Add copyright and license
+
+2011-04-07  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/jira.py: fixed bugs about the parsed description of bugs
+
+  * Bicho/backends/jira.py: fixed loop to download all the bugs xml
+
+  * Bicho/backends/jira.py: jira backend completed
+
+2011-03-24  Santiago Dueñas <sduenas@libresoft.es>
+
+  * doc/database/bicho.png, doc/database/bicho.xml: Update the database
+  documentation  New tables (those from Bugzilla and SF.net) has been added to
+  the database schema.
+
+2011-03-17  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * README: Include the Changes done by sduenas in the README file
+
+  * bicho: Remove useless man bicho file
+
+2011-03-10  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/bg.py: Add Bugzilla backend which supports the new database
+  schema  Bugzilla backend updated with a extra table to store all the
+  information provided by the HTML + XML feeds for each bug. The XML parsing
+  method is clearer now as it uses directories to store the content of the
+  tags.
+
+2011-03-08  Santiago Dueñas <sduenas@libresoft.es>
+
+  * Bicho/Makefile.am, Bicho/backends/Makefile.am: Remove deprecated stuff
+
+  * Bicho/backends/ParserSFBugs.py, Bicho/backends/sf.py: SourceForge backend
+  refactorized
+
+  * Bicho/db/database.py, Bicho/db/mysql.py, setup.py: Support for storing
+  non-common issue tracking data  Implementing the abstract class 'DBBackend',
+  Bicho's issue tracking backends can now store extracted data non common to
+  other issue tracking systems.
+
+  * Bicho/database.py, Bicho/db/__init__.py, Bicho/db/database.py,
+  Bicho/db/mysql.py: Add modular support for database engines
+
+  * Bicho/Bicho.py, Bicho/main.py: Tracker's URL is now passed on creating
+  backend objects
+
+  * Bicho/main.py: Fix typo
+
+2011-03-03  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/jira.py: The parse of jira is finished, now we have to store
+  the data in the database
+
+2011-03-02  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/jira.py: adding alpha version of jira backend
+
+2011-02-25  Santiago Dueñas <sduenas@libresoft.es>
+
+  * Bicho/common.py, Bicho/database.py: Add support to store different types
+  and versions of trackers
+
+  * Bicho/database.py: Missing 'attachment' MySQL query added
+
+  * Bicho/common.py: Fix typos on 'common' module
+
+  * Bicho/common.py: Fix initialization of attribs into Change class
+
+2011-02-24  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/database.py: Fix error: DBChange instance expects an integer as
+  fourth parameter
+
+  * Bicho/database.py: Add miss variable in _insert_change method
+
+  * Bicho/database.py: Changes on DBComment: var comment renamed to text
+
+  * Bicho/database.py: Fix error: DBComment instance expects an integer as
+  second parameter
+
+2011-02-22  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/database.py: Fix typo in the name of a SQL table
+
+2011-02-18  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/database.py: Changes on the MySQL database schema  Add a new table
+  for different trackers and its versions called 'tracker_types'. There is also
+  a new field in the comment table to take into account the number of comment
+  (useful for bugzilla)
+
+2011-02-17  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/database.py: Method 'getDatabase' renamed to 'get_database'
+
+2011-02-14  Santiago Dueñas <sduenas@libresoft.es>
+
+  * Bicho/Config.py, Bicho/info.py, Bicho/main.py, bin/bicho: Fixes #282 Use
+  optparse instead of getopt
+
+2011-02-08  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/backends/sf.py, Bicho/database.py: Fixes #277. OptionsStore is now
+  Config
+
+  * Bicho/backends/bg.py: Fixes #276. It wasn't using the new module
+  Bicho.database
+
+2010-12-28  Santiago Dueñas <sduenas@libresoft.es>
+
+  * doc/database/bicho.png, doc/database/bicho.xml: Database documentation
+
+  * Bicho/backends/sf.py: SourceForge backend addapted to the new database
+  schema  Specific fields are not yet implemented.
+
+  * Bicho/Bicho.py, Bicho/Bug.py, Bicho/SqlBug.py, Bicho/common.py,
+  Bicho/database.py: New database schema.  A new and improved database schema
+  has been developed. This new feature still uses Storm as an ORM and adds some
+  methods for accessing the database.  The new schema also addresses the
+  comments from issues #258, #259 and #261.  Trackers specific fields should be
+  implemented in future.
+
+2010-12-27  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/Bicho.py, Bicho/Bug.py, Bicho/Config.py, Bicho/SqlBug.py,
+  Bicho/backends/HTMLUtils.py, Bicho/backends/ParserSFBugs.py,
+  Bicho/backends/__init__.py, Bicho/backends/bg.py, Bicho/backends/sf.py,
+  Bicho/info.py, Bicho/main.py, Bicho/utils.py, bicho, setup.py: Copyright
+  statement updated to Copyright (C) 2011 GSyC/LibreSoft, Universidad Rey Juan
+  Carlos
+
+2010-12-23  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * AUTHORS: carlosgc added to AUTHORS file
+
+  * setup.py: bicho-web package deleted and URL changed from setup.py. It fixes
+  #268
+
+  * README: README file improved. Fixes #264
+
+2010-12-20  Luis Cañas Díaz <lcanas@libresoft.es>
+
+  * Bicho/Bicho.py, Bicho/Config.py, Bicho/SqlBug.py, Bicho/backends/bg.py,
+  Bicho/config.py, Bicho/info.py, Bicho/main.py, Bicho/utils.py, bicho,
+  config.sample: Improved argument handling and configuration file. Fixes #263 
+  I've used the argument handling used in cvsanaly and apply it to bicho. Now
+  we have more options (debug mode, version, optional delay) and the
+  configuration file is similar to the one used by cvsanaly.  I've also divided
+  the utils.py functions and the Config class. This part is very similar in
+  cvsanaly.
+
+  * AUTHORS: Names added to the AUTHORS file
+
+  * bicho: License header added to main bicho file
+
+2010-12-20  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/bg.py: added author
+
+  * Bicho/backends/bg.py: The html parser now has a more clear source code
+
+2010-12-16  Juan Francisco Gato Luis <jfcogato@libresoft.es>
+
+  * Bicho/backends/bg.py: added Beatifulsoup support
+
 2010-02-17  Daniel Izquierdo Cortázar <dizquierdo@libresoft.es>
 
 	* config.py: File needed for setup (anyway, file to be removed in the future)
