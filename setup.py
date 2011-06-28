@@ -24,7 +24,7 @@
 from distutils.core import setup
 
 setup(name = "Bicho",
-      version = "0.9beta",
+      version = "0.9",
       author =  "GSyC/LibreSoft, Universidad Rey Juan Carlos",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
       description = "Analysis tool for Issue/Bug Tracking Systems",
