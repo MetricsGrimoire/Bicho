@@ -156,7 +156,7 @@ class DBSourceForgeIssueExtMySQL(DBSourceForgeIssueExt):
                        REFERENCES issues (id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBSourceForgeBackend(DBBackend):

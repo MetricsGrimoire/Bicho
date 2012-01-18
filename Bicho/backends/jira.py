@@ -101,7 +101,7 @@ class DBJiraIssueExtMySQL(DBJiraIssueExt):
                        REFERENCES issues (id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     );'
+                     ) ENGINE=MYISAM;'
 
 
 class DBJiraBackend(DBBackend):

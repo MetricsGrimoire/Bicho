@@ -120,7 +120,7 @@ class DBBugzillaIssueExtMySQL(DBBugzillaIssueExt):
                        REFERENCES issues (id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     );'
+                     ) ENGINE=MYISAM;'
 
 
 class DBBugzillaBackend(DBBackend):

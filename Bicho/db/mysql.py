@@ -66,7 +66,7 @@ class DBSupportedTracker(DBSupportedTracker):
                      version VARCHAR(64) NOT NULL, \
                      PRIMARY KEY(id), \
                      UNIQUE KEY(name, version) \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBTrackerMySQL(DBTracker):
@@ -84,7 +84,7 @@ class DBTrackerMySQL(DBTracker):
                        REFERENCES tracker_types (id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBPeopleMySQL(DBPeople):
@@ -104,7 +104,7 @@ class DBPeopleMySQL(DBPeople):
                        REFERENCES trackers(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBIssueMySQL(DBIssue):
@@ -141,7 +141,7 @@ class DBIssueMySQL(DBIssue):
                        REFERENCES trackers(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 class DBIssuesWatchersMySQL(DBIssuesWatchers):
     """
@@ -163,7 +163,7 @@ class DBIssuesWatchersMySQL(DBIssuesWatchers):
                        REFERENCES people(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 class DBIssueRelationshipMySQL(DBIssueRelationship):
     """
@@ -186,7 +186,7 @@ class DBIssueRelationshipMySQL(DBIssueRelationship):
                        REFERENCES issues(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBCommentMySQL(DBComment):
@@ -211,7 +211,7 @@ class DBCommentMySQL(DBComment):
                        REFERENCES issues(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBAttachmentMySQL(DBAttachment):
@@ -237,7 +237,7 @@ class DBAttachmentMySQL(DBAttachment):
                        REFERENCES issues(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
-                     )'
+                     ) ENGINE=MYISAM;'
 
 
 class DBChangeMySQL(DBChange):
@@ -263,4 +263,4 @@ class DBChangeMySQL(DBChange):
                        REFERENCES people(id) \
                          ON DELETE SET NULL \
                          ON UPDATE CASCADE \
-                    )'
+                    ) ENGINE=MYISAM;'
