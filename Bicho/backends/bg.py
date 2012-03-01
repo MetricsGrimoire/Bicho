@@ -27,7 +27,7 @@ import time
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
-from Bicho.backends import Backend, register_backend
+from Bicho.backends import Backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change
@@ -870,10 +870,8 @@ class DBIssueBugzilla(object):
 class BGBackend (Backend):
 
     def __init__ (self):
-        Backend.__init__ (self)
-        options = Config()
-        self.url = options.url
-        self.delay = options.delay
+        self.url = Config.url
+        self.delay = Config.delay
 
     def get_domain(self, url):
         strings = url.split('/')
@@ -986,4 +984,4 @@ class BGBackend (Backend):
 
         printout("Done. %s bugs analyzed" % (nbugs))
 
-register_backend ("bg", BGBackend)
+Backend.register_backend ("bg", BGBackend)

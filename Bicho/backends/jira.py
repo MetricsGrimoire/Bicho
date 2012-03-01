@@ -28,7 +28,7 @@ from storm.locals import Int, DateTime, Unicode, Reference
 
 from dateutil.parser import parse
 from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
-from Bicho.backends import Backend, register_backend
+from Bicho.backends import Backend
 from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.Config import Config
 from Bicho.utils import printout, printerr, printdbg
@@ -710,8 +710,7 @@ class JiraBackend(Backend):
     """
 
     def __init__(self):
-        options = Config()
-        self.delay = options.delay
+        self.delay = Config.delay
    
     def bugsNumber(self,url):
         serverUrl = url.split("/browse/")[0]
@@ -773,4 +772,4 @@ class JiraBackend(Backend):
 
         printout("Done. %s bugs analyzed" % (bugs_number))
 
-register_backend ("jira", JiraBackend)
+Backend.register_backend ("jira", JiraBackend)

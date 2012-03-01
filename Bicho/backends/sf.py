@@ -32,7 +32,7 @@ import BeautifulSoup
 from storm.locals import Int, Unicode, Reference
 
 from Bicho.common import Issue, People, Tracker, Comment, Attachment, Change
-from Bicho.backends import register_backend
+from Bicho.backends import Backend
 from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.Config import Config
 from Bicho.utils import printdbg, printout, printerr
@@ -596,8 +596,7 @@ class SourceForge():
     URL_REQUIRED_FIELDS = ['atid', 'group_id']
 
     def __init__(self):
-        options = Config()
-        self.delay = options.delay
+        self.delay = Config.delay
 
     def run(self, url):
         """
@@ -718,7 +717,7 @@ class SourceForge():
         aux_url = (url.split("/?")[0] + "/?" + parameter).replace("?&","?")
         self.url = aux_url
 
-register_backend('sf', SourceForge)
+Backend.register_backend('sf', SourceForge)
 
 
 if __name__ == "__main__":
