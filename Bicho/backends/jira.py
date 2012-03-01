@@ -711,6 +711,7 @@ class JiraBackend(Backend):
 
     def __init__(self):
         self.delay = Config.delay
+        self.url = Config.url
    
     def bugsNumber(self,url):
         serverUrl = url.split("/browse/")[0]

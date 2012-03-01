@@ -909,9 +909,12 @@ class BGBackend (Backend):
         return issue
 
 
-    def run (self, url):
+    def run (self):
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
         #retrieving data in csv format
+
+        self.url = Config.url
+        self.delay = Config.delay
 
         if not self.url:
             self.url = url

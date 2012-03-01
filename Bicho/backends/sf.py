@@ -597,13 +597,13 @@ class SourceForge():
 
     def __init__(self):
         self.delay = Config.delay
+        self.url = Config.url
 
-    def run(self, url):
+    def run(self):
         """
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        self.url = url
         ids = []
         self.parser = SourceForgeParser()
 
