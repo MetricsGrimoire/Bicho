@@ -21,17 +21,15 @@
 #       Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
-import sys
-import os
-import errno
-import urllib
 import cgi
-import time
+import errno
+import os
 import random
+import sys
+import time
+import urllib
 
 from Config import Config
-
-config = Config ()
 
 def printout (str = '\n'):
     if str != '\n':
@@ -46,13 +44,13 @@ def printerr (str = '\n'):
     sys.stderr.flush ()
 
 def printwrn (str = '\n'):
-    if config.quiet:
+    if Config.quiet:
         return
 
     printerr ("WRN: " + str)
 
 def printdbg (str = '\n'):
-    if not config.debug:
+    if not Config.debug:
         return
 
     printout ("DBG: " + str)
@@ -98,7 +96,7 @@ def url_get_attr(url, attr=None):
 def rdelay():
     # it adds a random delay
     random.seed()
-    if config.delay:
+    if Config.delay:
         printdbg("delay")
         time.sleep(random.randint(0,20))
 
