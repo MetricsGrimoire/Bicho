@@ -913,12 +913,6 @@ class BGBackend (Backend):
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
         #retrieving data in csv format
 
-        self.url = Config.url
-        self.delay = Config.delay
-
-        if not self.url:
-            self.url = url
-
         bugsdb = get_database (DBBugzillaBackend())
 
         url = self.url + "&ctype=csv"
