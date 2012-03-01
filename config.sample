@@ -2,7 +2,7 @@
 type = 'bg'
 url = 'https://bugzilla.libresoft.es/buglist.cgi?product=CVSAnalY'
 debug = False
-delay = True
+delay = 5
 
 ##[DatabaseOut]
 db_driver_out = 'mysql'
