@@ -587,13 +587,15 @@ class SourceForgeParser():
       return dt
 
 
-SUPPORTED_SF_TRACKERS = ('sourceforge', 'website')
+
 
 class SourceForge():
     """
     SourceForge backend
     """
     URL_REQUIRED_FIELDS = ['atid', 'group_id']
+    
+    SUPPORTED_SF_TRACKERS = ('sourceforge', 'website')
 
     def __init__(self):
         self.delay = Config.delay
@@ -625,11 +627,6 @@ class SourceForge():
                                         SUPPORTED_SF_TRACKERS[1])
         self.__insert_tracker(self.url)
         
-        nbugs = len(ids)
-        if nbugs == 0:
-            printout("No bugs found. Did you provide the correct url?")
-            sys.exit(0)
-
         nbugs = len(ids)
         if nbugs == 0:
             printout("No bugs found. Did you provide the correct url?")
