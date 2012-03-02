@@ -160,7 +160,6 @@ class DBDatabase:
             db_issue.description = unicode(issue.description)
             db_issue.status = unicode(issue.status)
             db_issue.resolution = unicode(issue.resolution)
-            db_issue.resolution = unicode(issue.resolution)
             db_issue.priority = unicode(issue.priority)
             db_issue.submitted_by = self.insert_people(issue.submitted_by, 
                                                        tracker_id).id
