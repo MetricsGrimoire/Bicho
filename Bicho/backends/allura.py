@@ -26,8 +26,8 @@ from Bicho.backends import Backend
 from Bicho.utils import printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
+import json
 import os
-
 import pprint
 
 from storm.locals import DateTime, Int, Reference, Unicode
@@ -86,7 +86,7 @@ class Allura():
         
         url_ticket = "http://sourceforge.net/rest/p/allura/tickets/3824/"
         url_tickets = "http://sourceforge.net/rest/p/allura/tickets"
-        self.url = url_ticket;
+        self.url = url_tickets;
         
         if self.url.find("tickets/")>0:
             bugs.append(self.url.split("tickets/")[1].strip('/'))
@@ -96,8 +96,20 @@ class Allura():
             f = open(os.path.join(os.path.dirname(__file__),"tickets_allura.json"));
             ticketList_json = f.read()
             f.close()
-            
-        pprint.pprint(bugs);         
+            ticketList = json.loads(ticketList_json)
+            for ticket in ticketList["tickets"]:
+                bugs.append(ticket["ticket_num"])                    
+        
+        nbugs = len(bugs)
+        
+        if len(bugs) == 0:
+            printout("No bugs found. Did you provide the correct url?")
+            sys.exit(0)
+
+        print "TOTAL BUGS", str(len(bugs))
+        
+        for bug in bugs:
+            pass        
 
 def test_parse_ticket ():
     url = "http://sourceforge.net/rest/p/allura/tickets/3824/"
