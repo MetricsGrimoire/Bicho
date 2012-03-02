@@ -25,6 +25,10 @@ from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.utils import printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.common import Tracker, Issue, People
+
+from dateutil.parser import parse
+from datetime import datetime
 
 import json
 import os
@@ -73,26 +77,60 @@ class DBAlluraBackend(DBBackend):
     """
     def __init__(self):
         self.MYSQL_EXT = [DBAlluraIssueExtMySQL]
+        
+    def insert_issue_ext(self, store, issue, issue_id):
+        pass
 
+
+class AlluraIssue(Issue):
+    """
+    Ad-hoc Issue extension for bugzilla's issue
+    """
+    def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
+        Issue.__init__(self, issue, type, summary, desc, submitted_by,
+                       submitted_on)
+
+    
 class Allura():
     
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
+
+
         
+    def _convert_to_datetime(self,str_date):
+        """
+        Returns datetime object from string
+        """
+        return parse(str_date).replace(tzinfo=None)
+
+                
     def analyze_bug(self, bug_url):
         #Retrieving main bug information
         printdbg(bug_url)        
 
         try:
-            f = urllib.urlopen(bug_url)
+            # f = urllib.urlopen(bug_url)
+            f = open(os.path.join(os.path.dirname(__file__),"../../test/ticket_allura.json"));
             json_ticket = f.read()
-            issue = json.loads(json_ticket)
+            issue_allura = json.loads(json_ticket)["ticket"]
     
         except Exception, e:
             printerr("Error in bug analysis: " + bug_url);
             print(e)
             raise
+        
+        people = People(issue_allura["reported_by_id"])            
+        people.set_name(issue_allura["reported_by"])
+                
+        # FIXME: I miss resolution and priority
+        issue = AlluraIssue(issue_allura["_id"],
+                            "ticket",
+                            issue_allura["summary"],
+                            issue_allura["description"],
+                            people,
+                            self._convert_to_datetime(issue_allura["created_date"]))
 
         #Retrieving changes
 #        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
@@ -113,6 +151,12 @@ class Allura():
         bugs = [];
         bugsdb = get_database (DBAlluraBackend())
         
+        # still useless
+        bugsdb.insert_supported_traker("allura", "beta")
+        trk = Tracker (self.url, "allura", "beta")
+
+        dbtrk = bugsdb.insert_tracker(trk)
+        
         # url_ticket = "http://sourceforge.net/rest/p/allura/tickets/3824/"
         url_tickets = "http://sourceforge.net/rest/p/allura/tickets"
         self.url = url_tickets;
@@ -122,7 +166,7 @@ class Allura():
 
         else:
             # f = urllib.urlopen(url)
-            f = open(os.path.join(os.path.dirname(__file__),"tickets_allura.json"));
+            f = open(os.path.join(os.path.dirname(__file__),"../../test/tickets_allura.json"));
             ticketList_json = f.read()
             f.close()
             ticketList = json.loads(ticketList_json)
@@ -143,31 +187,19 @@ class Allura():
             try:
                 issue_url = url_tickets+"/"+str(bug)
                 issue_data = self.analyze_bug(issue_url)
-                pprint.pprint(issue_data) 
+                pprint.pprint(issue_data)
             except Exception, e:
                 printerr("Error in function analyze_bug " + issue_url)
                 print(e)
 
-#            try:
-#                bugsdb.insert_issue(issue_data, dbtrk.id)
-#            except UnicodeEncodeError:
-#                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-#                      % (issue_data.issue))
+            try:
+                bugsdb.insert_issue(issue_data, dbtrk.id)
+            except UnicodeEncodeError:
+                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
+                      % (issue_data.issue))
 
             time.sleep(self.delay)
             
         printout("Done. %s bugs analyzed" % (len(bugs)))
-
         
-
-def test_parse_ticket ():
-    url = "http://sourceforge.net/rest/p/allura/tickets/3824/"
-    json = urllib2.urlopen(url)
-
-    parser = AlluraParser()
-    parser.parse_issue(json)
-        
-if __name__ == "__main__":
-    test_parse_ticket()
-
 Backend.register_backend('allura', Allura)
