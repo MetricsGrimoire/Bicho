@@ -65,7 +65,7 @@ class Config:
         # FIXME /etc is not portable
         config_file = os.path.join ('/etc', 'bicho')
         if os.path.isfile (config_file):
-            __load_from_file (config_file)
+            Config.load_from_file (config_file)
 
         # Then look at $HOME
         config_file = os.path.join (bicho_dot_dir (), 'config')
