@@ -42,6 +42,7 @@ from storm.locals import DateTime, Int, Reference, Unicode, Bool
 
 
 class DBAlluraIssueExt(object):
+    # FIXME: Do we really need all this comments? DRY!!!
     """
     Maps elements from X{issues_ext_allura} table.
 
@@ -51,6 +52,15 @@ class DBAlluraIssueExt(object):
     @type private: C{boolean}
     @param ticket_num: identifier of the issue
     @type ticket_num: C{int}
+    @param discussion_thread_url: issue url for discussion thread
+    @type discussion_thread_url: L{storm.locals.Unicode}
+    @param related_artifacts: issue related artifacts
+    @type related_artifacts: L{storm.locals.Unicode}
+    @param custom_fields: issue custom fields
+    @type custom_fields: L{storm.locals.Unicode}
+    @param mod_date: issue modification date
+    @type mod_date: L{storm.locals.Date}
+
     @param issue_id: identifier of the issue
     @type issue_id: C{int}
 
@@ -66,27 +76,32 @@ class DBAlluraIssueExt(object):
     @type private: L{storm.locals.Boolean}
     @ivar ticket_num: Issue identifier.
     @type ticket_num: L{storm.locals.Int}
+    @ivar discussion_thread_url: issue url for discussion thread
+    @type discussion_thread_url: L{storm.locals.Unicode}
+    @ivar related_artifacts: issue related artifacts
+    @type related_artifacts: L{storm.locals.Unicode}
+    @ivar custom_fields: issue custom fields
+    @type custom_fields: L{storm.locals.Unicode}
+    @ivar mod_date: issue modification date
+    @type mod_date: L{storm.locals.Date}
     @ivar issue_id: Issue identifier.
     @type issue_id: L{storm.locals.Int}
     @ivar issue: Reference to L{DBIssue} object.
     @type issue: L{storm.locals.Reference}
     """
-    
-    # Other issue fields
-    # discussion_thread
-    # mod_date->datetime
-    # custom_fields->dict
-    # related_artifacts->sequence
-    # "discussion_thread_url->string
-
+        
     __storm_table__ = 'issues_ext_allura'
 
     id = Int(primary=True)
     labels = Unicode()
     private = Bool()
     ticket_num = Int()
+    discussion_thread_url = Unicode()
+    related_artifacts = Unicode()
+    custom_fields = Unicode()
+    mod_date = DateTime()        
     issue_id = Int()
-    
+            
     issue = Reference(issue_id, DBIssue.id)
     
     def __init__(self, issue_id):
@@ -104,6 +119,10 @@ class DBAlluraIssueExtMySQL(DBAlluraIssueExt):
                     labels TEXT, \
                     private BOOLEAN, \
                     ticket_num INTEGER NOT NULL, \
+                    discussion_thread_url TEXT, \
+                    related_artifacts TEXT, \
+                    custom_fields TEXT, \
+                    mod_date DATETIME, \
                     issue_id INTEGER NOT NULL, \
                     PRIMARY KEY(id), \
                     FOREIGN KEY(issue_id) \
@@ -147,6 +166,10 @@ class DBAlluraBackend(DBBackend):
             db_issue_ext.labels = unicode(issue.labels) 
             db_issue_ext.private = bool(issue.private)
             db_issue_ext.ticket_num = int(issue.ticket_num)
+            db_issue_ext.discussion_thread_url = unicode(issue.discussion_thread_url)
+            db_issue_ext.related_artifacts = unicode(issue.related_artifacts)
+            db_issue_ext.custom_fields = unicode(issue.custom_fields)
+            db_issue_ext.mod_date = issue.mod_date
         
             if newIssue == True:
                 store.add(db_issue_ext)
@@ -164,24 +187,29 @@ class AlluraIssue(Issue):
     def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
-        self.labels = None
-        self.private = None
-        self.ticket_num = None
+        
+        if False:
+            self.labels = None
+            self.private = None
+            self.ticket_num = None
+            
+            self.discussion_thread_url = None
+            self.related_artifacts = None
+            self.custom_fields = None
+            self.mod_date = None
+
     
 class Allura():
     
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
-
-
         
     def _convert_to_datetime(self,str_date):
         """
         Returns datetime object from string
         """
         return parse(str_date).replace(tzinfo=None)
-
                 
     def analyze_bug(self, bug_url):
         #Retrieving main bug information
@@ -201,7 +229,6 @@ class Allura():
         people = People(issue_allura["reported_by_id"])            
         people.set_name(issue_allura["reported_by"])
                 
-        # FIXME: I miss resolution and priority
         issue = AlluraIssue(issue_allura["_id"],
                             "ticket",
                             issue_allura["summary"],
@@ -220,6 +247,10 @@ class Allura():
         issue.labels = str(issue_allura["labels"])
         issue.private = issue_allura["private"]
         issue.ticket_num = issue_allura["ticket_num"]
+        issue.discussion_thread_url = issue_allura["discussion_thread_url"]
+        issue.related_artifacts = str(issue_allura["related_artifacts"])
+        issue.custom_fields = str(issue_allura["custom_fields"])
+        issue.mod_date = self._convert_to_datetime(issue_allura["mod_date"])        
                 
         #Retrieving changes
 #        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
