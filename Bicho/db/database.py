@@ -166,8 +166,10 @@ class DBDatabase:
                                                        tracker_id).id
 
             db_issue.submitted_on = issue.submitted_on
-            db_issue.assigned_to = self.insert_people(issue.assigned_to, 
-                                                      tracker_id).id
+            
+            if issue.assigned_to is not None:
+                db_issue.assigned_to = self.insert_people(issue.assigned_to,
+                                                          tracker_id).id
 
             #if issue is new, we add to the data base before the flush()
             if newIssue == True:
