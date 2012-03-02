@@ -29,6 +29,10 @@ from Bicho.db.database import DBIssue, DBBackend, get_database
 import json
 import os
 import pprint
+import random
+import sys
+import time
+import urllib
 
 from storm.locals import DateTime, Int, Reference, Unicode
 
@@ -75,6 +79,31 @@ class Allura():
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
+        
+    def analyze_bug(self, bug_url):
+        #Retrieving main bug information
+        printdbg(bug_url)        
+
+        try:
+            f = urllib.urlopen(bug_url)
+            json_ticket = f.read()
+            issue = json.loads(json_ticket)
+    
+        except Exception, e:
+            printerr("Error in bug analysis: " + bug_url);
+            print(e)
+            raise
+
+        #Retrieving changes
+#        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
+#        printdbg( bug_activity_url )
+#        data_activity = urllib.urlopen(bug_activity_url).read()
+#        parser = SoupHtmlParser(data_activity, bug_id)
+#        changes = parser.parse_changes()
+#        for c in changes:
+#            issue.add_change(c)
+        return issue
+
 
     def run(self):
         """
@@ -84,7 +113,7 @@ class Allura():
         bugs = [];
         bugsdb = get_database (DBAlluraBackend())
         
-        url_ticket = "http://sourceforge.net/rest/p/allura/tickets/3824/"
+        # url_ticket = "http://sourceforge.net/rest/p/allura/tickets/3824/"
         url_tickets = "http://sourceforge.net/rest/p/allura/tickets"
         self.url = url_tickets;
         
@@ -108,8 +137,28 @@ class Allura():
 
         print "TOTAL BUGS", str(len(bugs))
         
-        for bug in bugs:
-            pass        
+        test_bugs = bugs[random.randint(0,len(bugs))::100][0:1]
+                
+        for bug in test_bugs:
+            try:
+                issue_url = url_tickets+"/"+str(bug)
+                issue_data = self.analyze_bug(issue_url)
+                pprint.pprint(issue_data) 
+            except Exception, e:
+                printerr("Error in function analyze_bug " + issue_url)
+                print(e)
+
+#            try:
+#                bugsdb.insert_issue(issue_data, dbtrk.id)
+#            except UnicodeEncodeError:
+#                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
+#                      % (issue_data.issue))
+
+            time.sleep(self.delay)
+            
+        printout("Done. %s bugs analyzed" % (len(bugs)))
+
+        
 
 def test_parse_ticket ():
     url = "http://sourceforge.net/rest/p/allura/tickets/3824/"
