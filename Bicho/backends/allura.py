@@ -38,15 +38,53 @@ import sys
 import time
 import urllib
 
-from storm.locals import DateTime, Int, Reference, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode, Bool
 
 
 class DBAlluraIssueExt(object):
     """
+    Maps elements from X{issues_ext_allura} table.
+
+    @param labels: issue labels
+    @type labels: C{str}
+    @param private: issue private or not
+    @type private: C{boolean}
+    @param ticket_num: identifier of the issue
+    @type ticket_num: C{int}
+    @param issue_id: identifier of the issue
+    @type issue_id: C{int}
+
+
+    @ivar __storm_table__: Name of the database table.
+    @type __storm_table__: C{str}
+
+    @ivar id: Extra issue fields identifier.
+    @type id: L{storm.locals.Int}
+    @ivar labels: issue labels
+    @type labels: L{storm.locals.Unicode}
+    @ivar private: issue private or not
+    @type private: L{storm.locals.Boolean}
+    @ivar ticket_num: Issue identifier.
+    @type ticket_num: L{storm.locals.Int}
+    @ivar issue_id: Issue identifier.
+    @type issue_id: L{storm.locals.Int}
+    @ivar issue: Reference to L{DBIssue} object.
+    @type issue: L{storm.locals.Reference}
     """
+    
+    # Other issue fields
+    # discussion_thread
+    # mod_date->datetime
+    # custom_fields->dict
+    # related_artifacts->sequence
+    # "discussion_thread_url->string
+
     __storm_table__ = 'issues_ext_allura'
 
     id = Int(primary=True)
+    labels = Unicode()
+    private = Bool()
+    ticket_num = Int()
     issue_id = Int()
     
     issue = Reference(issue_id, DBIssue.id)
@@ -60,8 +98,12 @@ class DBAlluraIssueExtMySQL(DBAlluraIssueExt):
     MySQL subclass of L{DBBugzillaIssueExt}
     """
 
+    # If the table is changed you need to remove old from database
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_allura ( \
                     id INTEGER NOT NULL AUTO_INCREMENT, \
+                    labels TEXT, \
+                    private BOOLEAN, \
+                    ticket_num INTEGER NOT NULL, \
                     issue_id INTEGER NOT NULL, \
                     PRIMARY KEY(id), \
                     FOREIGN KEY(issue_id) \
@@ -69,7 +111,6 @@ class DBAlluraIssueExtMySQL(DBAlluraIssueExt):
                     ON DELETE CASCADE \
                     ON UPDATE CASCADE \
                      ) ENGINE=MYISAM;'
-
 
 class DBAlluraBackend(DBBackend):
     """
@@ -79,17 +120,53 @@ class DBAlluraBackend(DBBackend):
         self.MYSQL_EXT = [DBAlluraIssueExtMySQL]
         
     def insert_issue_ext(self, store, issue, issue_id):
-        pass
-
-
+        """
+        Insert the given extra parameters of issue with id X{issue_id}.
+        
+        @param store: database connection
+        @type store: L{storm.locals.Store}
+        @param issue: issue to insert
+        @type issue: L{AlluraIssue}
+        @param issue_id: identifier of the issue
+        @type issue_id: C{int}
+        
+        @return: the inserted extra parameters issue
+        @rtype: L{DBAlluraIssueExt}
+        """
+        
+        newIssue = False;
+        
+        try:
+            db_issue_ext = store.find(DBAlluraIssueExt,
+                                      DBAlluraIssueExt.issue_id == issue_id).one()
+            if not db_issue_ext:
+                newIssue = True
+                db_issue_ext = DBAlluraIssueExt(issue_id)
+                #db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
+        
+            db_issue_ext.labels = unicode(issue.labels) 
+            db_issue_ext.private = bool(issue.private)
+            db_issue_ext.ticket_num = int(issue.ticket_num)
+        
+            if newIssue == True:
+                store.add(db_issue_ext)
+            
+            store.flush()
+            return db_issue_ext
+        except:
+            store.rollback()
+            raise    
+    
 class AlluraIssue(Issue):
     """
-    Ad-hoc Issue extension for bugzilla's issue
+    Ad-hoc Issue extension for allura's issue
     """
     def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
-
+        self.labels = None
+        self.private = None
+        self.ticket_num = None
     
 class Allura():
     
@@ -108,7 +185,7 @@ class Allura():
                 
     def analyze_bug(self, bug_url):
         #Retrieving main bug information
-        printdbg(bug_url)        
+        printdbg(bug_url)
 
         try:
             # f = urllib.urlopen(bug_url)
@@ -130,8 +207,20 @@ class Allura():
                             issue_allura["summary"],
                             issue_allura["description"],
                             people,
-                            self._convert_to_datetime(issue_allura["created_date"]))
-
+                            self._convert_to_datetime(issue_allura["created_date"]))        
+        people =  People(issue_allura["assigned_to_id"])
+        people.set_name(issue_allura["assigned_to"])
+        issue.assigned_to = people
+        issue.status = issue_allura["status"]
+        # No information from Allura for this fields
+        issue.resolution = None
+        issue.priority = None
+                
+        # Extended attributes
+        issue.labels = str(issue_allura["labels"])
+        issue.private = issue_allura["private"]
+        issue.ticket_num = issue_allura["ticket_num"]
+                
         #Retrieving changes
 #        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
 #        printdbg( bug_activity_url )
