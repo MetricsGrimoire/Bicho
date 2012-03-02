@@ -25,6 +25,11 @@ from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.utils import printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
+
+import os
+
+import pprint
+
 from storm.locals import DateTime, Int, Reference, Unicode
 
 
@@ -76,8 +81,32 @@ class Allura():
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
+        bugs = [];
         bugsdb = get_database (DBAlluraBackend())
-
         
+        url_ticket = "http://sourceforge.net/rest/p/allura/tickets/3824/"
+        url_tickets = "http://sourceforge.net/rest/p/allura/tickets"
+        self.url = url_ticket;
+        
+        if self.url.find("tickets/")>0:
+            bugs.append(self.url.split("tickets/")[1].strip('/'))
+
+        else:
+            # f = urllib.urlopen(url)
+            f = open(os.path.join(os.path.dirname(__file__),"tickets_allura.json"));
+            ticketList_json = f.read()
+            f.close()
+            
+        pprint.pprint(bugs);         
+
+def test_parse_ticket ():
+    url = "http://sourceforge.net/rest/p/allura/tickets/3824/"
+    json = urllib2.urlopen(url)
+
+    parser = AlluraParser()
+    parser.parse_issue(json)
+        
+if __name__ == "__main__":
+    test_parse_ticket()
 
 Backend.register_backend('allura', Allura)
