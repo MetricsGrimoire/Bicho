@@ -24,7 +24,46 @@ from Bicho.Config import Config
 
 from Bicho.backends import Backend
 from Bicho.utils import printdbg, printout, printerr
+from Bicho.db.database import DBIssue, DBBackend, get_database
+from storm.locals import DateTime, Int, Reference, Unicode
 
+
+class DBAlluraIssueExt(object):
+    """
+    """
+    __storm_table__ = 'issues_ext_allura'
+
+    id = Int(primary=True)
+    issue_id = Int()
+    
+    issue = Reference(issue_id, DBIssue.id)
+    
+    def __init__(self, issue_id):
+        self.issue_id = issue_id
+
+
+class DBAlluraIssueExtMySQL(DBAlluraIssueExt):
+    """
+    MySQL subclass of L{DBBugzillaIssueExt}
+    """
+
+    __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_allura ( \
+                    id INTEGER NOT NULL AUTO_INCREMENT, \
+                    issue_id INTEGER NOT NULL, \
+                    PRIMARY KEY(id), \
+                    FOREIGN KEY(issue_id) \
+                    REFERENCES issues (id) \
+                    ON DELETE CASCADE \
+                    ON UPDATE CASCADE \
+                     ) ENGINE=MYISAM;'
+
+
+class DBAlluraBackend(DBBackend):
+    """
+    Adapter for Allura backend.
+    """
+    def __init__(self):
+        self.MYSQL_EXT = [DBAlluraIssueExtMySQL]
 
 class Allura():
     
@@ -36,5 +75,9 @@ class Allura():
         """
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
+        
+        bugsdb = get_database (DBAlluraBackend())
+
+        
 
 Backend.register_backend('allura', Allura)
