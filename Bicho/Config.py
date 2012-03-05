@@ -107,9 +107,9 @@ class Config:
                 retval = True    
                     
             if vars(Config).has_key('input') and Config.input == 'db':
-                Config.check_db_in_config(parser)
+                Config.check_db_in_config()
             if vars(Config).has_key('output') and Config.output == 'db':
-                Config.check_db_out_config(parser)
+                Config.check_db_out_config()
                             
     @staticmethod
     def check_db_in_config():
@@ -174,55 +174,63 @@ class Config:
 
         # General options
         parser.add_option('-b', '--backend', dest='backend',
-                          help='Backend used to fetch issues')
-        parser.add_option('-c', '--cfg', dest='cfgfile', default=None,
-                          help='Use a custom configuration file')
+                          help='Backend used to fetch issues', default=None)
+        parser.add_option('-c', '--cfg', dest='cfgfile', 
+                          help='Use a custom configuration file', default=None)
         parser.add_option('-d', '--delay', type='int', dest='delay',
-                          help='Delay in seconds betweeen petitions to avoid been banned')
+                          help='Delay in seconds betweeen petitions to avoid been banned',
+                          default='0')
         parser.add_option('-g', '--debug', action='store_true', dest='debug',
-                          help='Enable debug mode')
+                          help='Enable debug mode', default=False)
         parser.add_option('-i', '--input', choices=['url', 'db'],
-                          dest='input', help='Input format')
+                          dest='input', help='Input format', default='url')
         parser.add_option('-o', '--output', choices=['db'],
-                          dest='output', help='Output format')
+                          dest='output', help='Output format', default='db')
         parser.add_option('-p', '--path', dest='path',
-                          help='Path where downloaded URLs will be stored')
+                          help='Path where downloaded URLs will be stored',
+                          default=None)
         parser.add_option('-u', '--url', dest='url',
-                          help='URL to get issues from using the backend')
-
+                          help='URL to get issues from using the backend',
+                          default=None)
     
         # Options for output database
         group = OptionGroup(parser, 'Output database specific options')
         group.add_option('--db-driver-out',
                          choices=['sqlite','mysql','postgresql'],
-                         dest='db_driver_out', help='Output database driver')
+                         dest='db_driver_out', help='Output database driver',
+                         default='mysql')
         group.add_option('--db-user-out', dest='db_user_out',
-                         help='Database user name')
+                         help='Database user name', default=None)
         group.add_option('--db-password-out', dest='db_password_out',
-                         help='Database user password')
+                         help='Database user password', default=None)
         group.add_option('--db-hostname-out', dest='db_hostname_out',
-                         help='Name of the host where database server is running')
+                         help='Name of the host where database server is running',
+                         default='localhost')
         group.add_option('--db-port-out', dest='db_port_out',
-                         help='Port of the host where database server is running')
+                         help='Port of the host where database server is running',
+                         default='3306')
         group.add_option('--db-database-out', dest='db_database_out',
-                         help='Output database name')
+                         help='Output database name', default=None)
         parser.add_option_group(group)
     
         # Options for input database
         group = OptionGroup(parser, 'Input database specific options')
         group.add_option('--db-driver-in',
                          choices=['sqlite', 'mysql', 'postgresql'],
-                         dest='db_driver_in', help='Input database driver')
+                         dest='db_driver_in', help='Input database driver',
+                         default=None)
         group.add_option('--db-user-in', dest='db_user_in',
-                         help='Database user name')
+                         help='Database user name', default=None)
         group.add_option('--db-password-in', dest='db_password_in',
-                         help='Database user password')
+                         help='Database user password', default=None)
         group.add_option('--db-hostname-in', dest='db_hostname_in',
-                         help='Name of the host where database server is running')
+                         help='Name of the host where database server is running',
+                         default=None)
         group.add_option('--db-port-in', dest='db_port_in',
-                         help='Port of the host where database server is running')
+                         help='Port of the host where database server is running',
+                         default=None)
         group.add_option('--db-database-in', dest='db_database_in',
-                         help='Input database name')
+                         help='Input database name', default=None)
         parser.add_option_group(group)
                 
         (options, args) = parser.parse_args()
@@ -230,15 +238,16 @@ class Config:
         if options.cfgfile is not None:
             Config.load_from_file(options.cfgfile)
         else:
-            Config.load()            
-            
+            Config.load()
+                        
         # Command line options have preference
         # Backwards compatibility
         if (len(args) > 1):
             Config.backend=args[0]
         if (len(args) == 2):
             Config.url=args[1]
-                                           
+            
+        # Not remove config file options with empty default values                               
         Config.__dict__.update(Config.clean_empty_options(options))            
     
-        Config.check_config ()                    
+        Config.check_config ()
