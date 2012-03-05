@@ -234,11 +234,11 @@ class Config:
             
         # Command line options have preference
         # Backwards compatibility
-        if (len(args) == 1):
+        if (len(args) > 1):
             Config.backend=args[0]
         if (len(args) == 2):
             Config.url=args[1]
-                               
+                                           
         Config.__dict__.update(Config.clean_empty_options(options))            
     
         Config.check_config ()                    
