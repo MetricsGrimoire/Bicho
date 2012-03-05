@@ -45,6 +45,12 @@ Latest version:
   $ bicho --help
 
 
+ Improving Bicho
+----------------
+
+If you want to report a bug or submit a patch. Use our bugzilla at http://bugzilla.libresoft.es/
+
+
  Contact
 -------
 
@@ -97,3 +103,7 @@ F3. How can I create a new backend?
 
 Tell us through the contact information above that you want to create a new
 backend, we'll try to give you as much information as possible.
+
+F4. How can I submit a bug?
+
+Use our bugzilla at http://bugzilla.libresoft.es/
