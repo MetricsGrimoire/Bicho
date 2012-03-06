@@ -85,12 +85,12 @@ class Config:
         """
         """        
         
-        if Config.backend is None:
+        if not vars(Config).has_key('backend') or  Config.backend is None:
             raise InvalidConfig('Configuration parameter ''backend'' is required')
         else:
             if Config.backend+".py" not in Backend.get_all_backends():
                 raise InvalidConfig('Backend "'+ Config.backend + '" does not exists')
-        if Config.url is None:
+        if not vars(Config).has_key('url') or Config.url is None:
             raise InvalidConfig('Configuration parameter ''url'' is required')
         else:
             req = Request(Config.url)
