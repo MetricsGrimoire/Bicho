@@ -99,7 +99,7 @@ class Config:
                 response = urlopen(req)
             except HTTPError, e:
                 raise InvalidConfig('The server could not fulfill the request '
-                                    + str(e.reason) + '('+ str(e.code)+')')
+                                   + str(e.msg) + '('+ str(e.code)+')')
             except URLError, e:
                 raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
             else:
