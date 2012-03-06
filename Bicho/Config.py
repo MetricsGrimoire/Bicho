@@ -242,12 +242,12 @@ class Config:
                         
         # Command line options have preference
         # Backwards compatibility
-        if (len(args) > 1):
+        if (len(args) > 0):
             Config.backend=args[0]
         if (len(args) == 2):
             Config.url=args[1]
             
         # Not remove config file options with empty default values                               
-        Config.__dict__.update(Config.clean_empty_options(options))            
-    
+        Config.__dict__.update(Config.clean_empty_options(options))
+
         Config.check_config ()
