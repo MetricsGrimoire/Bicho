@@ -148,6 +148,10 @@ class Config:
         parser.add_option('-u', '--url', dest='url',
                           help='URL to get issues from using the backend',
                           default=None)
+        parser.add_option('--cache', action='store_true', dest='cache',
+                          help='Use cached data already retrieved',
+                          default=False)
+
     
         # Options for output database
         group = OptionGroup(parser, 'Output database specific options')
