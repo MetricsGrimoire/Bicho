@@ -81,80 +81,36 @@ class Config:
                 Config.load_from_file (config_file)
 
     @staticmethod
+    def check_params(check_params):            
+        for param in check_params:
+            if not vars(Config).has_key(param) or vars(Config)[param] is None:
+                raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
+
+    @staticmethod
     def check_config():
         """
-        """        
+        """
+        Config.check_params(['url','backend'])
         
-        if not vars(Config).has_key('backend') or  Config.backend is None:
-            raise InvalidConfig('Configuration parameter ''backend'' is required')
-        else:
-            if Config.backend+".py" not in Backend.get_all_backends():
-                raise InvalidConfig('Backend "'+ Config.backend + '" does not exists')
-        if not vars(Config).has_key('url') or Config.url is None:
-            raise InvalidConfig('Configuration parameter ''url'' is required')
-        else:
-            req = Request(Config.url)
-            try:
-                print "Opening URL: ", Config.url
-                response = urlopen(req)
-            except HTTPError, e:
-                raise InvalidConfig('The server could not fulfill the request '
-                                   + str(e.msg) + '('+ str(e.code)+')')
-            except URLError, e:
-                raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
-            else:
-                print Config.url, "OK"
-                retval = True    
-                    
-            if vars(Config).has_key('input') and Config.input == 'db':
-                Config.check_db_in_config()
-            if vars(Config).has_key('output') and Config.output == 'db':
-                Config.check_db_out_config()
-                            
-    @staticmethod
-    def check_db_in_config():
-        """
-        """
-        
-        param = None
-    
-        if Config.db_driver_in is None:
-            param = 'db-driver-in'
-        elif Config.db_user_in is None:
-            param = 'db-user-in'
-        elif Config.db_password_in is None:
-            param = 'db-password-in'
-        elif Config.db_hostname_in is None:
-            param = 'db-hostname-in'
-        elif Config.db_port_in is None:
-            param = 'db-port-in'
-        elif Config.db_database_in is None:
-            param = 'db-database-in'        
-    
-        if param is not None:
-            raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
-    
-    @staticmethod
-    def check_db_out_config():
-        """
-        """
-        param = None
-    
-        if Config.db_driver_out is None:
-            param = 'db-driver-out'
-        elif Config.db_user_out is None:
-            param = 'db-user-out'
-        elif Config.db_password_out is None:
-            param = 'db-password-out'
-        elif Config.db_hostname_out is None:
-            param = 'db-hostname-out'
-        elif Config.db_port_out is None:
-            param = 'db-port-out'
-        elif Config.db_database_out is None:
-            param = 'db-database-out'
-    
-        if param is not None:
-            raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
+        if Config.backend+".py" not in Backend.get_all_backends():
+            raise InvalidConfig('Backend "'+ Config.backend + '" does not exists')
+
+        req = Request(Config.url)
+        try:
+            print("Checking URL: "+Config.url)
+            response = urlopen(req)
+        except HTTPError, e:
+            raise InvalidConfig('The server could not fulfill the request '
+                               + str(e.msg) + '('+ str(e.code)+')')
+        except URLError, e:
+            raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
+                
+        if vars(Config).has_key('input') and Config.input == 'db':
+            Config.check_params(['db_driver_in', 'db_user_in', 'db_password_in',
+                                 'db_hostname_in', 'db_port_in', 'db_database_in'])        
+        if vars(Config).has_key('output') and Config.output == 'db':
+            Config.check_params(['db_driver_out','db_user_out','db_password_out',
+                                 'db_hostname_out','db_port_out','db_database_out'])
         
     @staticmethod
     def clean_empty_options(options):
@@ -248,6 +204,6 @@ class Config:
             Config.url=args[1]
             
         # Not remove config file options with empty default values                               
-        Config.__dict__.update(Config.clean_empty_options(options))
+        Config.__dict__.update(Config.clean_empty_options(options))        
 
         Config.check_config ()
