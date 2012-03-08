@@ -25,9 +25,11 @@
 from backends import Backend
 import info
 from optparse import OptionGroup, OptionParser
+import os
 import pprint
 import sys
 from urllib2 import Request, urlopen, URLError, HTTPError
+
 
 class ErrorLoadingConfig(Exception):
     """
@@ -57,8 +59,13 @@ class Config:
         # print dir(Config)          
     
     @staticmethod        
+    def get_cache_dir ():
+        from utils import bicho_dot_dir
+        return os.path.join (bicho_dot_dir (), 'cache')
+        
+    @staticmethod        
     def load ():
-        import os
+        # FIXME: a hack to avoid circular dependencies. 
         from utils import bicho_dot_dir, printout
 
         # First look in /etc
@@ -135,7 +142,7 @@ class Config:
                           help='Use a custom configuration file', default=None)
         parser.add_option('-d', '--delay', type='int', dest='delay',
                           help='Delay in seconds betweeen petitions to avoid been banned',
-                          default='0')
+                          default='5')
         parser.add_option('-g', '--debug', action='store_true', dest='debug',
                           help='Enable debug mode', default=False)
         parser.add_option('-i', '--input', choices=['url', 'db'],

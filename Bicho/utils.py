@@ -102,6 +102,17 @@ def rdelay():
 
 _dirs = {}
 
+def create_dir(dir):
+    try:
+        os.mkdir (dir, 0700)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            if not os.path.isdir (dir):
+                raise
+        else:
+            raise
+
+
 def bicho_dot_dir ():
     try:
         return _dirs['dot']
@@ -109,15 +120,9 @@ def bicho_dot_dir ():
         pass
 
     dot_dir = os.path.join (os.environ.get ('HOME'), '.bicho')
-    try:
-        os.mkdir (dot_dir, 0700)
-    except OSError, e:
-        if e.errno == errno.EEXIST:
-            if not os.path.isdir (dot_dir):
-                raise
-        else:
-            raise
-
+    create_dir (dot_dir)
+    create_dir (os.path.join(dot_dir, "cache"))
+        
     _dirs['dot'] = dot_dir
 
     return dot_dir

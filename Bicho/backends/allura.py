@@ -23,13 +23,14 @@
 from Bicho.Config import Config
 
 from Bicho.backends import Backend
-from Bicho.utils import printdbg, printout, printerr
+from Bicho.utils import create_dir, printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.common import Tracker, Issue, People
 
 from dateutil.parser import parse
 from datetime import datetime
 
+import errno
 import json
 import os
 import pprint
@@ -201,6 +202,9 @@ class AlluraIssue(Issue):
     
 class Allura():
     
+    project_cache_file = None
+    safe_delay = 5
+    
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
@@ -216,10 +220,35 @@ class Allura():
         printdbg(bug_url)
 
         try:
+            if Config.cache:
+                # 2595 2893
+                bug_number = bug_url.split('/')[-1]
+                bug_cache_file = self.project_cache_file + "." + bug_number
+                try:
+                    f = open(bug_cache_file)
+                except Exception, e:                                        
+                    if e.errno == errno.ENOENT:
+                        f = open(bug_cache_file,'w')
+                        fr = urllib.urlopen(bug_url)
+                        f.write(fr.read())
+                        f.close()
+                        f = open(bug_cache_file)
+                    else:
+                        print "ERROR", e.errno
+                        raise e
+            else:
+                f = urllib.urlopen(bug_url)
+
             # f = urllib.urlopen(bug_url)
-            f = open(os.path.join(os.path.dirname(__file__),"../../test/ticket_allura.json"));
+            # f = open(os.path.join(os.path.dirname(__file__),"../../test/ticket_allura.json")); 
             json_ticket = f.read()
-            issue_allura = json.loads(json_ticket)["ticket"]
+            try:                
+                issue_allura = json.loads(json_ticket)["ticket"]
+            except Exception, e:
+                print "Probably Allura has banned us. Use a longer delay than", Config.delay
+                print e
+                os.remove(bug_cache_file)
+                sys.exit()
     
         except Exception, e:
             printerr("Error in bug analysis: " + bug_url);
@@ -285,10 +314,25 @@ class Allura():
             bugs.append(self.url.split("tickets/")[1].strip('/'))
 
         else:
-            # f = urllib.urlopen(url)
-            f = open(os.path.join(os.path.dirname(__file__),"../../test/tickets_allura.json"));
+            if Config.cache:
+                tracker_cache_dir = os.path.join(Config.get_cache_dir(), trk.name)
+                if not os.path.isdir (tracker_cache_dir):
+                    create_dir (os.path.join(Config.get_cache_dir(), trk.name))
+                project_name = self.url.split("/")[-2]
+                self.project_cache_file = os.path.join(tracker_cache_dir, project_name) 
+                try:
+                    f = open(self.project_cache_file)
+                except Exception, e:
+                    if e.errno == errno.ENOENT:
+                        f = open(self.project_cache_file,'w+')
+                        fr = urllib.urlopen(self.url)
+                        f.write(fr.read())
+                        f.close()
+                        f = open(self.project_cache_file)
+            else:
+                f = urllib.urlopen(self.url)
+            # f = open(os.path.join(os.path.dirname(__file__),"../../test/tickets_allura.json"));
             ticketList_json = f.read()
-            f.close()
             ticketList = json.loads(ticketList_json)
             for ticket in ticketList["tickets"]:
                 bugs.append(ticket["ticket_num"])                    
@@ -301,19 +345,16 @@ class Allura():
 
         print "TOTAL BUGS", str(len(bugs))
         
-        test_bugs = bugs[random.randint(0,len(bugs))::100][0:1]
+        test_bugs = bugs[random.randint(0,len(bugs))::100][0:100]
                 
         for bug in test_bugs:
             try:
                 issue_url = url_tickets+"/"+str(bug)
                 issue_data = self.analyze_bug(issue_url)
-                pprint.pprint(issue_data)
+                bugsdb.insert_issue(issue_data, dbtrk.id)
             except Exception, e:
                 printerr("Error in function analyze_bug " + issue_url)
                 print(e)
-
-            try:
-                bugsdb.insert_issue(issue_data, dbtrk.id)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                       % (issue_data.issue))
