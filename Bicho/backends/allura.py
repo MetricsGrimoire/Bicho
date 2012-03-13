@@ -37,6 +37,7 @@ import pprint
 import random
 import sys
 import time
+import traceback
 import urllib
 
 from storm.locals import DateTime, Int, Reference, Unicode, Bool
@@ -243,13 +244,17 @@ class Allura():
 
             # f = urllib.urlopen(bug_url) 
             json_ticket = f.read()
+            # print json_ticket
             try:                
                 issue_allura = json.loads(json_ticket)["ticket"]
             except Exception, e:
                 print "Probably Allura has banned us. Use --cache and a longer delay than", Config.delay
                 print e
-                os.remove(bug_cache_file)
-                sys.exit()
+                # os.remove(bug_cache_file)
+                os.rename(bug_cache_file, bug_cache_file+".fail")
+                # Allura banned the URL not the access to the REST interface
+                # sys.exit()
+                return None
     
         except Exception, e:
             printerr("Error in bug analysis: " + bug_url);
@@ -333,14 +338,14 @@ class Allura():
         ticketList = json.loads(f.read())
         for ticket in ticketList["tickets"]:
             bugs.append(ticket["ticket_num"])                    
-        
+
         nbugs = len(bugs)
         
         if len(bugs) == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
-        
         # test_bugs = bugs[random.randint(0,len(bugs))::100][0:100]
+        
         
         print "Total bugs", nbugs
         print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)"         
@@ -349,11 +354,14 @@ class Allura():
             try:
                 issue_url = self.url+"/"+str(bug)
                 issue_data = self.analyze_bug(issue_url)
+                if issue_data is None:
+                    continue
                 bugsdb.insert_issue(issue_data, dbtrk.id)
+                print "Remaining time: ", (nbugs-issue_data.ticket_num)*Config.delay/60, "m"
                 if not issue_data.cached: time.sleep(self.delay)
             except Exception, e:
                 printerr("Error in function analyze_bug " + issue_url)
-                print(e)
+                traceback.print_exc(file=sys.stdout)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                       % (issue_data.issue))
