@@ -221,7 +221,6 @@ class Allura():
 
         try:
             if Config.cache:
-                # 2595 2893
                 bug_number = bug_url.split('/')[-1]
                 bug_cache_file = self.project_cache_file + "." + bug_number
                 try:
@@ -245,7 +244,7 @@ class Allura():
             try:                
                 issue_allura = json.loads(json_ticket)["ticket"]
             except Exception, e:
-                print "Probably Allura has banned us. Use a longer delay than", Config.delay
+                print "Probably Allura has banned us. Use --cache and a longer delay than", Config.delay
                 print e
                 os.remove(bug_cache_file)
                 sys.exit()
@@ -299,57 +298,54 @@ class Allura():
         
         bugs = [];
         bugsdb = get_database (DBAlluraBackend())
-        
+                
         # still useless
         bugsdb.insert_supported_traker("allura", "beta")
-        trk = Tracker (self.url, "allura", "beta")
+        trk = Tracker (Config.url, "allura", "beta")
 
         dbtrk = bugsdb.insert_tracker(trk)
         
-        # url_ticket = "http://sourceforge.net/rest/p/allura/tickets/3824/"
-        url_tickets = "http://sourceforge.net/rest/p/allura/tickets"
-        self.url = url_tickets;
+        self.url = Config.url
         
-        if self.url.find("tickets/")>0:
-            bugs.append(self.url.split("tickets/")[1].strip('/'))
-
-        else:
-            if Config.cache:
-                tracker_cache_dir = os.path.join(Config.get_cache_dir(), trk.name)
-                if not os.path.isdir (tracker_cache_dir):
-                    create_dir (os.path.join(Config.get_cache_dir(), trk.name))
-                project_name = self.url.split("/")[-2]
-                self.project_cache_file = os.path.join(tracker_cache_dir, project_name) 
-                try:
+        if Config.cache:
+            printdbg("Using file cache")
+            tracker_cache_dir = os.path.join(Config.get_cache_dir(), trk.name)
+            if not os.path.isdir (tracker_cache_dir):
+                create_dir (os.path.join(Config.get_cache_dir(), trk.name))
+            project_name = self.url.split("/")[-2]
+            self.project_cache_file = os.path.join(tracker_cache_dir, project_name) 
+            try:
+                f = open(self.project_cache_file)
+            except Exception, e:
+                if e.errno == errno.ENOENT:
+                    f = open(self.project_cache_file,'w+')
+                    fr = urllib.urlopen(self.url)
+                    f.write(fr.read())
+                    f.close()
                     f = open(self.project_cache_file)
-                except Exception, e:
-                    if e.errno == errno.ENOENT:
-                        f = open(self.project_cache_file,'w+')
-                        fr = urllib.urlopen(self.url)
-                        f.write(fr.read())
-                        f.close()
-                        f = open(self.project_cache_file)
-            else:
-                f = urllib.urlopen(self.url)
-            # f = open(os.path.join(os.path.dirname(__file__),"../../test/tickets_allura.json"));
-            ticketList_json = f.read()
-            ticketList = json.loads(ticketList_json)
-            for ticket in ticketList["tickets"]:
-                bugs.append(ticket["ticket_num"])                    
+        else:
+            f = urllib.urlopen(self.url)
+            
+        ticketList = json.loads(f.read())
+        for ticket in ticketList["tickets"]:
+            bugs.append(ticket["ticket_num"])                    
         
         nbugs = len(bugs)
         
         if len(bugs) == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
-
-        print "TOTAL BUGS", str(len(bugs))
         
-        test_bugs = bugs[random.randint(0,len(bugs))::100][0:100]
+        # test_bugs = bugs[random.randint(0,len(bugs))::100][0:100]
+        
+        print "Total bugs", nbugs
+        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)" 
+        
+        sys.exit()
                 
-        for bug in test_bugs:
+        for bug in bugs:
             try:
-                issue_url = url_tickets+"/"+str(bug)
+                issue_url = self.url+"/"+str(bug)
                 issue_data = self.analyze_bug(issue_url)
                 bugsdb.insert_issue(issue_data, dbtrk.id)
             except Exception, e:
