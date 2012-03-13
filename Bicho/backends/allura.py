@@ -218,6 +218,7 @@ class Allura():
     def analyze_bug(self, bug_url):
         #Retrieving main bug information
         printdbg(bug_url)
+        ticket_cached = False
 
         try:
             if Config.cache:
@@ -225,6 +226,8 @@ class Allura():
                 bug_cache_file = self.project_cache_file + "." + bug_number
                 try:
                     f = open(bug_cache_file)
+                    printdbg ("Cached file " + bug_cache_file)
+                    ticket_cached = True
                 except Exception, e:                                        
                     if e.errno == errno.ENOENT:
                         f = open(bug_cache_file,'w')
@@ -238,8 +241,7 @@ class Allura():
             else:
                 f = urllib.urlopen(bug_url)
 
-            # f = urllib.urlopen(bug_url)
-            # f = open(os.path.join(os.path.dirname(__file__),"../../test/ticket_allura.json")); 
+            # f = urllib.urlopen(bug_url) 
             json_ticket = f.read()
             try:                
                 issue_allura = json.loads(json_ticket)["ticket"]
@@ -278,7 +280,9 @@ class Allura():
         issue.discussion_thread_url = issue_allura["discussion_thread_url"]
         issue.related_artifacts = str(issue_allura["related_artifacts"])
         issue.custom_fields = str(issue_allura["custom_fields"])
-        issue.mod_date = self._convert_to_datetime(issue_allura["mod_date"])        
+        issue.mod_date = self._convert_to_datetime(issue_allura["mod_date"])
+        
+        issue.cached = ticket_cached        
                 
         #Retrieving changes
 #        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
@@ -346,14 +350,13 @@ class Allura():
                 issue_url = self.url+"/"+str(bug)
                 issue_data = self.analyze_bug(issue_url)
                 bugsdb.insert_issue(issue_data, dbtrk.id)
+                if not issue_data.cached: time.sleep(self.delay)
             except Exception, e:
                 printerr("Error in function analyze_bug " + issue_url)
                 print(e)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                       % (issue_data.issue))
-
-            time.sleep(self.delay)
             
         printout("Done. %s bugs analyzed" % (len(bugs)))
         
