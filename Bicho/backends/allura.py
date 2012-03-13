@@ -339,9 +339,7 @@ class Allura():
         # test_bugs = bugs[random.randint(0,len(bugs))::100][0:100]
         
         print "Total bugs", nbugs
-        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)" 
-        
-        sys.exit()
+        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)"         
                 
         for bug in bugs:
             try:
