@@ -831,8 +831,20 @@ class LPBackend(Backend):
         issue.set_heat(bug.bug.heat)
         issue.set_linked_branches(bug.bug.linked_branches)
 
-        #### TO DO : create comment instances for
-        ## issue.set_messages()
+        # storing the comments:
+        # first message of the bugs contains the description
+        if (bug.bug.messages and len(bug.bug.messages) > 1):
+            skip = 1
+            for c in bug.bug.messages:
+                if (skip==1):
+                    # we skip the first comment which is the description
+                    skip = 0
+                    continue
+                by = People(c.owner.name)
+                by.set_name(c.owner.display_name)
+                #by.set_email()
+                com = Comment(c.content, by, c.date_created)
+                issue.add_comment(com)        
 
         issue.set_tags(bug.bug.tags)
         issue.set_title(bug.bug.title)
