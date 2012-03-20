@@ -345,7 +345,7 @@ class LaunchpadTest(Test):
         for k in bug_patches.keys():
             aux_query = query_b.replace('X', str(k))
             for url in bug_patches[k]:
-                aux_query = query_b.replace('Y', str(url))
+                aux_query = aux_query.replace('Y', str(url))
                 db_number = self._execute_query(aux_query)[0]
                 if (db_number < 1):
                     self._print_error(msg2 + str(k))
