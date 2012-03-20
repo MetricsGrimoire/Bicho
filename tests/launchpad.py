@@ -84,7 +84,8 @@ class LaunchpadTest(Test):
         except:
             # no problem, we'll create the database
             pass
-        cur.execute("CREATE DATABASE " + str(self.dbname))
+        cur.execute("CREATE DATABASE " + str(self.dbname) +
+                    " CHARACTER SET utf8 COLLATE utf8_unicode_ci")
         con.close()
 
     def _execute_query(self, query):
