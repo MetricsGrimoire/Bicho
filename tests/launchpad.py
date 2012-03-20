@@ -277,7 +277,8 @@ class LaunchpadTest(Test):
         for k in bug_comments.keys():
             aux_query = query_nc.replace('X', str(k))
             db_number = self._execute_query(aux_query)[0]
-            if (bug_comments[k] == db_number):
+            aux_n = bug_comments[k] - 1  #1st is the description
+            if (aux_n == db_number):
                 self._print_success(msg + str(k))
             else:
                 self._print_error(msg + str(k))
