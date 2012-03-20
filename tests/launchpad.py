@@ -129,10 +129,21 @@ class LaunchpadTest(Test):
         # Checks the number of bugs per status
         #
 
+        # we can't use _all_status because the three incomplete statuses return
+        #only 'Incomplete' when accessing to bug.status . So we'll compare the
+        #result of searchTasks with the "Incomplete" status in the database
+
+        _a_status = ["New", "Opinion", "Invalid", "Won't Fix",
+                     "Expired", "Confirmed", "Triaged", "In Progress",
+                     "Fix Committed", "Fix Released"]
+        _b_status = ["Incomplete", "Incomplete (with response)",
+                     "Incomplete (without response)"]
+
         query = 'SELECT COUNT(*) FROM issues WHERE status = "X"'
         msg = "Number of bugs per status"
 
-        for s in _all_status:
+        # first we compare the statuses of the _a_status list
+        for s in _a_status:
             aux_query = query.replace('X', s)
             number = self._execute_query(aux_query)[0]
             bugs_lp = self.lp.projects[self.pname].searchTasks(
@@ -144,6 +155,19 @@ class LaunchpadTest(Test):
                 self._print_error(aux_msg)
             else:
                 self._print_success(aux_msg)
+
+        # second we compare the statuses of the Incomplete different names
+        aux_query = query.replace('X', "Incomplete")
+        number = self._execute_query(aux_query)[0]
+        bugs_lp = self.lp.projects[self.pname].searchTasks(
+            status=_b_status,
+            omit_duplicates=False)
+
+        aux_msg = msg + " for status Incomplete"
+        if ((len(bugs_lp) != number)):
+            self._print_error(aux_msg)
+        else:
+            self._print_success(aux_msg)
 
     def assignees(self):
         #
