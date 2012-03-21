@@ -17,13 +17,9 @@
 #
 # Authors: Luis Cañas Díaz <lcanas@libresoft.es>
 
-#import urllib
-#import string
 import sys
 import time
 
-"""from BeautifulSoup import BeautifulSoup
-from BeautifulSoup import Comment as BFComment"""
 from launchpadlib.launchpad import Launchpad
 from Bicho.backends import Backend, register_backend
 from Bicho.Config import Config
@@ -32,9 +28,6 @@ from Bicho.common import Tracker, People, Issue, Comment, Change
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode
-#import xml.sax.handler
-#from xml.sax._exceptions import SAXParseException
-#from dateutil.parser import parse
 from datetime import datetime
 
 from tempfile import mkdtemp
@@ -867,6 +860,9 @@ class LPBackend(Backend):
 
         return project_name
 
+    def __get_tracker_url_from_bug(self, bug):
+        return bug.web_link[:bug.web_link.rfind('+bug')-1]
+
     def run(self, url):
 
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
@@ -916,6 +912,12 @@ class LPBackend(Backend):
                 #continue
                 raise
             try:
+                # we can have meta-trackers but we want to have the original
+                #tracker name
+                tr_url = self.__get_tracker_url_from_bug(bug)
+                if (tr_url != url):
+                    aux_trk = Tracker(tr_url, "launchpad", "x.x")
+                    dbtrk = bugsdb.insert_tracker(aux_trk)                
                 bugsdb.insert_issue(issue_data, dbtrk.id)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
