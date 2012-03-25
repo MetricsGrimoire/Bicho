@@ -21,6 +21,8 @@ import sys
 import time
 
 from launchpadlib.launchpad import Launchpad
+from launchpadlib.credentials import Credentials
+
 from Bicho.backends import Backend, register_backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
@@ -29,8 +31,11 @@ from Bicho.db.database import DBIssue, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode
 from datetime import datetime
+from dateutil.parser import parse  # used to convert str time to datetime
 
 from tempfile import mkdtemp
+
+from lazr.restfulclient.errors import HTTPError
 
 
 class DBLaunchpadIssueExt(object):
@@ -829,7 +834,7 @@ class LPBackend(Backend):
         if (bug.bug.messages and len(bug.bug.messages) > 1):
             skip = 1
             for c in bug.bug.messages:
-                if (skip==1):
+                if (skip == 1):
                     # we skip the first comment which is the description
                     skip = 0
                     continue
@@ -837,14 +842,41 @@ class LPBackend(Backend):
                 by.set_name(c.owner.display_name)
                 #by.set_email()
                 com = Comment(c.content, by, c.date_created)
-                issue.add_comment(com)        
+                issue.add_comment(com)
 
         issue.set_tags(bug.bug.tags)
         issue.set_title(bug.bug.title)
         issue.set_users_affected_count(bug.bug.users_affected_count)
         issue.set_web_link_standalone(bug.bug.web_link)
 
+        # activity
+        for entry in bug.bug.activity.entries:
+            field = entry['whatchanged']
+            removed = entry['oldvalue']
+            added = entry['newvalue']
+            by = self.__get_people_from_uri(entry['person_link'])
+            date = self.__to_datetime(entry['datechanged'])
+            change = Change(field, removed, added, by, date)
+
+            issue.add_change(change)
+
         return issue
+
+    def __to_datetime(self, str):
+        # converts str time to datetime
+
+        return parse(str)
+
+    def __get_people_from_uri(self, uri):
+        # returns People object from uri (person_link)
+        # uri
+
+        aux = uri.rfind('~') + 1
+        dev_id = uri[aux:]
+        people_lp = self.lp.people[dev_id]
+        people_issue = People(people_lp.name)
+        people_issue.set_name(people_lp.display_name)
+        return people_issue
 
     def __get_project_from_url(self):
 
@@ -861,7 +893,11 @@ class LPBackend(Backend):
         return project_name
 
     def __get_tracker_url_from_bug(self, bug):
-        return bug.web_link[:bug.web_link.rfind('+bug')-1]
+        return bug.web_link[:bug.web_link.rfind('+bug') - 1]
+
+    def __no_credential():
+        print "Can't proceed without Launchpad credential."
+        sys.exit()
 
     def run(self, url):
 
@@ -880,14 +916,37 @@ class LPBackend(Backend):
         # launchpad needs a temp directory to store cached data
         cachedir = mkdtemp(suffix='launchpad')
 
-        lp = Launchpad.login_anonymously('just testing', 'production',
-                                         cachedir)
+        credentials = Credentials("Bicho")
+        request_token_info = credentials.get_request_token(
+            web_root="production")
+
+        complete = False
+        first = True
+        while not complete:
+            try:
+                credentials.exchange_request_token_for_access_token(
+                    web_root="production")
+                complete = True
+            except HTTPError:
+                # The user hasn't authorized the token yet.
+                if first:
+                    printout("Visit this page in order to get access %s"
+                             % (request_token_info,))
+                    first = False
+
+        #lp = Launchpad.login_anonymously('just testing', 'production',
+        #                                 cachedir)
+        #self.lp = Launchpad.login_with('Bicho','production',
+        #                    credential_save_failed=self.__no_credential)
+
+        self.lp = Launchpad(credentials, 'xxxxx', 'xxxxx', 'production')
+
         aux_status = ["New", "Incomplete", "Opinion", "Invalid", "Won't Fix",
                       "Expired", "Confirmed", "Triaged", "In Progress",
                       "Fix Committed", "Fix Released",
                       "Incomplete (with response)",
                       "Incomplete (without response)"]
-        bugs = lp.projects[pname].searchTasks(status=aux_status,
+        bugs = self.lp.projects[pname].searchTasks(status=aux_status,
                                               omit_duplicates=False)
         nbugs = len(bugs)
 
@@ -917,7 +976,7 @@ class LPBackend(Backend):
                 tr_url = self.__get_tracker_url_from_bug(bug)
                 if (tr_url != url):
                     aux_trk = Tracker(tr_url, "launchpad", "x.x")
-                    dbtrk = bugsdb.insert_tracker(aux_trk)                
+                    dbtrk = bugsdb.insert_tracker(aux_trk)
                 bugsdb.insert_issue(issue_data, dbtrk.id)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
