@@ -119,6 +119,7 @@ class Issue:
         self.attachments = []
         self.changes = []
         self.relationships = []
+        self.temp_relationships = []
         self.watchers = []
 
     def set_priority(self, priority):
@@ -212,6 +213,21 @@ class Issue:
         @type type: C{str}
         """
         self.relationships.append((issue, type))
+
+    def add_temp_relationship(self, relationship):
+        """
+        Add a relationship to the issue.
+
+        @param issue: an issue related to this issue
+        @type issue: C{str}
+        @param type: type of the relationship
+        @type type: C{str}
+        """
+        if not isinstance(relationship, TempRelationship):
+            raise ValueError('Parameter "relationship" should be a %s instance. %s given.' %
+                             ('TempRelationship', relationship.__class__.__name__,))
+        self.temp_relationships.append(relationship)
+
 
     def set_resolution(self, resolution):
         """
@@ -346,3 +362,21 @@ class Change:
 
         self.changed_by = changed_by
         self.changed_on = changed_on
+
+
+class TempRelationship:
+    """
+    """
+    def __init__(self, issue, type, related_to):
+        self.issue = issue
+        self.type = type
+        self.related_to = related_to
+
+
+class Relationship:
+    """
+    """
+    def __init__(self, issue, type, related_to):
+        self.issue = issue
+        self.type = type
+        self.related_to = related_to

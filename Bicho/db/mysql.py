@@ -27,7 +27,7 @@ from storm.locals import Store, create_database
 from Bicho.Config import Config
 from Bicho.db.database import DBDatabase, DBTracker, DBPeople, \
     DBIssue, DBIssuesWatchers, DBIssueRelationship, DBComment, DBAttachment, \
-    DBChange, DBSupportedTracker
+    DBChange, DBSupportedTracker, DBIssueTempRelationship
 
 class DBMySQL(DBDatabase):
     """
@@ -48,7 +48,7 @@ class DBMySQL(DBDatabase):
         clsl = [DBSupportedTracker, DBTrackerMySQL, DBPeopleMySQL,
                 DBIssueMySQL, DBIssueRelationshipMySQL,
                 DBCommentMySQL, DBAttachmentMySQL, DBChangeMySQL,
-                DBIssuesWatchersMySQL]
+                DBIssuesWatchersMySQL, DBIssueTempRelationshipMySQL]
 
         if backend is not None:
             clsl.extend([cls for cls in backend.MYSQL_EXT])
@@ -173,9 +173,9 @@ class DBIssueRelationshipMySQL(DBIssueRelationship):
                      id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, \
                      issue_id INTEGER UNSIGNED NOT NULL, \
                      related_to INTEGER UNSIGNED NOT NULL, \
-                     type INTEGER UNSIGNED NOT NULL, \
+                     type VARCHAR(64) NOT NULL, \
                      PRIMARY KEY(id), \
-                     UNIQUE KEY(issue_id, related_to), \
+                     UNIQUE KEY(issue_id, related_to, type), \
                      INDEX issues_related_idx1(issue_id), \
                      INDEX issues_related_idx2(related_to), \
                      FOREIGN KEY(issue_id) \
@@ -183,6 +183,25 @@ class DBIssueRelationshipMySQL(DBIssueRelationship):
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE, \
                      FOREIGN KEY(related_to) \
+                       REFERENCES issues(id) \
+                         ON DELETE CASCADE \
+                         ON UPDATE CASCADE \
+                     ) ENGINE=MYISAM;'
+
+class DBIssueTempRelationshipMySQL(DBIssueTempRelationship):
+    """
+    MySQL subclass of L{DBIssueTempRelationship}.
+    """
+    __sql_table__ = 'CREATE TEMPORARY TABLE temp_related_to ( \
+                     id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, \
+                     issue_id INTEGER UNSIGNED NOT NULL, \
+                     related_to VARCHAR(64) NOT NULL, \
+                     type VARCHAR(64) NOT NULL, \
+                     tracker_id INTEGER UNSIGNED NOT NULL, \
+                     PRIMARY KEY(id), \
+                     UNIQUE KEY(issue_id, related_to, type, tracker_id), \
+                     INDEX issues_related_idx1(issue_id), \
+                     FOREIGN KEY(issue_id) \
                        REFERENCES issues(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \

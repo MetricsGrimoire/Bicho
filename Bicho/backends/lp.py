@@ -26,7 +26,7 @@ from launchpadlib.credentials import Credentials
 from Bicho.backends import Backend, register_backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
-from Bicho.common import Tracker, People, Issue, Comment, Change
+from Bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode
@@ -70,8 +70,6 @@ class DBLaunchpadIssueExt(object):
     milestone_summary = Unicode()
     milestone_title = Unicode()
     milestone_web_link = Unicode()
-    duplicate_of = Int()
-    #duplicates
     heat = Int()
     linked_branches = Unicode()
     #messages
@@ -118,7 +116,6 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
                      milestone_summary VARCHAR(32) default NULL, \
                      milestone_title VARCHAR(32) default NULL, \
                      milestone_web_link VARCHAR(32) default NULL, \
-                     duplicate_of INTEGER UNSIGNED default NULL, \
                      heat INTEGER UNSIGNED default NULL, \
                      linked_branches VARCHAR(32) default NULL, \
                      tags VARCHAR(32) default NULL, \
@@ -199,8 +196,6 @@ class DBLaunchpadBackend(DBBackend):
                 issue.milestone_title)
             db_issue_ext.milestone_web_link = self.__return_unicode(
                 issue.milestone_web_link)
-            db_issue_ext.duplicate_of = issue.duplicate_of
-            #db_issue_ext.duplicates
             db_issue_ext.heat = issue.heat
             db_issue_ext.linked_branches = self.__return_unicode(
                 issue.linked_branches)
@@ -260,6 +255,12 @@ class DBLaunchpadBackend(DBBackend):
         """
         pass
 
+    def insert_temp_rel(self, store, temp_relationship, trel_id, tracker_id):
+        """
+        Does nothing
+        """
+        pass
+
 
 class LaunchpadIssue(Issue):
     """
@@ -306,9 +307,6 @@ class LaunchpadIssue(Issue):
         self.milestone_title = None
         # project name + name + code_name (from .milestone.title)
         self.milestone_web_link = None  # (from .milestone.web_link)
-
-        self.duplicate_of = None
-        self.duplicates = None  # list of duplicates (is it really needed??)
 
         self.heat = None  # heat of the issue (calculated measure)
 
@@ -604,15 +602,6 @@ class LaunchpadIssue(Issue):
         """
         self.milestone_web_link = milestone_web_link
 
-    def set_duplicate_of(self, duplicate_of):
-        """
-        Set the duplicate_of of the issue
-
-        @param alias: duplicate_of of the issue
-        @type alias: C{str}
-        """
-        self.duplicate_of = duplicate_of
-
     def set_duplicates(self, duplicates):
         ### FIXME is this neccesary??
         """
@@ -821,11 +810,11 @@ class LPBackend(Backend):
             issue.set_milestone_web_link(bug.milestone.web_link)
 
         if bug.bug.duplicate_of:
-            aux = bug.bug.duplicate_of.web_link
-            dupe_of = int(aux[aux.rfind('/') + 1:])
-            issue.set_duplicate_of(dupe_of)
-
-        #issue.set_duplicates(bug.bug.duplicates)
+            temp_rel = TempRelationship(bug.bug.id,
+                                        unicode('duplicate_of'),
+                                        unicode(bug.bug.duplicate_of.id))
+            issue.add_temp_relationship(temp_rel)
+            
         issue.set_heat(bug.bug.heat)
         issue.set_linked_branches(bug.bug.linked_branches)
 
@@ -961,15 +950,15 @@ class LPBackend(Backend):
             sys.exit(0)
 
         for bug in bugs:
+
             try:
                 issue_data = self.analyze_bug(bug)
             except Exception:
                 #FIXME it does not handle the e
                 printerr("Error in function analyzeBug with URL: ' \
                 '%s and Bug: %s" % (url, bug))
-                #print e
-                #continue
                 raise
+
             try:
                 # we can have meta-trackers but we want to have the original
                 #tracker name
@@ -983,6 +972,13 @@ class LPBackend(Backend):
                       % (issue_data.issue))
 
             time.sleep(self.delay)
+
+        try:
+            # we read the temporary table with the relationships and create
+            # the final one
+            bugsdb.store_final_relationships()
+        except:
+            raise
 
         printout("Done. %s bugs analyzed" % (nbugs))
 

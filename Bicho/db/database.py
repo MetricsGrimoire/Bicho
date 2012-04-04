@@ -26,6 +26,7 @@ Database module
 
 import datetime
 from storm.locals import DateTime, Int, Reference, Unicode
+from Bicho.utils import printerr, printdbg, printout
 
 from Bicho.Config import Config
 
@@ -178,7 +179,13 @@ class DBDatabase:
             if self.backend is not None:
                 self.backend.insert_issue_ext(self.store, issue, db_issue.id)
 
-            # Insert relationships
+            # Insert temporal relationships
+            for trel in issue.temp_relationships:
+                db_trel = self._get_db_temp_rel(trel, db_issue.id)
+                if db_trel == -1:
+                    db_trel = self._insert_temp_rel(trel, db_issue.id, tracker_id)
+                    if self.backend is not None:
+                        self.backend.insert_temp_rel(self.store, trel, db_trel, tracker_id)
 
             # Insert comments
             for comment in issue.comments:
@@ -220,7 +227,7 @@ class DBDatabase:
             self.store.rollback()
             raise
 
-    def _insert_relationship(self, rel_id, type, issue_id):
+    def _insert_relationship(self, issue_id, type, rel_id):
         """
         Insert a relationship between the given issues.
 
@@ -238,6 +245,35 @@ class DBDatabase:
         self.store.add(db_rel)
         self.store.flush()
         return db_rel
+
+    def _insert_temp_rel(self, relationship, issue_id, tracker_id):
+        """
+        Insert temporal relationships for the issue X{issue_id}
+
+        @return: the inserted relationship
+        @rtype: L{DBComment}
+        """
+        db_temp_rel = DBIssueTempRelationship(relationship.issue,
+                                              relationship.type,
+                                              relationship.related_to,
+                                              tracker_id)
+
+        self.store.add(db_temp_rel)
+        self.store.flush()
+        return db_temp_rel
+
+    def store_final_relationships(self):
+        """
+        """
+        temp_rels = self.store.find(DBIssueTempRelationship)
+
+        for tr in temp_rels:
+            aux_issue_id = self._get_db_issue(tr.issue_id, tr.tracker_id)
+            aux_related_to = self._get_db_issue(tr.related_to, tr.tracker_id)
+            if (aux_related_to != -1 and aux_issue_id != -1):
+                self._insert_relationship(aux_issue_id.id, tr.type, aux_related_to.id)
+            else:
+                printdbg("Issue %s belongs to a different tracker and won't be stored" % tr.related_to)
 
     def _insert_comment(self, comment, issue_id, tracker_id):
         """
@@ -329,7 +365,6 @@ class DBDatabase:
         self.store.add(db_issues_watchers)
         self.store.flush()
         return db_issues_watchers
-
 
     def _get_db_supported_tracker(self, name, version):
         """
@@ -487,6 +522,20 @@ class DBDatabase:
             db_attachment = -1
 
         return db_attachment
+
+    def _get_db_temp_rel(self, t_relationship, issue_id):
+        """
+        """
+        #DBIssueTempRelationship
+        db_temp_rel = self.store.find(DBIssueTempRelationship,
+                                      DBIssueTempRelationship.issue_id == issue_id,
+                                      DBIssueTempRelationship.type == t_relationship.type,
+                                      DBIssueTempRelationship.related_to == t_relationship.related_to).one()
+
+        if not db_temp_rel:
+            db_temp_rel = -1
+
+        return db_temp_rel                                      
 
 
 class DBSupportedTracker(object):
@@ -740,6 +789,52 @@ class DBIssueRelationship(object):
         self.related_to = related_to
         self.type = unicode(type)
         self.issue_id = issue_id
+
+class DBIssueTempRelationship(object):
+    """
+    Store temporal relationships between issues
+
+    @param related_to: identifier of the issue related to this one
+    @type related_to: C{int}
+    @param type: type of relationship
+    @type type: C{str}
+    @param issue_id: identifier of the issue in the tracker
+    @type issue_id: C{str}
+    @param tracker: identifier of the tracker of both issues
+    @type tracker: C{int}
+
+    @ivar __storm_table__: Name of the database table.
+    @type __storm_table__: C{str}
+
+    @ivar id: Relationship identifier.
+    @type id: L{storm.locals.Int}
+    @ivar related_to: Identifier of the issue related to this one
+    @type related_to: L{storm.locals.Int}
+    @ivar type: Type of the relationship.
+    @type type: L{storm.locals.Unicode}
+    @ivar issue_id: Issue identifier. 
+    @type issue_id: L{storm.locals.Int}
+    @ivar issue: Reference to L{DBIssue} object.
+    @type issue: L{storm.locals.Reference}
+    @ivar relationship: Reference to L{DBIssue} object.
+    @type relationship: L{storm.locals.Reference}
+    """
+    __storm_table__ = 'temp_related_to'
+
+    id = Int(primary=True)
+    issue_id = Int()
+    type = Unicode()
+    related_to = Unicode()
+    tracker_id = Int()
+
+    issue = Reference(issue_id, DBIssue.id)
+    #relationship = Reference(related_to, DBIssue.id)
+
+    def __init__(self, issue_id, type, related_to, tracker_id):
+        self.related_to = related_to
+        self.type = unicode(type)
+        self.issue_id = issue_id
+        self.tracker_id = tracker_id
 
 
 class DBComment(object):
