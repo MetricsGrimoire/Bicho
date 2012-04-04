@@ -30,6 +30,7 @@ Latest version:
  * Python Storm. Depending on the database driver to be used you'll also need
  one of the following python libraries:
    - mysqldb or psycopg2 or pysqlite2
+   - python-launchpadlib (for Launchpad backend)
  * Beautiful Soup library: error-tolerant HTML parser for Python
 
 
@@ -85,6 +86,10 @@ E3. Getting information from a project using JIRA
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 jira http://support.petalslink.com/browse/PETALSMASTER
 
+E4. Getting information from a project using Launchpad
+
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 3 lp https://bugs.launchpad.net/openstack
+
 
  FAQ
 ----
@@ -93,7 +98,9 @@ F1. Bicho crashed with 'UnicodeEncodeError' exception
 
 UnicodeEncodeError appears when it is not possible to write the data in the
 database with the encoding used by this one, to avoid that set your database to
-use UTF-8
+use UTF-8. For instance:
+
+CREATE DATABASE [DB NAME] CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 F2. What is the database schema?
 
