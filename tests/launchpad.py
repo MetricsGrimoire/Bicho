@@ -352,7 +352,7 @@ class LaunchpadTest(Test):
             bug_id = b.bug.id
             urls = []
             for p in b.bug.attachments.entries:
-                urls.append(p['web_link'])
+                urls.append(p['data_link'])
             bug_patches[bug_id] = urls
 
         # we first check the number of attachments/patches per bug
