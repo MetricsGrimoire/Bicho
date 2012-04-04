@@ -949,7 +949,12 @@ class LPBackend(Backend):
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
 
+        analyzed = []
+
         for bug in bugs:
+
+            if bug.web_link in analyzed:
+                continue   #for the bizarre error #338
 
             try:
                 issue_data = self.analyze_bug(bug)
@@ -971,6 +976,7 @@ class LPBackend(Backend):
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                       % (issue_data.issue))
 
+            analyzed.append(bug.web_link)  # for the bizarre error #338
             time.sleep(self.delay)
 
         try:
