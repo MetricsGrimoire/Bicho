@@ -26,7 +26,7 @@ from launchpadlib.credentials import Credentials
 from Bicho.backends import Backend, register_backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
-from Bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship
+from Bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship, Attachment
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode
@@ -849,6 +849,24 @@ class LPBackend(Backend):
 
             issue.add_change(change)
 
+        for a in bug.bug.attachments.entries:
+            a_url = a['data_link']
+            a_name = a['title']
+
+            # author and date are stored in the comment object
+            aux = a['message_link']
+            comment_id = int(aux[aux.rfind('/')+1:])
+            comment = bug.bug.messages[comment_id]
+            a_by = People(comment.owner.name)
+            a_by.set_name(comment.owner.display_name)
+            a_on = comment.date_created
+
+            #a_desc = a['']
+            att = Attachment(a_url, a_by, a_on)
+            att.set_name(a_name)
+            #att.set_description()
+            issue.add_attachment(att)
+
         return issue
 
     def __to_datetime(self, str):
@@ -936,7 +954,8 @@ class LPBackend(Backend):
                       "Incomplete (with response)",
                       "Incomplete (without response)"]
         bugs = self.lp.projects[pname].searchTasks(status=aux_status,
-                                              omit_duplicates=False)
+                                                   omit_duplicates=False)
+
         nbugs = len(bugs)
 
         # still useless
