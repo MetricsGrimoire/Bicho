@@ -777,7 +777,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         # bugzillas)
 
         # date must be also a datetime
-        for rc in self._get_raw_comments():
+        #for rc in self._get_raw_comments():
+        for rc in self.ctags["long_desc"]:
             if rc["bug_when"]:
                 by = People(rc["who"])
                 by.set_name(rc["who_name"])
