@@ -76,19 +76,23 @@ delay between bug petitions your IP address could be banned!
 
 E1. Getting information from a project that uses Bugzilla, like Bicho ;)
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] bg https://bugzilla.libresoft.es/buglist.cgi?product=bicho
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b bg -u https://bugzilla.libresoft.es/buglist.cgi?product=bicho
 
 E2. Getting information from a project hosted in sourceforge.net
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 sf "http://sourceforge.net/tracker/?atid=516295&group_id=66938"
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b sf -u "http://sourceforge.net/tracker/?atid=516295&group_id=66938"
 
 E3. Getting information from a project using JIRA
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 jira http://support.petalslink.com/browse/PETALSMASTER
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b jira -u http://support.petalslink.com/browse/PETALSMASTER
 
 E4. Getting information from a project using Launchpad
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 3 lp https://bugs.launchpad.net/openstack
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b lp -u https://bugs.launchpad.net/openstack
+
+E5. Getting information from a project using Allura
+
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b allura -u http://sourceforge.net/rest/p/allura/tickets
 
 
  FAQ
