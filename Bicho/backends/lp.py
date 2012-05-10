@@ -23,7 +23,7 @@ import time
 from launchpadlib.launchpad import Launchpad
 from launchpadlib.credentials import Credentials
 
-from Bicho.backends import Backend, register_backend
+from Bicho.backends import Backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship, Attachment
@@ -679,10 +679,8 @@ class LaunchpadIssue(Issue):
 class LPBackend(Backend):
 
     def __init__(self):
-        Backend.__init__(self)
-        options = Config()
-        self.url = options.url
-        self.delay = options.delay
+        self.url = Config.url
+        self.delay = Config.delay
 
     def get_domain(self, url):
         strings = url.split('/')
@@ -906,13 +904,11 @@ class LPBackend(Backend):
         print "Can't proceed without Launchpad credential."
         sys.exit()
 
-    def run(self, url):
+    def run(self):
 
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        if not self.url:
-            self.url = url
-
+        url = self.url
         pname = None
         pname = self.__get_project_from_url()
 
@@ -1007,4 +1003,4 @@ class LPBackend(Backend):
 
         printout("Done. %s bugs analyzed" % (nbugs))
 
-register_backend("lp", LPBackend)
+Backend.register_backend("lp", LPBackend)
