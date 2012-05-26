@@ -19,6 +19,8 @@
 
 import sys
 import time
+import os
+import pwd
 
 from launchpadlib.launchpad import Launchpad
 from launchpadlib.credentials import Credentials
@@ -917,32 +919,13 @@ class LPBackend(Backend):
         printdbg(url)
 
         # launchpad needs a temp directory to store cached data
-        cachedir = mkdtemp(suffix='launchpad')
-
-        credentials = Credentials("Bicho")
-        request_token_info = credentials.get_request_token(
-            web_root="production")
-
-        complete = False
-        first = True
-        while not complete:
-            try:
-                credentials.exchange_request_token_for_access_token(
-                    web_root="production")
-                complete = True
-            except HTTPError:
-                # The user hasn't authorized the token yet.
-                if first:
-                    printout("Visit this page in order to get access %s"
-                             % (request_token_info,))
-                    first = False
-
-        #lp = Launchpad.login_anonymously('just testing', 'production',
-        #                                 cachedir)
-        #self.lp = Launchpad.login_with('Bicho','production',
-        #                    credential_save_failed=self.__no_credential)
-
-        self.lp = Launchpad(credentials, 'xxxxx', 'xxxxx', 'production')
+        homedir = pwd.getpwuid(os.getuid()).pw_dir
+        cachedir = os.path.join(homedir, ".cache/bicho/")
+        if not os.path.exists(cachedir):
+            os.makedirs(cachedir)
+        cre_file = os.path.join(cachedir + 'launchpad-credential')
+        self.lp = Launchpad.login_with('Bicho','production',
+                                       credentials_file = cre_file)
 
         aux_status = ["New", "Incomplete", "Opinion", "Invalid", "Won't Fix",
                       "Expired", "Confirmed", "Triaged", "In Progress",

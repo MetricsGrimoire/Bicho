@@ -22,6 +22,8 @@ import MySQLdb as mdb
 from launchpadlib.launchpad import Launchpad
 import subprocess
 import sys
+import os
+import pwd
 from tempfile import mkdtemp
 from tests import Test, register_test, remove_directory
 from sets import Set
@@ -52,9 +54,15 @@ class LaunchpadTest(Test):
 
         print("Launchpad test using the project %s" % self.pname)
 
-        cachedir = mkdtemp(suffix='launchpad')
-        self.lp = Launchpad.login_anonymously('just testing', 'production',
-                                              cachedir)
+        homedir = pwd.getpwuid(os.getuid()).pw_dir
+        cachedir = os.path.join(homedir, ".cache/bicho/")
+        if not os.path.exists(cachedir):
+            os.makedirs(cachedir)
+        cre_file = os.path.join(cachedir + 'launchpad-credential')
+        self.lp = Launchpad.login_with('Bicho','production',
+                                       credentials_file = cre_file)
+        sys.stdout.write("Using credential file %s \n" % str(cre_file))
+
         self.all_bugs = self.lp.projects[self.pname].searchTasks(
             status=_all_status,
             omit_duplicates=False)
@@ -107,7 +115,7 @@ class LaunchpadTest(Test):
                          "--db-user-out=" + self.dbuser, \
                          "--db-password-out=" + self.dbpass, \
                          "--db-database-out=" + self.dbname, \
-                         "lp", "http://launchpad.net/glance"])
+                         "-b", "lp", "-u" ,"http://launchpad.net/glance"])
 
     def number_of_bugs(self):
         #
