@@ -95,7 +95,7 @@ class DBPeopleMySQL(DBPeople):
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      name VARCHAR(64) NULL, \
                      email VARCHAR(64) NULL, \
-                     user_id VARCHAR(64) NOT NULL, \
+                     user_id VARCHAR(255) NOT NULL, \
                      tracker_id INTEGER NOT NULL, \
                      PRIMARY KEY(id), \
                      UNIQUE KEY(user_id, tracker_id), \
