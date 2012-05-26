@@ -27,7 +27,7 @@ from Bicho.backends import Backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship, Attachment
-from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.db.database import DBIssue, DBBackend, get_database, NotFoundError
 
 from storm.locals import DateTime, Int, Reference, Unicode
 from datetime import datetime
@@ -990,6 +990,12 @@ class LPBackend(Backend):
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                       % (issue_data.issue))
+            except NotFoundError:
+                printerr("NotFoundError: the issue %s couldn't be stored"
+                         % (issue_data.issue))
+            except:
+                printerr("Unexpected Error: the issue %s couldn't be stored"
+                         % (issue_data.issue))
 
             analyzed.append(bug.web_link)  # for the bizarre error #338
             time.sleep(self.delay)
