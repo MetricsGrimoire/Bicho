@@ -5,6 +5,14 @@ Bicho is a command line based tool used to parse bug/issue tracking systems. It
 gets all the information associated to issues and store them in a relation
 database.
 
+Currently it supports:
+- Bugzilla
+- Sourceforge.net (abandoned)
+- Jira (unstable)
+- Launchpad
+- Allura (unstable)
+- Github (unstable)
+
 
  License
 ---------
@@ -93,6 +101,10 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 E5. Getting information from a project using Allura
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b allura -u http://sourceforge.net/rest/p/allura/tickets
+
+E6. Getting information from a project using Github
+
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
 
 
  FAQ
