@@ -138,6 +138,10 @@ class Config:
         # General options
         parser.add_option('-b', '--backend', dest='backend',
                           help='Backend used to fetch issues', default=None)
+        parser.add_option('--backend-user', dest='backend_user',
+                          help='Backend user', default=None)
+        parser.add_option('--backend-password', dest='backend_password',
+                          help='Backend password', default=None)
         parser.add_option('-c', '--cfg', dest='cfgfile', 
                           help='Use a custom configuration file', default=None)
         parser.add_option('-d', '--delay', type='int', dest='delay',
