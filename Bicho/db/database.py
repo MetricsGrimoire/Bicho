@@ -30,6 +30,8 @@ from Bicho.utils import printerr, printdbg, printout
 
 from Bicho.Config import Config
 
+from storm.exceptions import IntegrityError # DatabaseError, 
+
 class NotFoundError(Exception):
     """
     Exception raised when an entry is not found into the database.
@@ -127,7 +129,7 @@ class DBDatabase:
             db_people.set_email(people.email)
             self.store.add(db_people)
             self.store.commit()
-        except:
+        except IntegrityError:
             db_people = self._get_db_people(people.user_id, tracker_id)
         return db_people
 
@@ -227,6 +229,18 @@ class DBDatabase:
         except:
             self.store.rollback()
             raise
+
+    def get_last_modification_date(self, state = None):
+        """
+        Return last modification date stored in database
+        """
+        if self.backend is not None:
+            # in the github backend we need to get both open and closed
+            # issues in two different petitions
+            if state:
+                return self.backend.get_last_modification_date(self.store, state)
+            else:
+                return self.backend.get_last_modification_date(self.store)
 
     def _insert_relationship(self, issue_id, type, rel_id):
         """
@@ -420,9 +434,14 @@ class DBDatabase:
 
         @raise NotFoundError: When the identity is not found.
         """
-        db_people = self.store.find(DBPeople,
-                                    DBPeople.user_id == unicode(user_id),
-                                    DBPeople.tracker_id == tracker_id).one()
+        try:
+            db_people = self.store.find(DBPeople,
+                                        DBPeople.user_id == unicode(user_id),
+                                        DBPeople.tracker_id == tracker_id).one()
+        except Exception, e:
+            print ("petó el find")
+            print e
+            
         if not db_people:
             raise NotFoundError('Idenitity %s not found in tracker %s' % 
                                 (user_id, tracker_id))
@@ -1033,6 +1052,12 @@ class DBBackend:
     def insert_change_ext(self, change, change_id):
         """
         Abstract method for inserting extra data related to a change
+        """
+        raise NotImplementedError
+
+    def get_last_modification_date(self, ext):
+        """
+        Abstract method for obtaining the last change stored in the database
         """
         raise NotImplementedError
 
