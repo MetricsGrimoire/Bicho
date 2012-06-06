@@ -31,7 +31,7 @@ from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship, Attachment
 from Bicho.db.database import DBIssue, DBBackend, get_database, NotFoundError
 
-from storm.locals import DateTime, Int, Reference, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode, Desc
 from datetime import datetime
 from dateutil.parser import parse  # used to convert str time to datetime
 
@@ -262,6 +262,24 @@ class DBLaunchpadBackend(DBBackend):
         Does nothing
         """
         pass
+
+    def get_last_modification_date(self, store):
+        # get last modification date stored in the database for a given status
+        # select date_last_updated as date from issues_ext_github order by date
+        # desc limit 1;
+        # get latest modified since ..:
+        # https://api.github.com/repos/composer/composer/issues?page=1&
+        #state=closed&per_page=100&sort=updated&direction=asc&
+        #since=2012-05-28T21:11:28Z
+
+        result = store.find(DBLaunchpadIssueExt)
+        aux = result.order_by(Desc(DBLaunchpadIssueExt.date_last_updated))[:1]
+
+        for entry in aux:
+            return entry.date_last_updated
+
+        return None
+
 
 
 class LaunchpadIssue(Issue):
@@ -695,7 +713,7 @@ class LPBackend(Backend):
         ## all the retrieval can be improved. The method bug.lp_attributes
         ##offers a list of the available attributes for the object
         ##
-        printdbg(bug.web_link)
+        printdbg(bug.web_link + " updated at " + bug.bug.date_last_updated.isoformat())
 
         issue = bug.web_link[bug.web_link.rfind('/') + 1:]
         bug_type = bug.importance
@@ -704,7 +722,7 @@ class LPBackend(Backend):
         submitted_by = People(bug.owner.name)
         submitted_by.set_name(bug.owner.display_name)
 
-        submitted_on = bug.date_created
+        submitted_on = self.__drop_timezone(bug.date_created)
 
         if bug.assignee:
             assignee = People(bug.assignee.name)
@@ -725,79 +743,79 @@ class LPBackend(Backend):
 
         try:
             if bug.date_assigned:
-                issue.set_date_assigned(bug.date_assigned)
+                issue.set_date_assigned(self.__drop_timezone(bug.date_assigned))
         except AttributeError:
             pass
 
         try:
             if bug.date_closed:
-                issue.set_date_closed(bug.date_closed)
+                issue.set_date_closed(self.__drop_timezone(bug.date_closed))
         except AttributeError:
             pass
 
         try:
             if bug.date_confirmed:
-                issue.set_date_confirmed(bug.date_confirmed)
+                issue.set_date_confirmed(self.__drop_timezone(bug.date_confirmed))
         except AttributeError:
             pass
 
         try:
             if bug.date_created:
-                issue.set_date_created(bug.date_created)
+                issue.set_date_created(self.__drop_timezone(bug.date_created))
         except AttributeError:
             pass
 
         try:
             if bug.date_fix_committed:
-                issue.set_date_fix_committed(bug.date_fix_committed)
+                issue.set_date_fix_committed(self.__drop_timezone(bug.date_fix_committed))
         except AttributeError:
             pass
 
         try:
             if bug.date_fix_released:
-                issue.set_date_fix_released(bug.date_fix_released)
+                issue.set_date_fix_released(self.__drop_timezone(bug.date_fix_released))
         except AttributeError:
             pass
 
         try:
             if bug.date_in_progress:
-                issue.set_date_in_progress(bug.date_in_progress)
+                issue.set_date_in_progress(self.__drop_timezone(bug.date_in_progress))
         except AttributeError:
             pass
 
         try:
             if bug.date_incomplete:
-                issue.set_date_incomplete(bug.date_incomplete)
+                issue.set_date_incomplete(self.__drop_timezone(bug.date_incomplete))
         except AttributeError:
             pass
 
         try:
             if bug.date_left_closed:
-                issue.set_date_left_closed(bug.date_left_closed)
+                issue.set_date_left_closed(self.__drop_timezone(bug.date_left_closed))
         except AttributeError:
             pass
 
         try:
             if bug.date_left_new:
-                issue.set_date_left_new(bug.date_left_new)
+                issue.set_date_left_new(self.__drop_timezone(bug.date_left_new))
         except AttributeError:
             pass
 
         try:
             if bug.date_triaged:
-                issue.set_date_triaged(bug.date_triaged)
+                issue.set_date_triaged(self.__drop_timezone(bug.date_triaged))
         except AttributeError:
             pass
 
         try:
             if bug.date_last_message:
-                issue.set_date_last_message(bug.date_last_message)
+                issue.set_date_last_message(self.__drop_timezone(bug.date_last_message))
         except AttributeError:
             pass
 
         try:
-            if bug.date_last_updated:
-                issue.set_date_last_updated(bug.date_last_updated)
+            if bug.bug.date_last_updated:
+                issue.set_date_last_updated(self.__drop_timezone(bug.bug.date_last_updated))
         except AttributeError:
             pass
 
@@ -859,7 +877,7 @@ class LPBackend(Backend):
             comment = bug.bug.messages[comment_id]
             a_by = People(comment.owner.name)
             a_by.set_name(comment.owner.display_name)
-            a_on = comment.date_created
+            a_on = self.__drop_timezone(comment.date_created)
 
             #a_desc = a['']
             att = Attachment(a_url, a_by, a_on)
@@ -872,7 +890,17 @@ class LPBackend(Backend):
     def __to_datetime(self, str):
         # converts str time to datetime
 
-        return parse(str)
+        return self.__drop_timezone(parse(str))
+
+    def __drop_timezone(self, dt):
+        # drop the timezone from the datetime objetct
+        # MySQL doesn't support timezone, we remove it
+
+        if dt.isoformat().rfind('+') > 0:
+            aux = parse(dt.isoformat()[:dt.isoformat().rfind('+')])
+            return aux
+        else:
+            return dt
 
     def __get_people_from_uri(self, uri):
         # returns People object from uri (person_link)
@@ -932,8 +960,19 @@ class LPBackend(Backend):
                       "Fix Committed", "Fix Released",
                       "Incomplete (with response)",
                       "Incomplete (without response)"]
-        bugs = self.lp.projects[pname].searchTasks(status=aux_status,
-                                                   omit_duplicates=False)
+
+        last_mod_date = bugsdb.get_last_modification_date()
+
+        if last_mod_date:
+            bugs = self.lp.projects[pname].searchTasks(status=aux_status,
+                                                       omit_duplicates=False,
+                                                       order_by='date_last_updated',
+                                                       modified_since=last_mod_date)
+        else:
+            bugs = self.lp.projects[pname].searchTasks(status=aux_status,
+                                                       omit_duplicates=False,
+                                                       order_by='date_last_updated')
+        printdbg("Last bug already cached: %s" % last_mod_date)
 
         nbugs = len(bugs)
 
@@ -976,9 +1015,10 @@ class LPBackend(Backend):
             except NotFoundError:
                 printerr("NotFoundError: the issue %s couldn't be stored"
                          % (issue_data.issue))
-            except:
+            except Exception, e:
                 printerr("Unexpected Error: the issue %s couldn't be stored"
                          % (issue_data.issue))
+                print e
 
             analyzed.append(bug.web_link)  # for the bizarre error #338
             time.sleep(self.delay)
