@@ -33,7 +33,7 @@ from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
-from storm.locals import DateTime, Int, Reference, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode, Desc
 import xml.sax.handler
 #from xml.sax._exceptions import SAXParseException
 from dateutil.parser import parse
@@ -224,6 +224,17 @@ class DBBugzillaBackend(DBBackend):
         Does nothing
         """
         pass
+
+    def get_last_modification_date(self, store):
+        # get last modification date (day) stored in the database
+        # select date_last_updated as date from issues_ext_bugzilla order by date
+        result = store.find(DBBugzillaIssueExt)
+        aux = result.order_by(Desc(DBBugzillaIssueExt.delta_ts))[:1]
+
+        for entry in aux:
+            return entry.delta_ts.strftime('%Y-%m-%d') 
+
+        return None
 
 
 class SoupHtmlParser():
@@ -897,6 +908,7 @@ class BGBackend (Backend):
         parser.close()
         #handler.print_debug_data()
         issue = handler.get_issue()
+        printdbg(" updated at " + issue.delta_ts.isoformat())
 
         #Retrieving changes
         bug_activity_url = url + "show_activity.cgi?id=" + bug_id
@@ -915,7 +927,7 @@ class BGBackend (Backend):
 
         bugsdb = get_database (DBBugzillaBackend())
 
-        url = self.url + "&ctype=csv"
+        url = self.url + "&order=changeddate&ctype=csv"
 
         printdbg(url)
 
@@ -925,11 +937,21 @@ class BGBackend (Backend):
             bugs.append(self.url.split("show_bug.cgi?id=")[1])
 
         else:
+
+            last_mod_date = bugsdb.get_last_modification_date()
+
+            if last_mod_date:
+                url = url + "&chfieldfrom=" + last_mod_date
+                printdbg("Last bugs cached were modified on: %s" % last_mod_date)
             f = urllib.urlopen(url)
 
             #Problems using csv library, not all the fields are delimited by
             # '"' character. Easier using split.
             bugList_csv = f.read().split('\n')
+
+            #&chfieldfrom=2012-06-01
+
+            
             bugs = []
             #Ignoring first row
             for bug_csv in bugList_csv[1:]:
