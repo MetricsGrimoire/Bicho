@@ -278,7 +278,17 @@ class SoupHtmlParser():
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
         remove_tags = ['a', 'span','i']
-        [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
+        #[i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
+        html_error = None
+        for i in soup.findAll(remove_tags):
+            try:
+                i.replace(i.contents[0])
+            except:
+                html_error = True
+
+        if html_error:
+            printerr("error parsing HTML")
+
         changes = []
 
         tables = soup.findAll('table')
