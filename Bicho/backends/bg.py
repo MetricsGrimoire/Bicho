@@ -25,6 +25,9 @@ import string
 import sys
 import time
 
+import urllib2
+import cookielib
+
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
 from Bicho.backends import Backend
@@ -305,6 +308,7 @@ class SoupHtmlParser():
         for row in rows[1:]:
             cols = list(row.findAll('td'))
             if len(cols) == 5:
+                print("**** %s" % cols[0])
                 person_email = cols[0].contents[0].strip()
                 person_email = unicode(person_email.replace('&#64;', '@'))
                 date = self._to_datetime_with_secs(cols[1].contents[0].strip())
@@ -319,6 +323,7 @@ class SoupHtmlParser():
             field, removed, added = self.sanityze_change(field, removed, added)
             by = People(person_email)
             by.set_email(person_email)
+            print("1 People de %s" % person_email)
             change = Change(field, removed, added, by, date)
             changes.append(change)
 
@@ -776,6 +781,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         submitted_by = People(self.atags["reporter"])
         submitted_by.set_name(self.atags["reporter_name"])
         submitted_by.set_email(self.atags["reporter"])
+        print("2 People de %s" % self.atags["reporter"])
         submitted_on = self._convert_to_datetime(self.atags["creation_ts"])
 
         # FIXME: I miss resolution and priority
@@ -787,6 +793,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         assigned_to = People(self.atags["assigned_to"])
         assigned_to.set_name(self.atags["assigned_to_name"])
         assigned_to.set_email(self.atags["assigned_to"])
+        print("3 People de %s" % self.atags["assigned_to"])
         issue.set_assigned(assigned_to)
 
         # FIXME = I miss the number of comment and the work_time (useful in
@@ -798,6 +805,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
                 by = People(rc["who"])
                 by.set_name(rc["who_name"])
                 by.set_email(rc["who"])
+                print("4 People de %s" % rc["who"])
                 com = Comment(rc["thetext"], by, self._to_datetime_with_secs(rc["bug_when"]))
                 issue.add_comment(com)
             else:
@@ -842,6 +850,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         # we also store the list of watchers/CC
         for w in self.btags["cc"]:
             auxp = People(w)
+            print("5 People de %s" % w)            
             issue.add_watcher(auxp)
         issue.set_group(self.btags["group"])
         issue.set_flag(self.btags["flag"])
@@ -893,6 +902,15 @@ class BGBackend (Backend):
     def __init__ (self):
         self.url = Config.url
         self.delay = Config.delay
+        try:
+            self.backend_password = Config.backend_password
+            self.backend_user = Config.backend_user
+            self.cookies = {}
+        except AttributeError:
+            printout("No bugzilla account provided, mail addresses won't " +\
+                     "be retrieved")
+            self.backend_password = None
+            self.backend_user = None
 
     def get_domain(self, url):
         strings = url.split('/')
@@ -906,7 +924,25 @@ class BGBackend (Backend):
         handler = BugsHandler()
         parser = xml.sax.make_parser()
         parser.setContentHandler(handler)
-        f = urllib.urlopen(bug_url)
+
+        
+
+        ## In [43]: opener = urllib2.build_opener()
+        ## In [44]: opener.addheaders.append(('Cookie', 'Bugzilla_login=27'))
+        ## In [45]: opener.addheaders.append(('Cookie', 'Bugzilla_logincookie=WBizdtDFtv'))
+        ##
+        ## In [46]: response=urllib2.urlopen('https://bugzilla.libresoft.es/show_bug.cgi?ctype=xml&id=298')
+
+        if self.__auth_session():
+            opener = urllib2.build_opener()
+            for c in self.cookies:
+                key = str(c)
+                value = self.cookies[c]
+                aux = key + '=' + value
+                opener.addheaders.append(('Cookie', aux))
+            f = urllib2.urlopen(bug_url)
+        else:
+            f = urllib.urlopen(bug_url)
 
         try:
             parser.feed(f.read())
@@ -930,12 +966,49 @@ class BGBackend (Backend):
             issue.add_change(c)
         return issue
 
+    def __auth_session(self):
+        # returns True if the session is authenticated
+        if len(self.cookies) > 0:
+            return True
+        else:
+            return False
+
+    def __login(self):
+
+        cookie_j = cookielib.CookieJar()
+        cookie_h = urllib2.HTTPCookieProcessor(cookie_j)
+        
+        to_aux = self.url.rfind('buglist')
+        url = self.url[:to_aux] + 'index.cgi'
+
+        values = {'Bugzilla_login': self.backend_user,
+                  'Bugzilla_password': self.backend_password}
+        opener = urllib2.build_opener(cookie_h)
+        urllib2.install_opener(opener)
+        data = urllib.urlencode(values)
+        req = urllib2.Request(url, data)
+        response = urllib2.urlopen(req)
+        for n,c in enumerate(cookie_j):
+            self.cookies[c.name] = c.value
+
+        print self.cookies
+        #sys.exit(1)
+
+        ## In [43]: opener = urllib2.build_opener()
+        ## In [44]: opener.addheaders.append(('Cookie', 'Bugzilla_login=27'))
+        ## In [45]: opener.addheaders.append(('Cookie', 'Bugzilla_logincookie=WBizdtDFtv'))
+        ##
+        ## In [46]: response=urllib2.urlopen('https://bugzilla.libresoft.es/show_bug.cgi?ctype=xml&id=298')
+        
 
     def run (self):
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
         #retrieving data in csv format
 
         bugsdb = get_database (DBBugzillaBackend())
+
+        if self.backend_user and self.backend_password:
+            self.__login()
 
         url = self.url + "&order=changeddate&ctype=csv"
 
