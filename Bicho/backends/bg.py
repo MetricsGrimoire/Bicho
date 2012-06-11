@@ -290,7 +290,7 @@ class SoupHtmlParser():
                 html_error = True
 
         if html_error:
-            printerr("error parsing HTML")
+            printerr("error removing HTML tags")
 
         changes = []
 
@@ -308,7 +308,6 @@ class SoupHtmlParser():
         for row in rows[1:]:
             cols = list(row.findAll('td'))
             if len(cols) == 5:
-                print("**** %s" % cols[0])
                 person_email = cols[0].contents[0].strip()
                 person_email = unicode(person_email.replace('&#64;', '@'))
                 date = self._to_datetime_with_secs(cols[1].contents[0].strip())
@@ -323,7 +322,6 @@ class SoupHtmlParser():
             field, removed, added = self.sanityze_change(field, removed, added)
             by = People(person_email)
             by.set_email(person_email)
-            print("1 People de %s" % person_email)
             change = Change(field, removed, added, by, date)
             changes.append(change)
 
@@ -781,7 +779,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         submitted_by = People(self.atags["reporter"])
         submitted_by.set_name(self.atags["reporter_name"])
         submitted_by.set_email(self.atags["reporter"])
-        print("2 People de %s" % self.atags["reporter"])
         submitted_on = self._convert_to_datetime(self.atags["creation_ts"])
 
         # FIXME: I miss resolution and priority
@@ -793,7 +790,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         assigned_to = People(self.atags["assigned_to"])
         assigned_to.set_name(self.atags["assigned_to_name"])
         assigned_to.set_email(self.atags["assigned_to"])
-        print("3 People de %s" % self.atags["assigned_to"])
         issue.set_assigned(assigned_to)
 
         # FIXME = I miss the number of comment and the work_time (useful in
@@ -805,7 +801,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
                 by = People(rc["who"])
                 by.set_name(rc["who_name"])
                 by.set_email(rc["who"])
-                print("4 People de %s" % rc["who"])
                 com = Comment(rc["thetext"], by, self._to_datetime_with_secs(rc["bug_when"]))
                 issue.add_comment(com)
             else:
@@ -850,7 +845,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         # we also store the list of watchers/CC
         for w in self.btags["cc"]:
             auxp = People(w)
-            print("5 People de %s" % w)            
             issue.add_watcher(auxp)
         issue.set_group(self.btags["group"])
         issue.set_flag(self.btags["flag"])
@@ -961,9 +955,12 @@ class BGBackend (Backend):
         printdbg( bug_activity_url )
         data_activity = urllib.urlopen(bug_activity_url).read()
         parser = SoupHtmlParser(data_activity, bug_id)
-        changes = parser.parse_changes()
-        for c in changes:
-            issue.add_change(c)
+        try:
+            changes = parser.parse_changes()
+            for c in changes:
+                issue.add_change(c)
+        except Exception, e:
+            printerr("error while parsing HTML")
         return issue
 
     def __auth_session(self):
