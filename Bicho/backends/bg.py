@@ -712,7 +712,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
     def endElement(self, name):
         if self.atags.has_key( name ):
             aux = string.join(self.interestData)
-            self.atags[name] = unicode(aux)
+            if not self.atags[name]:
+                #delta_ts could be overwritten by delta_ts of attachment
+                self.atags[name] = unicode(aux)
             self.tag_name = None
         elif self.long_desc_tags.has_key( name ):
             aux = string.join(self.interestData)
