@@ -281,24 +281,18 @@ class SoupHtmlParser():
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
         remove_tags = ['a', 'span','i']
-        #[i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
-        html_error = None
-        for i in soup.findAll(remove_tags):
-            try:
-                i.replace(i.contents[0])
-            except:
-                html_error = True
-
-        if html_error:
-            printerr("error removing HTML tags")
-
         changes = []
-
         tables = soup.findAll('table')
-        # We need the first table with 5 cols in the first line
+
+        # We look for the first table with 5 cols
         table = None
         for table in tables:
             if len(table.tr.findAll('th')) == 5:
+                try:
+                    for i in table.findAll(remove_tags):
+                        i.replaceWith(i.contents[0])
+                except:
+                    printerr("error removing HTML tags")
                 break
 
         if table is None:
