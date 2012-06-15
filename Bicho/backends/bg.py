@@ -892,10 +892,10 @@ class BGBackend (Backend):
     def __init__ (self):
         self.url = Config.url
         self.delay = Config.delay
+        self.cookies = {}
         try:
             self.backend_password = Config.backend_password
             self.backend_user = Config.backend_user
-            self.cookies = {}
         except AttributeError:
             printout("No bugzilla account provided, mail addresses won't " +\
                      "be retrieved")
