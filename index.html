@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Bicho by MetricsGrimoire</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Bicho</h1>
+        <p>Bicho is a command line based tool used to parse bug/issue tracking systems</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/MetricsGrimoire/Bicho" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/MetricsGrimoire/Bicho/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/MetricsGrimoire/Bicho/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <p>Bicho is a command line based tool used to parse bug/issue tracking systems. It gets all the information associated to issues and store them in a relation database.</p>
+
+<p>Currently it supports:</p>
+
+<ul>
+<li>Bugzilla ( &gt; 4)</li>
+<li>Sourceforge.net (abandoned)</li>
+<li>Jira (unstable)</li>
+<li>Launchpad</li>
+<li>Allura (unstable)</li>
+<li>Github (unstable)</li>
+</ul><h2>License</h2>
+
+<p>Bicho is licensed under GNU General Public License (GPL), version 2 or later.</p>
+
+<h2>How to get Bicho</h2>
+
+<p>Releases:</p>
+
+<ul>
+<li><a href="https://github.com/MetricsGrimoire/Bicho/downloads">https://github.com/MetricsGrimoire/Bicho/downloads</a></li>
+</ul><p>Latest version:</p>
+
+<ul>
+<li>git://github.com/MetricsGrimoire/Bicho.git</li>
+</ul><h2>Requirements</h2>
+
+<ul>
+<li>Python &gt;= 2.4</li>
+<li>Python Storm. Depending on the database driver to be used you'll also need one of the following python libraries:
+** mysqldb or psycopg2 or pysqlite2
+** python-launchpadlib (for Launchpad backend)</li>
+<li>Beautiful Soup library: error-tolerant HTML parser for Python</li>
+</ul><h2>Installing bicho</h2>
+
+<p>You can install bicho running the setup.py script:</p>
+
+<p><code>
+python setup.py install
+</code></p>
+
+<p>For the impatients:</p>
+
+<p><code>
+$ bicho --help
+</code></p>
+
+<h2>Improving Bicho</h2>
+
+<p>If you want to report a bug or submit a patch. Use our page in Github <a href="https://github.com/MetricsGrimoire/Bicho">https://github.com/MetricsGrimoire/Bicho</a></p>
+
+<h2>Contact</h2>
+
+<ul>
+<li>Website
+git://github.com/MetricsGrimoire/Bicho</li>
+<li>Mailing list
+<a href="http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/">http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/</a>
+</li>
+<li>IRC
+#libresoft at freenode.net</li>
+</ul><h2>Examples</h2>
+
+<p>It is very important to use a delay, if you run Bicho against big sites with a delay between bug petitions your IP address could be banned!</p>
+
+<p>E1. Getting information from a project that uses Bugzilla</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b bg -u <a href="https://bugzilla.libresoft.es/buglist.cgi?product=bicho">https://bugzilla.libresoft.es/buglist.cgi?product=bicho</a></p>
+
+<p>E2. Getting information from a project hosted in sourceforge.net</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b sf -u "<a href="http://sourceforge.net/tracker/?atid=516295&amp;group_id=66938">http://sourceforge.net/tracker/?atid=516295&amp;group_id=66938</a>"</p>
+
+<p>E3. Getting information from a project using JIRA</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b jira -u <a href="http://support.petalslink.com/browse/PETALSMASTER">http://support.petalslink.com/browse/PETALSMASTER</a></p>
+
+<p>E4. Getting information from a project using Launchpad</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b lp -u <a href="https://bugs.launchpad.net/openstack">https://bugs.launchpad.net/openstack</a></p>
+
+<p>E5. Getting information from a project using Allura</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b allura -u <a href="http://sourceforge.net/rest/p/allura/tickets">http://sourceforge.net/rest/p/allura/tickets</a></p>
+
+<p>E6. Getting information from a project using Github</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u <a href="https://api.github.com/repos/composer/composer/issues">https://api.github.com/repos/composer/composer/issues</a> --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]</p>
+
+<h2>FAQ</h2>
+
+<p>F1. Bicho crashed with 'UnicodeEncodeError' exception</p>
+
+<p>UnicodeEncodeError appears when it is not possible to write the data in the database with the encoding used by this one, to avoid that set your database to use UTF-8. For instance:</p>
+
+<p>CREATE DATABASE [DB NAME] CHARACTER SET utf8 COLLATE utf8_unicode_ci;</p>
+
+<p>F2. What is the database schema?</p>
+
+<p>There is a nice PNG schema in the directory /doc/database</p>
+
+<p>F3. How can I create a new backend?</p>
+
+<p>Tell us through the contact information above that you want to create a new backend, we'll try to give you as much information as possible.</p>
+
+<p>F4. How can I submit a bug?</p>
+
+<p>Go to <a href="https://github.com/MetricsGrimoire/Bicho/issues">https://github.com/MetricsGrimoire/Bicho/issues</a></p>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/MetricsGrimoire">MetricsGrimoire</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+    
+  </body>
+</html>
