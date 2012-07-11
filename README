@@ -1,9 +1,9 @@
  Description
 -----------
 
-Bicho is a command line based tool used to parse bug/issue tracking systems. It
-gets all the information associated to issues and store them in a relation
-database.
+Bicho is a command line based tool used to parse bug/issue tracking 
+systems. It gets all the information associated to issues and store 
+them in a relation database.
 
 Currently it supports:
 - Bugzilla
@@ -20,15 +20,17 @@ Currently it supports:
 Bicho is licensed under GNU General Public License (GPL), version 2 or later.
 
 
- How to get Bicho
-----------------
+ Download
+----------
+
+Home page:
+* http://metricsgrimoire.github.com/Bicho/
 
 Releases:
-  * http://projects.libresoft.es/projects/bicho/files
+* https://github.com/MetricsGrimoire/Bicho/downloads
 
 Latest version:
-  * git clone http://git.libresoft.es/bicho
-  * git clone git://git.libresoft.es/git/bicho
+* git://github.com/MetricsGrimoire/Bicho.git
 
 
  Requirements
@@ -42,8 +44,8 @@ Latest version:
  * Beautiful Soup library: error-tolerant HTML parser for Python
 
 
- Installing bicho
-----------------
+ Installation
+-------------
 
  You can install bicho running the setup.py script:
 
@@ -54,30 +56,8 @@ Latest version:
   $ bicho --help
 
 
- Improving Bicho
-----------------
-
-If you want to report a bug or submit a patch. Use our bugzilla at http://bugzilla.libresoft.es/
-
-
- Contact
--------
-
- * Website
-
-   http://projects.libresoft.es/projects/bicho
-
- * Mailing list
-
-   http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/
-
- * IRC
-
-   #libresoft at freenode.net
-
-
- Examples
---------
+ Running Bicho
+--------------
 
 It is very important to use a delay, if you run Bicho against big sites with a
 delay between bug petitions your IP address could be banned!
@@ -105,6 +85,37 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 E6. Getting information from a project using Github
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
+
+
+ Analysis
+---------
+
+[To be written]
+
+
+ Improving Bicho
+----------------
+
+Source code, wiki and ITS available on Github:
+* https://github.com/MetricsGrimoire/Bicho
+
+Please write to the developers mailing at
+* libresoft-tools-devel _at_ lists.morfeo-project.org
+
+If you want to receive updates about new versions, and keep in touch
+with the development team, consider subscribing to the list. It is a
+very low traffic list (< 1 msg a day):
+
+* https://lists.morfeo-project.org/mailman/listinfo/libresoft-tools-devel
+
+
+ Credits
+--------
+
+MLStats has been originally developed by the GSyC/LibreSoft group at the
+Universidad Rey Juan Carlos in Mostoles, near Madrid (Spain). It is
+part of a wider research on libre software engineering, aimed to gain
+knowledge on how libre software is developed and maintained.
 
 
  FAQ
