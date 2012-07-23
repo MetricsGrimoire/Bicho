@@ -903,8 +903,17 @@ class BGBackend (Backend):
             self.backend_user = None
 
     def get_domain(self, url):
-        strings = url.split('/')
-        return strings[0] + "//" + strings[2] + "/"
+        import urlparse
+
+        result = urlparse.urlparse(url)
+
+        # Some trackers use 'bugzilla' in the path
+        pos = result.path.find('/bugzilla/')
+        newpath = result.path[pos:pos + len('/bugzilla/')]
+
+        domain = urlparse.urljoin(result.scheme + '://' + result.netloc + '/',
+                                  newpath)
+        return domain
 
     def analyze_bug(self, bug_id, url):
         #Retrieving main bug information
@@ -1036,12 +1045,9 @@ class BGBackend (Backend):
                 bugs.append(bug_csv.split(',')[0])
 
         nbugs = len(bugs)
-        
-        url = self.url
-        url = self.get_domain(url)
-        if url.find("apache")>0:
-            url =  url + "bugzilla/"
-            
+
+        url = self.get_domain(self.url)
+
         # still useless
         bugsdb.insert_supported_traker("bugzilla", "3.2.3")
         trk = Tracker ( url, "bugzilla", "3.2.3")
