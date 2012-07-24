@@ -853,45 +853,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         return issue
 
 
-class DBIssueBugzilla(object):
-    """
-    """
-    __storm_table__ = 'issues_extra'
-
-    id = Int(primary=True)
-    alias = Unicode()
-    delta_ts = DateTime()
-    reporter_accessible = Unicode()
-    cclist_accessible = Unicode()
-    classification_id = Unicode()
-    classification = Unicode()
-    product = Unicode()
-    component = Unicode()
-    version = Unicode()
-    rep_platform = Unicode()
-    op_sys = Unicode()
-    dup_id = Int()
-    bug_file_loc = Unicode()
-    status_whiteboard = Unicode()
-    target_milestone = Unicode()
-    votes = Int()
-    everconfirmed = Unicode()
-    qa_contact = Unicode()
-    estimated_time = Unicode()
-    remaining_time = Unicode()
-    actual_time = DateTime()
-    deadline = Unicode()
-    keywords = Unicode()
-    cc = Unicode()
-    group = Unicode()
-    flag = Unicode()
-    issue_id = Int()
-
-    issue = Reference(issue_id, DBIssue.id)
-
-    def __init__(self, issue_id):
-        self.issue_id = issue_id
-
 class BGBackend (Backend):
 
     def __init__ (self):
