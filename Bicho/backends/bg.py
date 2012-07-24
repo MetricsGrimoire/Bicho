@@ -177,8 +177,8 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.qa_contact = self.__return_unicode(issue.qa_contact)
             db_issue_ext.estimated_time = self.__return_unicode(issue.estimated_time)
             db_issue_ext.remaining_time = self.__return_unicode(issue.remaining_time)
-            db_issue_ext.actual_time = self.__return_unicode(issue.actual_time)
-            db_issue_ext.deadline = self.__return_unicode(issue.deadline)
+            db_issue_ext.actual_time = issue.actual_time
+            db_issue_ext.deadline = issue.deadline
             db_issue_ext.keywords = self.__return_unicode(issue.keywords)
             db_issue_ext.group = self.__return_unicode(issue.group)
             db_issue_ext.flag = self.__return_unicode(issue.flag)
@@ -839,9 +839,10 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.set_qa_contact(self.atags["qa_contact"])
         issue.set_estimated_time(self.atags["estimated_time"])
         issue.set_remaining_time(self.atags["remaining_time"])
-        issue.set_actual_time(self.atags["actual_time"])
+        if self.atags["actual_time"]:
+            issue.set_actual_time(self._convert_to_datetime(self.atags["actual_time"]))
         if self.atags["deadline"]:
-            issue.set_deadline(self.atags["deadline"])
+            issue.set_deadline(self._convert_to_datetime(self.atags["deadline"]))
         issue.set_keywords(self.btags["keywords"])
         # we also store the list of watchers/CC
         for w in self.btags["cc"]:
