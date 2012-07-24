@@ -720,18 +720,18 @@ class JiraBackend(Backend):
         bugs = data_url.split("<issue")[1].split('\"/>')[0].split("total=\"")[1]
         return bugs
  
-    def run(self,url):
+    def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
-        trk = Tracker(url.split("-")[0], "jira", "4.1.2")
+        trk = Tracker(self.url.split("-")[0], "jira", "4.1.2")
         dbtrk = bugsdb.insert_tracker(trk)
 
-        serverUrl = url.split("/browse/")[0]
+        serverUrl = self.url.split("/browse/")[0]
         query = "/si/jira.issueviews:issue-xml/"
-        project = url.split("/browse/")[1]
+        project = self.url.split("/browse/")[1]
 
         if (project.split("-").__len__() > 1):
             bug_key = project
@@ -752,7 +752,7 @@ class JiraBackend(Backend):
                 print(e)
 
         else:
-            bugs_number = self.bugsNumber(url)
+            bugs_number = self.bugsNumber(self.url)
 
             for i in range(int(bugs_number)+1):
                 if i != 0:
