@@ -771,7 +771,12 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue_id = self.atags["bug_id"]
         type  = self.atags["bug_severity"]
         summary = self.atags["short_desc"]
-        desc = self.ctags["long_desc"][0]["thetext"]
+
+        if len(self.ctags["long_desc"]) > 0:
+            desc = self.ctags["long_desc"][0]["thetext"]
+        else:
+            desc = ""
+
         submitted_by = People(self.atags["reporter"])
         submitted_by.set_name(self.atags["reporter_name"])
         submitted_by.set_email(self.atags["reporter"])
