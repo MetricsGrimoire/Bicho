@@ -19,7 +19,7 @@
 #          Juan Francisco Gato Luis <jfcogato@libresoft.es>
 #          Luis Cañas Díaz <lcanas@libresoft.es>
 #          Santiago Dueñas <sduenas@libresoft.es>
-#          Alvaro del Castillo <acs@barrapunto.com>
+#          Alvaro del Castillo <acs@bitergia.com>
 
 
 import cookielib, pprint, string, sys, time, urllib, urllib2 
