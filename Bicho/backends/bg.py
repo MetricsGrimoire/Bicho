@@ -63,7 +63,7 @@ class DBBugzillaIssueExt(object):
     qa_contact = Unicode()
     estimated_time = Unicode()
     remaining_time = Unicode()
-    actual_time = DateTime()
+    actual_time = Unicode()
     deadline = DateTime()
     keywords = Unicode()
     cc = Unicode()
@@ -104,7 +104,7 @@ class DBBugzillaIssueExtMySQL(DBBugzillaIssueExt):
                      qa_contact VARCHAR(32) default NULL, \
                      estimated_time VARCHAR(32) default NULL, \
                      remaining_time VARCHAR(32) default NULL, \
-                     actual_time DATETIME default NULL, \
+                     actual_time VARCHAR(32) default NULL, \
                      deadline DATETIME default NULL, \
                      keywords VARCHAR(32) default NULL, \
                      flag VARCHAR(32) default NULL, \
@@ -172,7 +172,7 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.qa_contact = self.__return_unicode(issue.qa_contact)
             db_issue_ext.estimated_time = self.__return_unicode(issue.estimated_time)
             db_issue_ext.remaining_time = self.__return_unicode(issue.remaining_time)
-            db_issue_ext.actual_time = issue.actual_time
+            db_issue_ext.actual_time = self.__return_unicode(issue.actual_time)
             db_issue_ext.deadline = issue.deadline
             db_issue_ext.keywords = self.__return_unicode(issue.keywords)
             db_issue_ext.group = self.__return_unicode(issue.group)
@@ -852,8 +852,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.set_qa_contact(self.atags["qa_contact"])
         issue.set_estimated_time(self.atags["estimated_time"])
         issue.set_remaining_time(self.atags["remaining_time"])
-        if self.atags["actual_time"]:
-            issue.set_actual_time(self._convert_to_datetime(self.atags["actual_time"]))
+        issue.set_actual_time(self.atags["actual_time"])
         if self.atags["deadline"]:
             issue.set_deadline(self._convert_to_datetime(self.atags["deadline"]))
         issue.set_keywords(self.btags["keywords"])
@@ -866,45 +865,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         return issue
 
-
-class DBIssueBugzilla(object):
-    """
-    """
-    __storm_table__ = 'issues_extra'
-
-    id = Int(primary=True)
-    alias = Unicode()
-    delta_ts = DateTime()
-    reporter_accessible = Unicode()
-    cclist_accessible = Unicode()
-    classification_id = Unicode()
-    classification = Unicode()
-    product = Unicode()
-    component = Unicode()
-    version = Unicode()
-    rep_platform = Unicode()
-    op_sys = Unicode()
-    dup_id = Int()
-    bug_file_loc = Unicode()
-    status_whiteboard = Unicode()
-    target_milestone = Unicode()
-    votes = Int()
-    everconfirmed = Unicode()
-    qa_contact = Unicode()
-    estimated_time = Unicode()
-    remaining_time = Unicode()
-    actual_time = DateTime()
-    deadline = Unicode()
-    keywords = Unicode()
-    cc = Unicode()
-    group = Unicode()
-    flag = Unicode()
-    issue_id = Int()
-
-    issue = Reference(issue_id, DBIssue.id)
-
-    def __init__(self, issue_id):
-        self.issue_id = issue_id
 
 class BGBackend (Backend):
 
