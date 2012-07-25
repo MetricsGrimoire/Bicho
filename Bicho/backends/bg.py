@@ -20,13 +20,8 @@
 #          Luis Cañas Díaz <lcanas@libresoft.es>
 #          Santiago Dueñas <sduenas@libresoft.es>
 
-import urllib
-import string
-import sys
-import time
 
-import urllib2
-import cookielib
+import cookielib, pprint, string, sys, time, urllib, urllib2 
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
@@ -584,10 +579,9 @@ class BugzillaIssue(Issue):
         """
         self.flag = flag
 
-
 class BugsHandler(xml.sax.handler.ContentHandler):
     """
-    Parses XML for each bug, the XML is using
+    Parses XML for a list of bugs, the XML is using
     https://bugzilla.libresoft.es/bugzilla.dtd
     """
 
@@ -597,7 +591,17 @@ class BugsHandler(xml.sax.handler.ContentHandler):
     def __init__ (self):
         """
         """
-        # TBD attachments and flag, see bugzilla.dtd
+        # TBD attachments and flag, see bugzilla.dtd        
+        self.issues_data = {}
+        self.init_bug()
+        
+    def get_issues(self):
+        return self.issues_data
+        
+    def init_bug (self):
+        """
+        Clean all the values to start parsing a new bug
+        """
 
         self.atags = {
             "bug_id": None,
@@ -674,6 +678,10 @@ class BugsHandler(xml.sax.handler.ContentHandler):
                 or self.long_desc_tags.has_key( name ):
             self.tag_name = name
             self.interestData = []
+        if name == "bug":
+            self.init_bug()
+        else:
+            printdbg("Tag unknown: " + name);
 
         for attrName in attrs.keys():
             if self.tag_name == "reporter":
@@ -726,7 +734,12 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             elif name == 'attachment':
                 pass
             self.tag_name = None
-
+        elif name == "bug":
+            self.issues_data[self.atags["bug_id"]] = self.get_issue()
+#        elif name == "bugzilla":
+#            pp = pprint.PrettyPrinter(indent=4)
+#            pp.pprint(self.issues_data)
+            
         else:
             printdbg( "unknown tag:" + name)
 
@@ -920,11 +933,18 @@ class BGBackend (Backend):
         domain = urlparse.urljoin(result.scheme + '://' + result.netloc + '/',
                                   newpath)
         return domain
+    
 
-    def analyze_bug(self, bug_id, url):
+    def analyze_bug_list (self, bugs_id, url, dbtrk_id, bugsdb):
         #Retrieving main bug information
-        bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
-        printdbg(bug_url)
+        # bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
+        
+        bugs_url = url + "show_bug.cgi?";
+        for id in bugs_id:
+            bugs_url += "id="+id+"&"
+        bugs_url += "&ctype=xml"
+        
+        printdbg(bugs_url)
 
         handler = BugsHandler()
         parser = xml.sax.make_parser()
@@ -945,34 +965,43 @@ class BGBackend (Backend):
                 value = self.cookies[c]
                 aux = key + '=' + value
                 opener.addheaders.append(('Cookie', aux))
-            f = urllib2.urlopen(bug_url)
+            f = urllib2.urlopen(bugs_url)
         else:
-            f = urllib.urlopen(bug_url)
+            f = urllib.urlopen(bugs_url)
 
         try:
             parser.feed(f.read())
         except Exception:
-            printerr("Error parsing URL: %s" % (bug_url))
+            printerr("Error parsing URL: %s" % (bugs_url))
             raise
 
         f.close()
         parser.close()
         #handler.print_debug_data()
-        issue = handler.get_issue()
-        printdbg(" updated at " + issue.delta_ts.isoformat())
+        issues = handler.get_issues()
+        # printdbg(" updated at " + issue.delta_ts.isoformat())
 
         #Retrieving changes
-        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
-        printdbg( bug_activity_url )
-        data_activity = urllib.urlopen(bug_activity_url).read()
-        parser = SoupHtmlParser(data_activity, bug_id)
-        try:
+        
+        for bug_id in  issues:        
+            bug_activity_url = url + "show_activity.cgi?id=" + bug_id
+            printdbg( bug_activity_url )
+            data_activity = urllib.urlopen(bug_activity_url).read()
+            parser = SoupHtmlParser(data_activity, bug_id)
+            #try:
             changes = parser.parse_changes()
             for c in changes:
-                issue.add_change(c)
-        except Exception, e:
-            printerr("error while parsing HTML")
-        return issue
+                issues[bug_id].add_change(c)
+            try:
+                bugsdb.insert_issue(issues[bug_id], dbtrk_id)
+            except UnicodeEncodeError:
+                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
+                % (issues[issue].issue))
+            #except Exception, e:
+            #    printerr("error while parsing HTML")
+            # No delay in XML. Need it here
+            time.sleep(self.delay)
+        return issues
 
     def __auth_session(self):
         # returns True if the session is authenticated
@@ -1012,6 +1041,9 @@ class BGBackend (Backend):
     def run (self):
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
         #retrieving data in csv format
+
+        # 500 is the max recommend by bugmaster@gnome.org. Use 1 for legacy working.
+        issues_per_xml_query = 500
 
         bugsdb = get_database (DBBugzillaBackend())
 
@@ -1060,31 +1092,18 @@ class BGBackend (Backend):
 
         dbtrk = bugsdb.insert_tracker(trk)
 
+        printout("Total bugs: " + str(nbugs))
+
         if nbugs == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
 
-        for bug in bugs:
-
-            #The URL from bugzilla (so far KDE and GNOME) are like:
-            #http://<domain>/show_bug.cgi?id=<bugid>&ctype=xml
-
-            try:
-                issue_data = self.analyze_bug(bug, url)
-            except Exception:
-                #FIXME it does not handle the e
-                printerr("Error in function analyzeBug with URL: %s and Bug: %s"
-                         % (url,bug))
-                #print e
-                #continue
-                raise
-
-            try:
-                bugsdb.insert_issue(issue_data, dbtrk.id)
-            except UnicodeEncodeError:
-                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                      % (issue_data.issue))
-
+        while (bugs):
+            query_bugs = []
+            while (len(query_bugs) < issues_per_xml_query and bugs):
+                query_bugs.append(bugs.pop())
+            issues = self.analyze_bug_list(query_bugs, url, dbtrk.id, bugsdb)
+                        
             time.sleep(self.delay)
 
         printout("Done. %s bugs analyzed" % (nbugs))
