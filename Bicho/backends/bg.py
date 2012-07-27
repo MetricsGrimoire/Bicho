@@ -919,16 +919,7 @@ class BGBackend (Backend):
         ##
         ## In [46]: response=urllib2.urlopen('https://bugzilla.libresoft.es/show_bug.cgi?ctype=xml&id=298')
 
-        if self.__auth_session():
-            opener = urllib2.build_opener()
-            for c in self.cookies:
-                key = str(c)
-                value = self.cookies[c]
-                aux = key + '=' + value
-                opener.addheaders.append(('Cookie', aux))
-            f = urllib2.urlopen(bugs_url)
-        else:
-            f = urllib.urlopen(bugs_url)
+        f = self.__urlopen_auth(bugs_url)
 
         try:
             parser.feed(f.read())
@@ -947,7 +938,7 @@ class BGBackend (Backend):
         for bug_id in  issues:        
             bug_activity_url = url + "show_activity.cgi?id=" + bug_id
             printdbg( bug_activity_url )
-            data_activity = urllib.urlopen(bug_activity_url).read()
+            data_activity = self.__urlopen_auth(bug_activity_url).read()
             parser = SoupHtmlParser(data_activity, bug_id)
             #try:
             changes = parser.parse_changes()
@@ -957,7 +948,7 @@ class BGBackend (Backend):
                 bugsdb.insert_issue(issues[bug_id], dbtrk_id)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                % (issues[issue].issue))
+                % (issues[bug_id].issue))
             #except Exception, e:
             #    printerr("error while parsing HTML")
             # No delay in XML. Need it here
@@ -997,7 +988,16 @@ class BGBackend (Backend):
         ## In [45]: opener.addheaders.append(('Cookie', 'Bugzilla_logincookie=WBizdtDFtv'))
         ##
         ## In [46]: response=urllib2.urlopen('https://bugzilla.libresoft.es/show_bug.cgi?ctype=xml&id=298')
-        
+
+    def __urlopen_auth(self, url):
+        """
+        """
+        if self.__auth_session():
+            opener = urllib2.build_opener()
+            for c in self.cookies:
+                q = str(c) + '=' + self.cookies[c]
+                opener.addheaders.append(('Cookie', q))
+        return urllib2.urlopen(url)
 
     def run (self):
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
@@ -1019,15 +1019,13 @@ class BGBackend (Backend):
         if url.find("show_bug.cgi")>0:
             bugs = []
             bugs.append(self.url.split("show_bug.cgi?id=")[1])
-
         else:
-
             last_mod_date = bugsdb.get_last_modification_date()
 
             if last_mod_date:
                 url = url + "&chfieldfrom=" + last_mod_date
                 printdbg("Last bugs cached were modified on: %s" % last_mod_date)
-            f = urllib.urlopen(url)
+            f = self.__urlopen_auth(url)
 
             #Problems using csv library, not all the fields are delimited by
             # '"' character. Easier using split.
