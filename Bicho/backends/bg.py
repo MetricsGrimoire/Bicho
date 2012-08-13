@@ -1066,9 +1066,10 @@ class BGBackend (Backend):
             url = self.url + "&order=changeddate&ctype=csv"
         printdbg(url)
 
+        bugs = []
+
         #The url is a bug            
         if url.find("show_bug.cgi")>0:
-            bugs = []
             bugs.append(self.url.split("show_bug.cgi?id=")[1])
         else:
             # TODO: this should be when the gathering starts
@@ -1083,11 +1084,7 @@ class BGBackend (Backend):
             #Problems using csv library, not all the fields are delimited by
             # '"' character. Easier using split.
             bugList_csv = f.read().split('\n')
-
-            #&chfieldfrom=2012-06-01
-
             
-            bugs = []
             #Ignoring first row
             for bug_csv in bugList_csv[1:]:
                 #First field is the id field, necessary to later create the url
