@@ -1060,8 +1060,10 @@ class BGBackend (Backend):
         trk = Tracker (self.get_domain(self.url), "bugzilla", bugzilla_version)
         dbtrk = bugsdb.insert_tracker(trk)
 
-        url = self.url + "&order=changeddate&ctype=csv"
-
+        if (bugzilla_version == "3.2.3"):
+            url = self.url + "&order=Last+Changed&ctype=csv"
+        else:
+            url = self.url + "&order=changeddate&ctype=csv"
         printdbg(url)
 
         #The url is a bug            
@@ -1075,6 +1077,7 @@ class BGBackend (Backend):
             if last_mod_date:
                 url = url + "&chfieldfrom=" + last_mod_date
                 printdbg("Last bugs cached were modified on: %s" % last_mod_date)
+
             f = self.__urlopen_auth(url)
 
             #Problems using csv library, not all the fields are delimited by
