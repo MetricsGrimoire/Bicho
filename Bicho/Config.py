@@ -28,7 +28,7 @@ from optparse import OptionGroup, OptionParser
 import os
 import pprint
 import sys
-from urllib2 import Request, urlopen, URLError, HTTPError
+from urllib2 import Request, urlopen, urlparse, URLError, HTTPError
 
 
 class ErrorLoadingConfig(Exception):
@@ -102,9 +102,12 @@ class Config:
         if Config.backend+".py" not in Backend.get_all_backends():
             raise InvalidConfig('Backend "'+ Config.backend + '" does not exists')
 
-        req = Request(Config.url)
+
+        url = urlparse.urlparse(Config.url)
+        check_url = urlparse.urljoin(url.scheme + '://' + url.netloc,'')
+        print("Checking URL: " + check_url)
+        req = Request(check_url)
         try:
-            print("Checking URL: "+Config.url)
             response = urlopen(req)
         except HTTPError, e:
             raise InvalidConfig('The server could not fulfill the request '

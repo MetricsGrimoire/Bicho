@@ -580,14 +580,42 @@ class BugzillaIssue(Issue):
         """
         self.flag = flag
 
+class BugzillaHandler(xml.sax.handler.ContentHandler):
+    """
+    Parses XML to get bugzilla version, the XML is using
+    https://bugzilla.libresoft.es/bugzilla.dtd
+    """
+
+    def __init__ (self):
+        self.init_bugzilla()
+
+    def init_bugzilla(self):
+
+        self.bugzilla = {
+              "version": None,
+              "urlbase": None,
+              "maintainer": None,
+              "exporter": None
+          }
+
+    def get_bugzilla(self):
+        return self.bugzilla
+
+    def get_bugzilla_version(self):
+        return self.bugzilla["version"]
+
+    def startElement(self, name, attrs):
+        if name == "bugzilla":
+            self.init_bugzilla()
+
+            for attrName in attrs.keys():
+                self.bugzilla[attrName] = unicode(attrs.get(attrName))
+
 class BugsHandler(xml.sax.handler.ContentHandler):
     """
     Parses XML for a list of bugs, the XML is using
     https://bugzilla.libresoft.es/bugzilla.dtd
     """
-
-
-    # TBD get the bugzilla version number
 
     def __init__ (self):
         """
@@ -598,7 +626,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         
     def get_issues(self):
         return self.issues_data
-        
+
     def init_bug (self):
         """
         Clean all the values to start parsing a new bug
@@ -679,10 +707,11 @@ class BugsHandler(xml.sax.handler.ContentHandler):
                 or self.long_desc_tags.has_key( name ):
             self.tag_name = name
             self.interestData = []
+
         if name == "bug":
             self.init_bug()
-        else:
-            printdbg("Tag unknown: " + name);
+        # else:
+        #    printdbg("Tag unknown: " + name);
 
         for attrName in attrs.keys():
             if self.tag_name == "reporter":
@@ -737,13 +766,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.tag_name = None
         elif name == "bug":
             self.issues_data[self.atags["bug_id"]] = self.get_issue()
-#        elif name == "bugzilla":
-#            pp = pprint.PrettyPrinter(indent=4)
-#            pp.pprint(self.issues_data)
-            
-        else:
-            printdbg( "unknown tag:" + name)
-
 
     def print_debug_data(self):
         printdbg("")
@@ -779,7 +801,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         Returns datetime object from string with seconds
         """
         return parse(str_date).replace(tzinfo=None)
-
 
     def get_issue(self):
         issue_id = self.atags["bug_id"]
@@ -896,6 +917,26 @@ class BGBackend (Backend):
         return domain
     
 
+    def get_bugzilla_version(self, url):
+        handler = BugzillaHandler()
+        parser = xml.sax.make_parser()
+        parser.setContentHandler(handler)
+
+        f = self.__urlopen_auth(url)
+
+        printdbg("Getting bugzilla info: %s" % (url))
+
+        try:
+            parser.feed(f.read())
+        except Exception:
+            printerr("Error parsing URL in get_bugzilla info: %s" % (url))
+            raise
+
+        f.close()
+        parser.close()
+
+        return handler.get_bugzilla_version()
+
     def analyze_bug_list (self, bugs_id, url, dbtrk_id, bugsdb):
         #Retrieving main bug information
         # bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
@@ -903,7 +944,7 @@ class BGBackend (Backend):
         bugs_url = url + "show_bug.cgi?";
         for id in bugs_id:
             bugs_url += "id="+id+"&"
-        bugs_url += "&ctype=xml"
+        bugs_url += "ctype=xml"
         
         printdbg(bugs_url)
 
@@ -1011,6 +1052,14 @@ class BGBackend (Backend):
         if self.backend_user and self.backend_password:
             self.__login()
 
+        # bugzilla version
+        url_bugzilla_info = self.get_domain(self.url) + "show_bug.cgi?id=0&ctype=xml"
+        bugzilla_version = self.get_bugzilla_version(url_bugzilla_info)
+        printdbg("Bugzilla version: " + bugzilla_version)
+        bugsdb.insert_supported_traker("bugzilla", bugzilla_version)
+        trk = Tracker (self.get_domain(self.url), "bugzilla", bugzilla_version)
+        dbtrk = bugsdb.insert_tracker(trk)
+
         url = self.url + "&order=changeddate&ctype=csv"
 
         printdbg(url)
@@ -1020,6 +1069,7 @@ class BGBackend (Backend):
             bugs = []
             bugs.append(self.url.split("show_bug.cgi?id=")[1])
         else:
+            # TODO: this should be when the gathering starts
             last_mod_date = bugsdb.get_last_modification_date()
 
             if last_mod_date:
@@ -1045,12 +1095,6 @@ class BGBackend (Backend):
 
         url = self.get_domain(self.url)
 
-        # still useless
-        bugsdb.insert_supported_traker("bugzilla", "3.2.3")
-        trk = Tracker ( url, "bugzilla", "3.2.3")
-
-        dbtrk = bugsdb.insert_tracker(trk)
-
         printout("Total bugs: " + str(nbugs))
 
         if nbugs == 0:
@@ -1062,8 +1106,6 @@ class BGBackend (Backend):
             while (len(query_bugs) < issues_per_xml_query and bugs):
                 query_bugs.append(bugs.pop())
             issues = self.analyze_bug_list(query_bugs, url, dbtrk.id, bugsdb)
-                        
-            time.sleep(self.delay)
 
         printout("Done. %s bugs analyzed" % (nbugs))
 
