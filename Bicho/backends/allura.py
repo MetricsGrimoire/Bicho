@@ -25,7 +25,7 @@ from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.utils import create_dir, printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
-from Bicho.common import Tracker, Issue, People
+from Bicho.common import Tracker, Issue, People, Change
 
 from dateutil.parser import parse
 from datetime import datetime
@@ -39,6 +39,7 @@ import sys
 import time
 import traceback
 import urllib
+import feedparser
 
 from storm.locals import DateTime, Int, Reference, Unicode, Bool
 
@@ -180,8 +181,14 @@ class DBAlluraBackend(DBBackend):
             return db_issue_ext
         except:
             store.rollback()
-            raise    
-    
+            raise
+
+    def insert_change_ext(self, store, change, change_id):
+        """
+        Does nothing
+        """
+        pass
+
 class AlluraIssue(Issue):
     """
     Ad-hoc Issue extension for allura's issue
@@ -220,10 +227,10 @@ class Allura():
         #Retrieving main bug information
         printdbg(bug_url)
         ticket_cached = False
+        bug_number = bug_url.split('/')[-1]
 
         try:
             if Config.cache:
-                bug_number = bug_url.split('/')[-1]
                 bug_cache_file = self.project_cache_file + "." + bug_number
                 try:
                     f = open(bug_cache_file)
@@ -287,24 +294,69 @@ class Allura():
         issue.custom_fields = str(issue_allura["custom_fields"])
         issue.mod_date = self._convert_to_datetime(issue_allura["mod_date"])
         
-        issue.cached = ticket_cached        
-                
-        #Retrieving changes
-#        bug_activity_url = url + "show_activity.cgi?id=" + bug_id
-#        printdbg( bug_activity_url )
-#        data_activity = urllib.urlopen(bug_activity_url).read()
-#        parser = SoupHtmlParser(data_activity, bug_id)
-#        changes = parser.parse_changes()
-#        for c in changes:
-#            issue.add_change(c)
+        issue.cached = ticket_cached
+
+        changes_url = bug_url.replace("rest/","")+"/feed.atom"
+
+        printdbg("Analyzing issue " + changes_url)
+
+        d = feedparser.parse(changes_url)
+        changes = self.parse_changes(d, bug_number)
+
+        for c in changes:
+            issue.add_change(c)
+                                        
         return issue
 
+    def parse_changes (self, activity, bug_id):
+        changesList = []
+        for entry in activity['entries']:
+            # print "changed_by:" + entry['author']
+            by = People(entry['author'])
+            # print "changed_on:" + entry['updated']
+            description = entry['description'].split('updated:')
+            changes = description.pop(0)
+            field = changes.rpartition('\n')[2].strip()
+            while description:                
+                changes = description.pop(0).split('\n')
+                values = changes[0].split('=>')                
+                if (len(values) != 2):
+                    printdbg(field + " not supported in changes analysis")
+                    old_value = new_value = ""                    
+                else:
+                    # u'in-progress' => u'closed'
+                    values = changes[0].split('=>')
+                    old_value = self.remove_unicode(values[0].strip())
+                    if old_value == "''": old_value =""
+                    new_value = self.remove_unicode(values[1].strip())
+                    if new_value == "''": new_value =""
+                # print "old_value:'" + old_value + "'"
+                # print "new_value:'" + new_value + "'"
+                # print "issue_id:'" + bug_id +"'"
+                update = parse(entry['updated'])
+                change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
+                changesList.append(change)
+                if (len(changes)>1):
+                    field = changes[1].strip()
+        return changesList
+
+    def remove_unicode(self, str):
+        """
+        Cleanup u'' chars indicating a unicode string
+        """
+        if (str.startswith('u\'') and str.endswith('\'')):
+            str = str[2:len(str)-1]
+        return str
 
     def run(self):
         """
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
+        # Not sure about the optimum number here
+        issues_per_query = 5000
+        # issues_per_query = 100
+
         bugs = [];
         bugsdb = get_database (DBAlluraBackend())
                 
@@ -315,6 +367,20 @@ class Allura():
         dbtrk = bugsdb.insert_tracker(trk)
         
         self.url = Config.url
+        
+        # TODO: improve how to get all issues from Allura
+        self.url_issues = Config.url + "/search/?limit="+str(issues_per_query)
+        self.url_issues += "&q="
+        self.url_issues += "status%3Ablocked+or+"
+        self.url_issues += "status%3Aclosed+or+"
+        self.url_issues += "status%3Acode-review+or+"
+        self.url_issues += "status%3Ain-progress+or+"
+        self.url_issues += "status%3Ainvalid+or+"
+        self.url_issues += "status%3Aopen+"
+        self.url_issues += "or+status%3Avalidation+or+status%3Awont-fix+"
+        # self.url_issues += "&sort=ticket_num_i%20desc"
+                        
+        printdbg("URL " + self.url_issues)
         
         if Config.cache:
             printdbg("Using file cache")
@@ -328,12 +394,12 @@ class Allura():
             except Exception, e:
                 if e.errno == errno.ENOENT:
                     f = open(self.project_cache_file,'w+')
-                    fr = urllib.urlopen(self.url)
+                    fr = urllib.urlopen(self.url_issues)
                     f.write(fr.read())
                     f.close()
                     f = open(self.project_cache_file)
         else:
-            f = urllib.urlopen(self.url)
+            f = urllib.urlopen(self.url_issues)
             
         ticketList = json.loads(f.read())
         for ticket in ticketList["tickets"]:
@@ -348,16 +414,18 @@ class Allura():
         
         
         print "Total bugs", nbugs
-        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)"         
-                
+        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)"
+        
+        remaining = len(bugs)
         for bug in bugs:
             try:
-                issue_url = self.url+"/"+str(bug)
+                issue_url = self.url+"/"+str(bug)                
                 issue_data = self.analyze_bug(issue_url)
                 if issue_data is None:
                     continue
                 bugsdb.insert_issue(issue_data, dbtrk.id)
-                print "Remaining time: ", (nbugs-issue_data.ticket_num)*Config.delay/60, "m"
+                remaining -= 1
+                print "Remaining time: ", (remaining)*Config.delay/60, "m"
                 if not issue_data.cached: time.sleep(self.delay)
             except Exception, e:
                 printerr("Error in function analyze_bug " + issue_url)
