@@ -19,10 +19,12 @@
 #          Juan Francisco Gato Luis <jfcogato@libresoft.es>
 #          Luis Cañas Díaz <lcanas@libresoft.es>
 #          Santiago Dueñas <sduenas@libresoft.es>
+#          Alvaro del Castillo <acs@bitergia.com>
 
 import datetime
 import urllib
 import time
+import sys, pprint
 
 from storm.locals import Int, DateTime, Unicode, Reference
 
@@ -32,7 +34,7 @@ from Bicho.backends import Backend
 from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.Config import Config
 from Bicho.utils import printout, printerr, printdbg
-from BeautifulSoup import BeautifulSoup
+from BeautifulSoup import BeautifulSoup, Tag, NavigableString 
 #from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
 #from Bicho.Config import Config
@@ -334,8 +336,22 @@ class SoupHtmlParser():
             
             if change_author == None:
                 break
-            author = People(change_author.contents[2].strip())
-            date = parse(change_author.contents[4]).replace(tzinfo=None)
+            if isinstance(change_author.contents[2], Tag):
+                change_author_str = change_author.contents[2]['rel']
+            elif isinstance(change_author.contents[2], NavigableString):
+                change_author_str = change_author.contents[2]
+            else:
+                printerr("Change author format not supported")
+                sys.exit()
+            author = People(change_author_str.strip())
+            if isinstance(change_author.contents[4], Tag):
+                date_str = change_author.contents[4].find('time')['datetime']
+            elif isinstance(change_author.contents[4], NavigableString):
+                date_str = change_author.contents[4]
+            else:
+                printerr("Change date format not supported")
+                sys.exit()
+            date = parse(date_str).replace(tzinfo=None)
  
             rows = list(table.findAll('tr'))
             for row in rows:
@@ -718,7 +734,7 @@ class JiraBackend(Backend):
         oneBug = serverUrl + "/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml?jqlQuery=project+%3D+" + url.split("/browse/")[1] + "&tempMax=1"
         data_url = urllib.urlopen(oneBug).read()
         bugs = data_url.split("<issue")[1].split('\"/>')[0].split("total=\"")[1]
-        return bugs
+        return int(bugs)
  
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
@@ -753,8 +769,13 @@ class JiraBackend(Backend):
 
         else:
             bugs_number = self.bugsNumber(self.url)
+            
+            print "Total bugs", str(bugs_number)
+            print "ETA ", (bugs_number*Config.delay)/(60), "m (", (bugs_number*Config.delay)/(60*60), "h)"
 
-            for i in range(int(bugs_number)+1):
+            remaining = bugs_number
+
+            for i in range(bugs_number+1):
                 if i != 0:
                     bug_key = project + "-" + str(i)
                     printdbg(serverUrl + query + bug_key + "/" + bug_key + ".xml")
@@ -766,6 +787,8 @@ class JiraBackend(Backend):
                         parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
                         issue = handler.getIssue()
                         bugsdb.insert_issue(issue, dbtrk.id)
+                        remaining -= 1
+                        print "Remaining time: ", (remaining)*Config.delay/60, "m", "(",remaining,")"
                     except Exception, e:
                         #printerr(e)
                         print(e)
