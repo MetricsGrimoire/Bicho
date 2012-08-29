@@ -138,8 +138,6 @@ class GoogleCode():
         return parse(str_date).replace(tzinfo=None)
                 
     def analyze_bug(self, entry):
-        pprint.pprint(entry)
-
         people = People(entry['author_detail']['href'])                        
         people.set_name(entry['author_detail']['name'])
             
@@ -167,49 +165,37 @@ class GoogleCode():
         issue.closed_date = None
         if 'issues_closeddate' in entry.keys():
             issue.closed_date = self._convert_to_datetime(entry['issues_closeddate'])
+        
+        
+        # URL to get changes
+        # https://code.google.com/feeds/issues/p/mobile-time-care/issues/2/comments/full
+        # https://code.google.com/feeds/issues/p/mobile-time-care
+        
             
-#        changes_url = bug_url.replace("rest/","")+"/feed.atom"
-#
-#        printdbg("Analyzing issue " + changes_url)
-#
-#        d = feedparser.parse(changes_url)
-#        changes = self.parse_changes(d, bug_number)
-#
-#        for c in changes:
-#            issue.add_change(c)
-                                        
+        changes_url = Config.url + "/issues/" + issue.ticket_num + "/comments/full"
+
+        printdbg("Analyzing issue " + changes_url)
+
+        d = feedparser.parse(changes_url)
+        changes = self.parse_changes(d, issue.ticket_num)
+
+        for c in changes:
+            issue.add_change(c)
+                                                    
         return issue
 
     def parse_changes (self, activity, bug_id):
         changesList = []
         for entry in activity['entries']:
-            # print "changed_by:" + entry['author']
-            by = People(entry['author'])
-            # print "changed_on:" + entry['updated']
-            description = entry['description'].split('updated:')
-            changes = description.pop(0)
-            field = changes.rpartition('\n')[2].strip()
-            while description:                
-                changes = description.pop(0).split('\n')
-                values = changes[0].split('=>')                
-                if (len(values) != 2):
-                    printdbg(field + " not supported in changes analysis")
-                    old_value = new_value = ""                    
-                else:
-                    # u'in-progress' => u'closed'
-                    values = changes[0].split('=>')
-                    old_value = self.remove_unicode(values[0].strip())
-                    if old_value == "''": old_value =""
-                    new_value = self.remove_unicode(values[1].strip())
-                    if new_value == "''": new_value =""
-                # print "old_value:'" + old_value + "'"
-                # print "new_value:'" + new_value + "'"
-                # print "issue_id:'" + bug_id +"'"
-                update = parse(entry['updated'])
-                change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
-                changesList.append(change)
-                if (len(changes)>1):
-                    field = changes[1].strip()
+            if not 'issues_status' in entry.keys():
+                continue
+            by = People(entry['author_detail']['href'])                        
+            update = parse(entry['updated'])
+            field =  'Status'
+            old_value = ''
+            new_value = entry['issues_status']
+            change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
+            changesList.append(change)                        
         return changesList
 
     def remove_unicode(self, str):
@@ -240,8 +226,7 @@ class GoogleCode():
         
         self.url = Config.url
         
-
-       #  https://code.google.com/feeds/issues/p/mobile-time-care/issues/full
+       #  https://code.google.com/feeds/issues/p/mobile-time-care
         self.url_issues = Config.url + "/issues/full"
                         
         printdbg("URL " + self.url_issues)
