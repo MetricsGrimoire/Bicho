@@ -137,7 +137,7 @@ class GoogleCode():
     def _convert_to_datetime(self,str_date):
         return parse(str_date).replace(tzinfo=None)
                 
-    def analyze_bug(self, entry):
+    def analyze_bug(self, entry):        
         people = People(entry['author_detail']['href'])                        
         people.set_name(entry['author_detail']['name'])
             
@@ -165,15 +165,8 @@ class GoogleCode():
         issue.closed_date = None
         if 'issues_closeddate' in entry.keys():
             issue.closed_date = self._convert_to_datetime(entry['issues_closeddate'])
-        
-        
-        # URL to get changes
-        # https://code.google.com/feeds/issues/p/mobile-time-care/issues/2/comments/full
-        # https://code.google.com/feeds/issues/p/mobile-time-care
-        
-            
+                
         changes_url = Config.url + "/issues/" + issue.ticket_num + "/comments/full"
-
         printdbg("Analyzing issue " + changes_url)
 
         d = feedparser.parse(changes_url)
@@ -211,9 +204,8 @@ class GoogleCode():
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
-        # Not sure about the optimum number here
-        # issues_per_query = 5000
-        # issues_per_query = 100
+        issues_per_query = 250
+        start_issue=1
 
         bugs = [];
         bugsdb = get_database (DBGoogleCodeBackend())
@@ -226,38 +218,50 @@ class GoogleCode():
         
         self.url = Config.url
         
+        
        #  https://code.google.com/feeds/issues/p/mobile-time-care
-        self.url_issues = Config.url + "/issues/full"
-                        
-        printdbg("URL " + self.url_issues)
+        self.url_issues = Config.url + "/issues/full?max-results=1" 
+        printdbg("URL for getting metadata " + self.url_issues)        
                             
         d = feedparser.parse(self.url_issues)
-
-        nbugs = len(d['entries'])
-        if nbugs == 0:
+                
+        total_issues = int(d['feed']['opensearch_totalresults'])
+        print "Total bugs: ", total_issues
+        if  total_issues == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
-                
-        print "Total bugs", nbugs
-        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)"
-        
-        remaining = nbugs
-        for entry in d['entries']:
-            try:
-                issue = self.analyze_bug(entry)
-                if issue is None:
-                    continue
-                bugsdb.insert_issue(issue, dbtrk.id)
-                remaining -= 1
-                print "Remaining time: ", (remaining)*Config.delay/60, "m"
-            except Exception, e:
-                printerr("Error in function analyze_bug ")
-                pprint.pprint(entry)
-                traceback.print_exc(file=sys.stdout)
-            except UnicodeEncodeError:
-                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                      % (issue.issue))
-                            
-        printout("Done. %s bugs analyzed" % (nbugs-remaining))
+        remaining = total_issues                
+
+        print "ETA ", (total_issues*Config.delay)/(60), "m (", (total_issues*Config.delay)/(60*60), "h)"
+
+        while start_issue < total_issues:            
+            self.url_issues = Config.url + "/issues/full?max-results=" + str(issues_per_query) 
+            self.url_issues += "&start-index=" + str(start_issue)
+            
+            printdbg("URL for next issues " + self.url_issues) 
+                                                            
+            d = feedparser.parse(self.url_issues)
+                                    
+            for entry in d['entries']:
+                try:
+                    issue = self.analyze_bug(entry)
+                    if issue is None:
+                        continue
+                    bugsdb.insert_issue(issue, dbtrk.id)
+                    remaining -= 1
+                    print "Remaining time: ", (remaining)*Config.delay/60, "m", " issues ", str(remaining) 
+                    time.sleep(Config.delay)
+                except Exception, e:
+                    printerr("Error in function analyze_bug ")
+                    pprint.pprint(entry)
+                    traceback.print_exc(file=sys.stdout)
+                except UnicodeEncodeError:
+                    printerr("UnicodeEncodeError: the issue %s couldn't be stored"
+                          % (issue.issue))
+            
+            start_issue += issues_per_query
+
+                                            
+        printout("Done. %s bugs analyzed" % (total_issues-remaining))
         
 Backend.register_backend('googlecode', GoogleCode)
