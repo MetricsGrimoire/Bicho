@@ -86,6 +86,8 @@ E6. Getting information from a project using Github
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
 
+E7. Getting information from a project using Google Code
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b googlecode -u https://code.google.com/feeds/issues/p/apv
 
  Analysis
 ---------
