@@ -40,7 +40,7 @@ import traceback
 import urllib
 import feedparser
 
-from storm.locals import DateTime, Int, Reference, Unicode, Bool
+from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
 
 
 class DBAlluraIssueExt(object):
@@ -112,7 +112,7 @@ class DBAlluraIssueExt(object):
 
 class DBAlluraIssueExtMySQL(DBAlluraIssueExt):
     """
-    MySQL subclass of L{DBBugzillaIssueExt}
+    MySQL subclass of L{DBAlluraIssueExt}
     """
 
     # If the table is changed you need to remove old from database
@@ -187,6 +187,18 @@ class DBAlluraBackend(DBBackend):
         Does nothing
         """
         pass
+
+    def get_last_modification_date(self, store):
+        # get last modification date (day) stored in the database
+        # select date_last_updated as date from issues_ext_allura order by date
+        result = store.find(DBAlluraIssueExt)
+        aux = result.order_by(Desc(DBAlluraIssueExt.mod_date))[:1]
+
+        for entry in aux:
+            return entry.mod_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        return None
+
 
 class AlluraIssue(Issue):
     """
@@ -352,9 +364,10 @@ class Allura():
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
-        # limit=-1 is NOT recognized as 'all'.  500 is a reasonable limit.
+        # limit=-1 is NOT recognized as 'all'.  500 is a reasonable limit. - allura code
         issues_per_query = 500
-        # issues_per_query = 100
+        start_page=0
+
 
         bugs = [];
         bugsdb = get_database (DBAlluraBackend())
@@ -365,74 +378,91 @@ class Allura():
 
         dbtrk = bugsdb.insert_tracker(trk)
         
+        last_mod_date = bugsdb.get_last_modification_date()
+
+        # Date before the first ticket
+        time_window_start = "1900-01-01T00:00:00Z" 
+        time_window_end = datetime.now().isoformat()+"Z"
+
+        if last_mod_date:
+            time_window_start = last_mod_date
+            printdbg("Last bugs cached were modified on: %s" % last_mod_date)
+
+        time_window = time_window_start + " TO  " + time_window_end
+
         self.url = Config.url
         
-        # TODO: improve how to get all issues from Allura
-        self.url_issues = Config.url + "/search/?limit="+str(issues_per_query)
+        self.url_issues = Config.url + "/search/?limit=1"
         self.url_issues += "&q="
-        self.url_issues += "status%3Ablocked+or+"
-        self.url_issues += "status%3Aclosed+or+"
-        self.url_issues += "status%3Acode-review+or+"
-        self.url_issues += "status%3Ain-progress+or+"
-        self.url_issues += "status%3Ainvalid+or+"
-        self.url_issues += "status%3Aopen+"
-        self.url_issues += "or+status%3Avalidation+or+status%3Awont-fix+"
-        # self.url_issues += "&sort=ticket_num_i%20desc"
-                        
-        printdbg("URL " + self.url_issues)
-        
-        if Config.cache:
-            printdbg("Using file cache")
-            tracker_cache_dir = os.path.join(Config.get_cache_dir(), trk.name)
-            if not os.path.isdir (tracker_cache_dir):
-                create_dir (os.path.join(Config.get_cache_dir(), trk.name))
-            project_name = self.url.split("/")[-2]
-            self.project_cache_file = os.path.join(tracker_cache_dir, project_name) 
-            try:
-                f = open(self.project_cache_file)
-            except Exception, e:
-                if e.errno == errno.ENOENT:
-                    f = open(self.project_cache_file,'w+')
-                    fr = urllib.urlopen(self.url_issues)
-                    f.write(fr.read())
-                    f.close()
-                    f = open(self.project_cache_file)
-        else:
-            f = urllib.urlopen(self.url_issues)
-            
-        ticketList = json.loads(f.read())
-        for ticket in ticketList["tickets"]:
-            bugs.append(ticket["ticket_num"])                    
+        # A time range with all the tickets
+        self.url_issues +=  urllib.quote("mod_date_dt:["+time_window+"]")
+        printdbg("URL for getting metadata " + self.url_issues)
 
-        nbugs = len(bugs)
+        f = urllib.urlopen(self.url_issues)
+        ticketTotal = json.loads(f.read())
         
-        if len(bugs) == 0:
+        total_issues = int(ticketTotal['count'])
+        total_pages = total_issues/issues_per_query
+        print("Number of tickets: " + str(total_issues))
+
+        if  total_issues == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
-        # test_bugs = bugs[random.randint(0,len(bugs))::100][0:100]
+        remaining = total_issues
+
+        print "ETA ", (total_issues*Config.delay)/(60), "m (", (total_issues*Config.delay)/(60*60), "h)"
         
-        
-        print "Total bugs", nbugs
-        print "ETA ", (nbugs*Config.delay)/(60), "m (", (nbugs*Config.delay)/(60*60), "h)"
-        
-        remaining = len(bugs)
-        for bug in bugs:
-            try:
-                issue_url = self.url+"/"+str(bug)                
-                issue_data = self.analyze_bug(issue_url)
-                if issue_data is None:
-                    continue
-                bugsdb.insert_issue(issue_data, dbtrk.id)
-                remaining -= 1
-                print "Remaining time: ", (remaining)*Config.delay/60, "m"
-                if not issue_data.cached: time.sleep(self.delay)
-            except Exception, e:
-                printerr("Error in function analyze_bug " + issue_url)
-                traceback.print_exc(file=sys.stdout)
-            except UnicodeEncodeError:
-                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                      % (issue_data.issue))
+        while start_page <= total_pages:
+            self.url_issues = Config.url + "/search/?limit="+str(issues_per_query)
+            self.url_issues += "&page=" + str(start_page) + "&q="
+            # A time range with all the tickets
+            self.url_issues +=  urllib.quote("mod_date_dt:["+time_window+"]")
+
+            printdbg("URL for next issues " + self.url_issues) 
+
+            if Config.cache:
+                printdbg("Using file cache")
+                tracker_cache_dir = os.path.join(Config.get_cache_dir(), trk.name)
+                if not os.path.isdir (tracker_cache_dir):
+                    create_dir (os.path.join(Config.get_cache_dir(), trk.name))
+                project_name = self.url.split("/")[-2]
+                self.project_cache_file = os.path.join(tracker_cache_dir, project_name) 
+                try:
+                    f = open(self.project_cache_file)
+                except Exception, e:
+                    if e.errno == errno.ENOENT:
+                        f = open(self.project_cache_file,'w+')
+                        fr = urllib.urlopen(self.url_issues)
+                        f.write(fr.read())
+                        f.close()
+                        f = open(self.project_cache_file)
+            else:
+                f = urllib.urlopen(self.url_issues)
+
+            ticketList = json.loads(f.read())
+
+            bugs=[]
+            for ticket in ticketList["tickets"]:
+                bugs.append(ticket["ticket_num"])
+
+            for bug in bugs:
+                try:
+                    issue_url = self.url+"/"+str(bug)
+                    issue_data = self.analyze_bug(issue_url)
+                    if issue_data is None:
+                        continue
+                    bugsdb.insert_issue(issue_data, dbtrk.id)
+                    remaining -= 1
+                    print "Remaining time: ", (remaining)*Config.delay/60, "m"
+                    if not issue_data.cached: time.sleep(self.delay)
+                except Exception, e:
+                    printerr("Error in function analyze_bug " + issue_url)
+                    traceback.print_exc(file=sys.stdout)
+                except UnicodeEncodeError:
+                    printerr("UnicodeEncodeError: the issue %s couldn't be stored"
+                          % (issue_data.issue))
+            start_page += 1
             
-        printout("Done. %s bugs analyzed" % (len(bugs)))
+        printout("Done. Bugs analyzed:" + str(total_issues-remaining))
         
 Backend.register_backend('allura', Allura)
