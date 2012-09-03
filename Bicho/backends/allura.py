@@ -19,7 +19,6 @@
 # Authors:  Alvaro del Castillo <acs@bitergia.com>
 #
 
-
 from Bicho.Config import Config
 
 from Bicho.backends import Backend
@@ -353,8 +352,8 @@ class Allura():
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
-        # Not sure about the optimum number here
-        issues_per_query = 5000
+        # limit=-1 is NOT recognized as 'all'.  500 is a reasonable limit.
+        issues_per_query = 500
         # issues_per_query = 100
 
         bugs = [];
