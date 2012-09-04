@@ -221,18 +221,75 @@ class AlluraIssue(Issue):
     
 class Allura():
     
-    project_cache_file = None
+    project_test_file = None
     safe_delay = 5
     
     def __init__(self):
         self.delay = Config.delay
-        self.url = Config.url
         
     def _convert_to_datetime(self,str_date):
         """
         Returns datetime object from string
         """
         return parse(str_date).replace(tzinfo=None)
+
+    def open_project_page_test(self, bug_url, start_page, limit, trk_name):
+        if vars(Config).has_key('tests_dir'):
+            tracker_tests_data_dir = os.path.join(Config.tests_dir, trk_name)
+        else:
+            tracker_tests_data_dir = os.path.join("./tests/data/", trk_name)
+        if not os.path.isdir (tracker_tests_data_dir):
+            create_dir (tracker_tests_data_dir)
+        project_name = Config.url.split("/")[-2]
+        test_file = project_name+"_p"+str(start_page)+"_"+str(limit)
+        self.project_test_file = os.path.join(tracker_tests_data_dir, test_file)
+        printdbg("Using project file test: " + self.project_test_file)
+
+        try:
+            f = open(self.project_test_file)
+        except Exception, e:
+            printdbg("Downloading : " + project_name + " data from " + self.url_issues)
+            if e.errno == errno.ENOENT:
+                f = open(self.project_test_file,'w+')
+                fr = urllib.urlopen(self.url_issues)
+                f.write(fr.read())
+                f.close()
+                f = open(self.project_test_file)
+        return f
+
+    # Open the bug data from a file for testing purposes
+    def open_bug_test(self, bug_url):
+        bug_number = bug_url.split('/')[-1]
+        bug_test_file = self.project_test_file + "." + bug_number
+        try:
+            f = open(bug_test_file)
+            printdbg ("Test file " + bug_test_file)
+        except Exception, e:
+            if e.errno == errno.ENOENT:
+                f = open(bug_test_file,'w')
+                fr = urllib.urlopen(bug_url)
+                f.write(fr.read())
+                f.close()
+                f = open(bug_test_file)
+            else:
+                print "ERROR", e.errno
+                raise e
+        return f
+
+    # Open the changes bug data from a file for testing purposes
+    def open_changes_test(self, bug_url):
+        changes_url = bug_url.replace("rest/","")+"/feed.atom"
+        bug_number = bug_url.split('/')[-1]
+        changes_test_file = self.project_test_file + "." + bug_number + ".changes"
+
+        if os.path.isfile(changes_test_file): pass
+        else:
+            f = open(changes_test_file,'w')
+            fr = urllib.urlopen(changes_url)
+            f.write(fr.read())
+            f.close()
+        return changes_test_file
+
                 
     def analyze_bug(self, bug_url):
         #Retrieving main bug information
@@ -241,22 +298,8 @@ class Allura():
         bug_number = bug_url.split('/')[-1]
 
         try:
-            if Config.cache:
-                bug_cache_file = self.project_cache_file + "." + bug_number
-                try:
-                    f = open(bug_cache_file)
-                    printdbg ("Cached file " + bug_cache_file)
-                    ticket_cached = True
-                except Exception, e:                                        
-                    if e.errno == errno.ENOENT:
-                        f = open(bug_cache_file,'w')
-                        fr = urllib.urlopen(bug_url)
-                        f.write(fr.read())
-                        f.close()
-                        f = open(bug_cache_file)
-                    else:
-                        print "ERROR", e.errno
-                        raise e
+            if Config.test:
+                f =  self.open_bug_test(bug_url)
             else:
                 f = urllib.urlopen(bug_url)
 
@@ -266,12 +309,8 @@ class Allura():
             try:                
                 issue_allura = json.loads(json_ticket)["ticket"]
             except Exception, e:
-                print "Probably Allura has banned us. Use --cache and a longer delay than", Config.delay
+                print "Problems with Ticket format: " + bug_number
                 print e
-                # os.remove(bug_cache_file)
-                os.rename(bug_cache_file, bug_cache_file+".fail")
-                # Allura banned the URL not the access to the REST interface
-                # sys.exit()
                 return None
     
         except Exception, e:
@@ -307,9 +346,12 @@ class Allura():
         
         issue.cached = ticket_cached
 
-        changes_url = bug_url.replace("rest/","")+"/feed.atom"
+        if Config.test:
+            changes_url = self.open_changes_test(bug_url)
+        else:
+            changes_url = bug_url.replace("rest/","")+"/feed.atom"
 
-        printdbg("Analyzing issue " + changes_url)
+        printdbg("Analyzing issue changes" + changes_url)
 
         d = feedparser.parse(changes_url)
         changes = self.parse_changes(d, bug_number)
@@ -359,6 +401,7 @@ class Allura():
             str = str[2:len(str)-1]
         return str
 
+
     def run(self):
         """
         """
@@ -372,10 +415,9 @@ class Allura():
         bugs = [];
         bugsdb = get_database (DBAlluraBackend())
                 
-        # still useless
+        # still useless in allura
         bugsdb.insert_supported_traker("allura", "beta")
         trk = Tracker (Config.url, "allura", "beta")
-
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_date = bugsdb.get_last_modification_date()
@@ -386,11 +428,9 @@ class Allura():
 
         if last_mod_date:
             time_window_start = last_mod_date
-            printdbg("Last bugs cached were modified on: %s" % last_mod_date)
+            printdbg("Last bugs analyzed were modified on: %s" % last_mod_date)
 
         time_window = time_window_start + " TO  " + time_window_end
-
-        self.url = Config.url
         
         self.url_issues = Config.url + "/search/?limit=1"
         self.url_issues += "&q="
@@ -420,22 +460,8 @@ class Allura():
 
             printdbg("URL for next issues " + self.url_issues) 
 
-            if Config.cache:
-                printdbg("Using file cache")
-                tracker_cache_dir = os.path.join(Config.get_cache_dir(), trk.name)
-                if not os.path.isdir (tracker_cache_dir):
-                    create_dir (os.path.join(Config.get_cache_dir(), trk.name))
-                project_name = self.url.split("/")[-2]
-                self.project_cache_file = os.path.join(tracker_cache_dir, project_name) 
-                try:
-                    f = open(self.project_cache_file)
-                except Exception, e:
-                    if e.errno == errno.ENOENT:
-                        f = open(self.project_cache_file,'w+')
-                        fr = urllib.urlopen(self.url_issues)
-                        f.write(fr.read())
-                        f.close()
-                        f = open(self.project_cache_file)
+            if Config.test:
+                f =self.open_project_page_test(Config.url, start_page, issues_per_query, trk.name)
             else:
                 f = urllib.urlopen(self.url_issues)
 
@@ -447,7 +473,7 @@ class Allura():
 
             for bug in bugs:
                 try:
-                    issue_url = self.url+"/"+str(bug)
+                    issue_url = Config.url+"/"+str(bug)
                     issue_data = self.analyze_bug(issue_url)
                     if issue_data is None:
                         continue
