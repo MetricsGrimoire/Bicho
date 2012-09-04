@@ -72,6 +72,7 @@
 ** mysqldb or psycopg2 or pysqlite2
 ** python-launchpadlib (for Launchpad backend)</li>
 <li>Beautiful Soup library: error-tolerant HTML parser for Python</li>
+<li>python-feedparser</li>
 </ul><h2>Installing bicho</h2>
 
 <p>You can install bicho running the setup.py script:</p>
@@ -96,7 +97,7 @@ $ bicho --help
 <li>Website
 git://github.com/MetricsGrimoire/Bicho</li>
 <li>Mailing list
-<a href="http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/">http://lists.morfeo-project.org/pipermail/libresoft-tools-devel/</a>
+<a href="https://lists.libresoft.es/listinfo/metrics-grimoire">https://lists.libresoft.es/listinfo/metrics-grimoire</a>
 </li>
 <li>IRC
 #libresoft at freenode.net</li>
@@ -128,6 +129,10 @@ git://github.com/MetricsGrimoire/Bicho</li>
 
 <p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u <a href="https://api.github.com/repos/composer/composer/issues">https://api.github.com/repos/composer/composer/issues</a> --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]</p>
 
+<p>E7. Getting information from a project using Google Code</p>
+
+<p>$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b googlecode -u <a href="https://code.google.com/feeds/issues/p/apv">https://code.google.com/feeds/issues/p/apv</a></p>
+
 <h2>FAQ</h2>
 
 <p>F1. Bicho crashed with 'UnicodeEncodeError' exception</p>
@@ -153,7 +158,7 @@ git://github.com/MetricsGrimoire/Bicho</li>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
       </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
   </body>
 </html>
