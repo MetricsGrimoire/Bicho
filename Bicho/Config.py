@@ -156,10 +156,6 @@ class Config:
         parser.add_option('-u', '--url', dest='url',
                           help='URL to get issues from using the backend',
                           default=None)
-        parser.add_option('--test', action='store_true', dest='test',
-                          help='Use data already retrieved for testing',
-                          default=False)
-
     
         # Options for output database
         group = OptionGroup(parser, 'Output database specific options')
