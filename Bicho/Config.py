@@ -56,13 +56,7 @@ class Config:
         except Exception, e:
             raise ErrorLoadingConfig ("Error reading config file %s (%s)" % (\
                     config_file, str (e)))
-        # print dir(Config)          
-    
-    @staticmethod        
-    def get_cache_dir ():
-        from utils import bicho_dot_dir
-        return os.path.join (bicho_dot_dir (), 'cache')
-        
+
     @staticmethod        
     def load ():
         # FIXME: a hack to avoid circular dependencies. 
@@ -162,8 +156,8 @@ class Config:
         parser.add_option('-u', '--url', dest='url',
                           help='URL to get issues from using the backend',
                           default=None)
-        parser.add_option('--cache', action='store_true', dest='cache',
-                          help='Use cached data already retrieved',
+        parser.add_option('--test', action='store_true', dest='test',
+                          help='Use data already retrieved for testing',
                           default=False)
 
     
