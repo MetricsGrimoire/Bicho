@@ -6,25 +6,22 @@ from Bicho.Config import Config
 from Bicho.common import Tracker #, Issue, People, Change
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
-# search/?limit=15&q=status%3Aopen&page=10
-
 class AlluraTest(unittest.TestCase):
     
-    page = 10
-    limit = 15
-    status = 'open'
-    issue_id_test = 2643
+    page = 50
+    limit = 14
+    issue_id_test = 1500
     tests_data_dir = None
     issuesDB = None
+    issuesList_expected = [701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712, 713, 714]
     
     def read_issues(self):
         if not os.path.isdir (self.tests_data_dir):
             create_dir (self.tests_data_dir)
         project_name = Config.url.split("/")[-2]                
-        issues_file = project_name+"_p"+str(self.page)+"_"+str(self.limit)+"_"+self.status
+        issues_file = project_name+"_p"+str(self.page)+"_"+str(self.limit)
         self.project_issues_file = os.path.join(self.tests_data_dir, issues_file)
         print("Using project file test: " + issues_file)
-
         try:
             f = open(self.project_issues_file)
         except Exception, e:
@@ -32,7 +29,12 @@ class AlluraTest(unittest.TestCase):
             if e.errno == errno.ENOENT:
                 f = open(self.project_issues_file,'w+')
                 issues_url = Config.url+"/search/?limit="+str(self.limit)
-                issues_url +="&q=status%3A"+self.status+"&page="+str(self.page)
+                # Search to get all the results
+                time_window_start = "1900-01-01T00:00:00Z"
+                time_window_end = "2200-01-01T00:00:00Z"
+                time_window = time_window_start + " TO  " + time_window_end
+                issues_url +="&q=" + urllib.quote("mod_date_dt:["+time_window+"]")
+                issues_url +="&page="+str(self.page)
                 print "URL for getting data: " + issues_url
                 fr = urllib.urlopen(issues_url)
                 f.write(fr.read())
@@ -79,6 +81,7 @@ class AlluraTest(unittest.TestCase):
     def testReadIssues(self):
         issuesList_data = json.loads(self.read_issues())
         for issue in issuesList_data['tickets']:
+            self.assertTrue(issue['ticket_num'] in self.issuesList_expected, "Ticket not expected " + str(issue['ticket_num']))
             issue_data = json.loads(self.read_issue(issue['ticket_num']))
             issue_bicho = self.backend.parse_bug(issue_data['ticket'])
             changes_file = self.read_issue_changes(issue['ticket_num'])
