@@ -1065,8 +1065,11 @@ class DBBackend:
 def get_database(backend=None):
     """
     """
-    opts = Config()
+    opts = Config
+    if not vars(Config).has_key('url'):
+        opts = Config()
 
     if opts.db_driver_out == "mysql":
         from Bicho.db.mysql import DBMySQL
         return DBMySQL(backend)
+    
