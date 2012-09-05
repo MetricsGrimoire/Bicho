@@ -16,10 +16,7 @@ class AlluraTest(unittest.TestCase):
     issuesList_expected = [701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712, 713, 714]
     
     def read_issues(self):
-        if not os.path.isdir (self.tests_data_dir):
-            # create_dir (self.tests_data_dir)
-            os.makedirs (self.tests_data_dir)
-        project_name = Config.url.split("/")[-2]                
+        project_name = Config.url.split("/")[-2]
         issues_file = project_name+"_p"+str(self.page)+"_"+str(self.limit)
         self.project_issues_file = os.path.join(self.tests_data_dir, issues_file)
         print("Using project file test: " + issues_file)
@@ -47,8 +44,7 @@ class AlluraTest(unittest.TestCase):
         issue_url = Config.url+"/"+str(issue_id)
         project_name = Config.url.split("/")[-2]                 
         issue_file = os.path.join(self.tests_data_dir, project_name+"." + str(issue_id))
-         
-        try:             
+        try:
             f = open(issue_file)
         except Exception, e:
             if e.errno == errno.ENOENT:
@@ -144,6 +140,9 @@ class AlluraTest(unittest.TestCase):
         
         AlluraTest.tests_data_dir = os.path.join('./data/', AlluraTest.tracker.name)        
         AlluraTest.backend = Backend.create_backend(backend_name)
+        
+        if not os.path.isdir (AlluraTest.tests_data_dir):
+            os.makedirs (AlluraTest.tests_data_dir)
         
 if __name__ == '__main__':
     AlluraTest.setUpBackend()
