@@ -1,4 +1,4 @@
-import errno, json, os, pprint, sys, unittest, urllib
+import errno, feedparser, json, os, pprint, sys, unittest, urllib
 sys.path.insert(0, "..")
 from Bicho.backends import Backend
 from Bicho.Config import Config
@@ -35,7 +35,7 @@ class AlluraTest(unittest.TestCase):
                 f.write(fr.read())
                 f.close()
                 f = open(self.project_issues_file)
-        return f
+        return f.read()
     
     def read_issue(self, issue_id):
         issue_url = Config.url+"/"+str(issue_id)
@@ -55,7 +55,7 @@ class AlluraTest(unittest.TestCase):
             else:
                 print "ERROR", e.errno
                 raise e
-        return f
+        return f.read()
 
     # Open the changes bug data from a file for testing purposes
     def read_issue_changes(self, issue_id):
@@ -74,10 +74,13 @@ class AlluraTest(unittest.TestCase):
         return changes_file
 
     def testReadIssues(self):
-        issuesList_data = json.loads(self.read_issues().read())
+        issuesList_data = json.loads(self.read_issues())
         for issue in issuesList_data['tickets']:
-            issue_data = self.read_issue(issue['ticket_num'])
+            issue_data = json.loads(self.read_issue(issue['ticket_num']))
+            issue_bicho = self.backend.parse_bug(issue_data['ticket'])
             changes_file = self.read_issue_changes(issue['ticket_num'])
+            changes_data = feedparser.parse(changes_file)
+            changes_bicho = self.backend.parse_changes(changes_data)
         
     def testReadIssue(self): 
         self.read_issue(self.issue_id_test)
@@ -91,6 +94,7 @@ class AlluraTest(unittest.TestCase):
     
     def setUp(self):
         Config.delay = 1
+        Config.debug = True
         Config.url = "http://sourceforge.net/rest/p/allura/tickets"
         self.backend = Backend.create_backend('allura')
             
