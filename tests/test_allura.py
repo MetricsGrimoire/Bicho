@@ -90,7 +90,13 @@ class AlluraTest(unittest.TestCase):
             for c in changes_bicho:
                 issue_bicho.add_change(c)                 
             self.issuesDB.insert_issue(issue_bicho, AlluraTest.dbtracker.id)
-        
+
+        c = AlluraTest.db.cursor()
+        sql = "SELECT ticket_num FROM issues_ext_allura"
+        c.execute(sql)
+        for row in c.fetchall():
+            self.assertTrue(row[0] in self.issuesList_expected, "Ticket not expected in DB" + str(issue['ticket_num']))
+
     def testReadIssue(self): 
         self.read_issue(self.issue_id_test)
         
@@ -115,10 +121,11 @@ class AlluraTest(unittest.TestCase):
         Config.db_port_out = ""
         Config.db_database_out = "bichoalluraTest"
         
-        db = MySQLdb.connect(user=Config.db_user_out, passwd=Config.db_password_out)
-        c = db.cursor()
+        AlluraTest.db = MySQLdb.connect(user=Config.db_user_out, passwd=Config.db_password_out)
+        c = AlluraTest.db.cursor()
         sql = "DROP DATABASE " + Config.db_database_out
         sql += "; CREATE DATABASE "+ Config.db_database_out +" CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+        AlluraTest.db = MySQLdb.connect(user=Config.db_user_out, passwd=Config.db_password_out, db=Config.db_database_out)
         c.execute(sql)                        
 
     @staticmethod                
