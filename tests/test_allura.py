@@ -17,7 +17,8 @@ class AlluraTest(unittest.TestCase):
     
     def read_issues(self):
         if not os.path.isdir (self.tests_data_dir):
-            create_dir (self.tests_data_dir)
+            # create_dir (self.tests_data_dir)
+            os.makedirs (self.tests_data_dir)
         project_name = Config.url.split("/")[-2]                
         issues_file = project_name+"_p"+str(self.page)+"_"+str(self.limit)
         self.project_issues_file = os.path.join(self.tests_data_dir, issues_file)
