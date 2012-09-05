@@ -299,11 +299,11 @@ class Allura():
         printdbg("Analyzing issue changes" + changes_url)
 
         d = feedparser.parse(changes_url)
-        changes = self.parse_changes(d, bug_number)
+        changes = self.parse_changes(d)
         
         return changes
 
-    def parse_changes (self, activity, bug_id):
+    def parse_changes (self, activity):
         changesList = []
         for entry in activity['entries']:
             # print "changed_by:" + entry['author']
@@ -325,9 +325,6 @@ class Allura():
                     if old_value == "''": old_value =""
                     new_value = self.remove_unicode(values[1].strip())
                     if new_value == "''": new_value =""
-                # print "old_value:'" + old_value + "'"
-                # print "new_value:'" + new_value + "'"
-                # print "issue_id:'" + bug_id +"'"
                 update = parse(entry['updated'])
                 change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
                 changesList.append(change)
