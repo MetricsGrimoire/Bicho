@@ -121,6 +121,7 @@ class AlluraTest(unittest.TestCase):
         c = AlluraTest.db.cursor()
         sql = "CREATE DATABASE "+ Config.db_database_out +" CHARACTER SET utf8 COLLATE utf8_unicode_ci"
         c.execute(sql)
+        AlluraTest.db.close()
         AlluraTest.db = MySQLdb.connect(user=Config.db_user_out, passwd=Config.db_password_out, db=Config.db_database_out)
 
     @staticmethod                
@@ -147,6 +148,7 @@ class AlluraTest(unittest.TestCase):
         c = AlluraTest.db.cursor()
         sql = "DROP DATABASE " + Config.db_database_out
         c.execute(sql)
+        AlluraTest.db.close()
         
 if __name__ == '__main__':
     AlluraTest.setUpBackend()
