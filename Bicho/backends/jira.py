@@ -43,6 +43,8 @@ from BeautifulSoup import Comment as BFComment
 import xml.sax.handler
 #from xml.sax._exceptions import SAXParseException
 
+import feedparser
+
 
 
 class DBJiraIssueExt(object):
@@ -344,6 +346,7 @@ class SoupHtmlParser():
                 printerr("Change author format not supported")
                 sys.exit()
             author = People(change_author_str.strip())
+            author.set_email(BugsHandler.getUserEmail(change_author_str.strip()))
             if isinstance(change_author.contents[4], Tag):
                 date_str = change_author.contents[4].find('time')['datetime']
             elif isinstance(change_author.contents[4], NavigableString):
@@ -661,6 +664,35 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.description = ""
             self.environment = ""
 
+    @staticmethod
+    def remove_unicode(str):
+        """
+        Cleanup u'' chars indicating a unicode string
+        """
+        if (str.startswith('u\'') and str.endswith('\'')):
+            str = str[2:len(str)-1]
+        return str
+
+    @staticmethod
+    def getUserEmail(username):
+        # http://issues.liferay.com/activity?maxResults=1&streams=user+IS+kalman.vincze
+        if not vars(BugsHandler).has_key("_emails"):
+            BugsHandler._emails = {}
+        if BugsHandler._emails.has_key(username):
+            email = BugsHandler._emails[username]
+        else:
+            serverUrl = Config.url.split("/browse/")[0]
+            user_url = serverUrl + "/activity?maxResults=1&streams=user+IS+"+username
+            email = ""
+            d = feedparser.parse(user_url)
+            if d.has_key('entries'):
+                if len(d['entries'])>0:
+                    email = d['entries'][0]['author_detail']['email']
+                    email = BugsHandler.remove_unicode(email)
+                    printdbg(username + " " + email)
+            BugsHandler._emails[username] = email
+        return email
+        
     def getIssue(self):
         #Return the parse data bug into issue object
         for bug in self.mapping:
@@ -672,14 +704,16 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             status = bug.status
             resolution = bug.resolution
 
-            submitted_by = People(bug.assignee_username)
-            submitted_by.set_name(bug.assignee)            
+            assigned_by = People(bug.assignee_username)
+            assigned_by.set_name(bug.assignee)
+            assigned_by.set_email(BugsHandler.getUserEmail(bug.assignee_username))
 
-            assigned_by = People(bug.reporter_username)
-            assigned_by.set_name(bug.reporter)
-            
+            submitted_by = People(bug.reporter_username)
+            submitted_by.set_name(bug.reporter)
+            submitted_by.set_email(BugsHandler.getUserEmail(bug.reporter_username))
+
             submitted_on = parse(bug.created).replace(tzinfo=None)
-
+            
             issue = JiraIssue(issue_id, issue_type, summary, description, submitted_by, submitted_on)
             issue.set_assigned(assigned_by)
             issue.setIssue_key(bug.issue_key)
@@ -706,6 +740,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
             for comment in bug.comments:
                 comment_by = People(comment.comment_author)
+                comment_by.set_email(BugsHandler.getUserEmail(comment.comment_author))
                 comment_on = parse(comment.comment_created).replace(tzinfo=None)
                 com = Comment(comment.comment, comment_by, comment_on)
                 issue.add_comment(com)
@@ -713,6 +748,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             for attachment in bug.attachments:
                 url = "/secure/attachment/" + attachment.attachment_id + "/" + attachment.attachment_name
                 attachment_by = People(attachment.attachment_author)
+                attachment_by.set_email(BugsHandler.getUserEmail(attachment.attachment_author))
                 attachment_on = parse(attachment.attachment_created).replace(tzinfo=None)
                 attach = Attachment(url, attachment_by, attachment_on)
                 issue.add_attachment(attach)
