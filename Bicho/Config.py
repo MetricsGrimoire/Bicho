@@ -94,7 +94,7 @@ class Config:
         Config.check_params(['url','backend'])
         
         if Config.backend+".py" not in Backend.get_all_backends():
-            raise InvalidConfig('Backend "'+ Config.backend + '" does not exists')
+            raise InvalidConfig('Backend "'+ Config.backend + '" does not exist')
 
 
         url = urlparse.urlparse(Config.url)
