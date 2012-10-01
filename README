@@ -43,6 +43,7 @@ Latest version:
    - mysqldb or psycopg2 or pysqlite2
    - python-launchpadlib (for Launchpad backend)
  * Beautiful Soup library: error-tolerant HTML parser for Python
+ * python-feedparser
 
 
  Installation
