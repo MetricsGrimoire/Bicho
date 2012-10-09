@@ -612,56 +612,56 @@ class IssuesLog():
 
                     if (field in bg_issues_links):
                         table_field = bg_issues_links[field]
-                        db_ilog_bugzilla.submitted_by = changed_by
-                        db_ilog_bugzilla.date = date
+                        db_ilog.submitted_by = changed_by
+                        db_ilog.date = date
 
                         if table_field == 'summary':
-                            db_ilog_bugzilla.summary = new_value                    
+                            db_ilog.summary = new_value                    
                         elif table_field == 'priority':
-                            db_ilog_bugzilla.priority = new_value
+                            db_ilog.priority = new_value
                         elif table_field == 'type':
-                            db_ilog_bugzilla.type = new_value
+                            db_ilog.type = new_value
                         elif table_field == 'assigned_to':
-                            db_ilog_bugzilla.assigned_to = self.get_people_id(new_value)
+                            db_ilog.assigned_to = self.get_people_id(new_value)
                         elif table_field == 'status':
-                            db_ilog_bugzilla.status = new_value
+                            db_ilog.status = new_value
                         elif table_field == 'resolution':
-                            db_ilog_bugzilla.resolution = new_value
+                            db_ilog.resolution = new_value
                         elif table_field == 'alias':
-                            db_ilog_bugzilla.alias = new_value
+                            db_ilog.alias = new_value
                         elif table_field == 'reporter_accessible':
-                            db_ilog_bugzilla.reporter_accessible = new_value
+                            db_ilog.reporter_accessible = new_value
                         elif table_field == 'cclist_accessible':
-                            db_ilog_bugzilla.cclist_accessible = new_value
+                            db_ilog.cclist_accessible = new_value
                         elif table_field == 'product':
-                            db_ilog_bugzilla.product = new_value
+                            db_ilog.product = new_value
                         elif table_field == 'component':
-                            db_ilog_bugzilla.component = new_value
+                            db_ilog.component = new_value
                         elif table_field == 'version':
-                            db_ilog_bugzilla.version = new_value
+                            db_ilog.version = new_value
                         elif table_field == 'rep_platform':
-                            db_ilog_bugzilla.rep_platform = new_value
+                            db_ilog.rep_platform = new_value
                         elif table_field == 'op_sys':
-                            db_ilog_bugzilla.op_sys = new_value
+                            db_ilog.op_sys = new_value
                         elif table_field == 'bug_file_loc':
-                            db_ilog_bugzilla.bug_file_loc = new_value
+                            db_ilog.bug_file_loc = new_value
                         elif table_field == 'status_whiteboard':
-                            db_ilog_bugzilla.status_whiteboard = new_value
+                            db_ilog.status_whiteboard = new_value
                         elif table_field == 'target_milestone':
-                            db_ilog_bugzilla.target_milestone = new_value
+                            db_ilog.target_milestone = new_value
                         elif table_field == 'votes':
-                            db_ilog_bugzilla.votes = new_value
+                            db_ilog.votes = new_value
                         elif table_field == 'everconfirmed':
-                            db_ilog_bugzilla.everconfirmed = new_value
+                            db_ilog.everconfirmed = new_value
                         elif table_field == 'qa_contact':
-                            db_ilog_bugzilla.qa_contact = new_value
+                            db_ilog.qa_contact = new_value
                         elif table_field == 'keywords':
-                            db_ilog_bugzilla.Keywords = new_value
+                            db_ilog.Keywords = new_value
                         elif table_field == 'cc':
-                            db_ilog_bugzilla.cc = new_value
+                            db_ilog.cc = new_value
 
                         try:
-                            self.store.add(db_ilog_bugzilla)
+                            self.store.add(db_ilog)
                         except:
                             traceback.print_exc()
                             
