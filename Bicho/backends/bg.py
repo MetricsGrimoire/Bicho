@@ -908,9 +908,8 @@ class BGBackend (Backend):
 
         result = urlparse.urlparse(url)
 
-        # Some trackers use 'bugzilla' in the path
-        pos = result.path.find('/bugzilla/')
-        newpath = result.path[pos:pos + len('/bugzilla/')]
+        pos = result.path.find('buglist.cgi')
+        newpath = result.path[0:pos]
 
         domain = urlparse.urljoin(result.scheme + '://' + result.netloc + '/',
                                   newpath)
