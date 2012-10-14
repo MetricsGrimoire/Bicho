@@ -1059,7 +1059,7 @@ class BGBackend (Backend):
         trk = Tracker (self.get_domain(self.url), "bugzilla", bugzilla_version)
         dbtrk = bugsdb.insert_tracker(trk)
 
-        if (bugzilla_version == "3.2.3"):
+        if (bugzilla_version == "3.2.3" or bugzilla_version == "3.2.2"):
             url = self.url + "&order=Last+Changed&ctype=csv"
         else:
             url = self.url + "&order=changeddate&ctype=csv"
