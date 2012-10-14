@@ -924,7 +924,7 @@ class BGBackend (Backend):
         f = self.__urlopen_auth(url)
 
         printdbg("Getting bugzilla info: %s" % (url))
-
+                
         try:
             parser.feed(f.read())
         except Exception:
@@ -1052,7 +1052,10 @@ class BGBackend (Backend):
             self.__login()
 
         # bugzilla version
-        url_bugzilla_info = self.get_domain(self.url) + "show_bug.cgi?id=0&ctype=xml"
+        if self.url.find("show_bug.cgi")>0:
+            url_bugzilla_info = self.url + "&ctype=xml"
+        else:
+            url_bugzilla_info = self.get_domain(self.url) + "show_bug.cgi?id=0&ctype=xml"
         bugzilla_version = self.get_bugzilla_version(url_bugzilla_info)
         printdbg("Bugzilla version: " + bugzilla_version)
         bugsdb.insert_supported_traker("bugzilla", bugzilla_version)
