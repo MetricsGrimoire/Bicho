@@ -19,7 +19,13 @@
 #
 #
 
-import cookielib, pprint, string, sys, time, urllib, urllib2
+import cookielib
+import pprint
+import string
+import sys
+import time
+import urllib
+import urllib2
 import traceback
 
 from BeautifulSoup import BeautifulSoup
@@ -30,9 +36,11 @@ from Bicho.backends.jira import DBJiraIssueExt
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change
-from Bicho.db.database import DBIssue, DBBackend, get_database, DBTracker, DBPeople
+from Bicho.db.database import DBIssue, DBBackend, get_database, DBTracker, \
+     DBPeople
 
-from storm.locals import DateTime, Int, Reference, Unicode, Desc, Store, create_database
+from storm.locals import DateTime, Int, Reference, Unicode, Desc, Store, \
+     create_database
 import xml.sax.handler
 
 from dateutil.parser import parse
@@ -151,53 +159,54 @@ __sql_table_jira__ = 'CREATE TABLE IF NOT EXISTS issues_log_jira ( \
 #
 
 bg_issues_links = {
-    "Summary":"summary",
-    "Priority":"priority",
-    "Assignee":"assigned_to",
-    "status":"status",
-    "resolution":"resolution",
-    "Severity":"type",
-    "Alias":"alias",
-    "Reporter accessible":"reporter_accessible",
-    "CC list accessible":"cclist_accessible",
+    "Summary": "summary",
+    "Priority": "priority",
+    "Assignee": "assigned_to",
+    "status": "status",
+    "resolution": "resolution",
+    "Severity": "type",
+    "Alias": "alias",
+    "Reporter accessible": "reporter_accessible",
+    "CC list accessible": "cclist_accessible",
     #"":"classification_id",
     #"":"classification",
-    "Product":"product",
-    "Component":"component",
-    "Version":"version",
-    "Hardware":"rep_platform",
-    "OS":"op_sys",
+    "Product": "product",
+    "Component": "component",
+    "Version": "version",
+    "Hardware": "rep_platform",
+    "OS": "op_sys",
     #"":"dup_id",
-    "URL":"bug_file_loc",
-    "Whiteboard":"status_whiteboard",
-    "Target Milestone":"target_milestone",
-    "Votes":"votes",
-    "Ever confirmed":"everconfirmed",
-    "QA Contact":"qa_contact",
+    "URL": "bug_file_loc",
+    "Whiteboard": "status_whiteboard",
+    "Target Milestone": "target_milestone",
+    "Votes": "votes",
+    "Ever confirmed": "everconfirmed",
+    "QA Contact": "qa_contact",
     #"":"estimated_time",
     #"":"remaining_time",
     #"":"actual_time",
     #"":"deadline",
-    "Keywords":"keywords",
+    "Keywords": "keywords",
     #"":"flag",
     #"":"group_bugzilla",
-    "CC":"cc"}
+    "CC": "cc"}
 
 jira_issues_links = {
-    "Link":"link",
-    "Summary":"summary",
-    "Priority":"priority",
-    "Resolution":"resolution",
-    "Status":"status",
-    "Assignee":"assigned_to",
-    "Fix Version/s":"version",
-    #"Comment":"",
-    #"Attachment":"",
-    "Environment":"environment",
-    "Component/s":"component",
-    "Issue Type":"type",
-    "Description":"description",
-    "Security":"security"}
+    "Link": "link",
+    "Summary": "summary",
+    "Priority": "priority",
+    "Resolution": "resolution",
+    "Status": "status",
+    "Assignee": "assigned_to",
+    "Fix Version/s": "version",
+    #"Comment": "",
+    #"Attachment": "",
+    "Environment": "environment",
+    "Component/s": "component",
+    "Issue Type": "type",
+    "Description": "description",
+    "Security": "security"}
+
 
 class DBIssuesLog(object):
     """
@@ -260,13 +269,14 @@ class DBBugzillaIssuesLog(DBIssuesLog):
     flag = Unicode()
     issue_id = Int()
 
+
 class DBJiraIssuesLog(DBIssuesLog):
     """
     """
     __storm_table__ = 'issues_log_jira'
     issue_key = Unicode()
     link = Unicode()
-    environment = Unicode()    
+    environment = Unicode()
     security = Unicode()
     updated = DateTime()
     version = Unicode()
@@ -275,12 +285,11 @@ class DBJiraIssuesLog(DBIssuesLog):
     project = Unicode()
     project_id = Int
     project_key = Unicode()
-    
 
 
 class IssuesLog():
 
-    def __init__(self,backend_name):
+    def __init__(self, backend_name):
         self.backend_name = backend_name
         self.connect()
         self.create_db()
@@ -318,7 +327,7 @@ class IssuesLog():
             aux.priority = db_ilog.priority
             aux.submitted_by = db_ilog.submitted_by
             aux.date = db_ilog.date
-            aux.assigned_to = db_ilog.assigned_to        
+            aux.assigned_to = db_ilog.assigned_to
 
             #aux = DBBugzillaIssuesLog (db_ilog.issue_id)
             aux.alias = db_ilog.alias
@@ -348,7 +357,7 @@ class IssuesLog():
             aux.group_bugzilla = db_ilog.group_bugzilla
             aux.flag = db_ilog.flag
             return aux
-        
+
         elif self.backend_is_jira():
             aux = DBJiraIssuesLog(db_ilog.issue, db_ilog.tracker_id)
             aux.issue_id = db_ilog.issue_id
@@ -360,7 +369,7 @@ class IssuesLog():
             aux.priority = db_ilog.priority
             aux.submitted_by = db_ilog.submitted_by
             aux.date = db_ilog.date
-            aux.assigned_to = db_ilog.assigned_to        
+            aux.assigned_to = db_ilog.assigned_to
 
             aux.link = db_ilog.link
             aux.component = db_ilog.component
@@ -392,10 +401,12 @@ class IssuesLog():
         This method gets the first changes of every field in
         order to get the initial state of the bug
         """
-        fields = self.store.execute("SELECT DISTINCT(field) FROM changes where issue_id=%s" % (db_ilog.issue_id))
+        fields = self.store.execute("SELECT DISTINCT(field) FROM changes\
+        where issue_id=%s" % (db_ilog.issue_id))
 
         for f in fields:
-            value = self.store.execute("SELECT old_value FROM changes WHERE issue_id=%s AND field=\"%s\" ORDER BY changed_on LIMIT 1"
+            value = self.store.execute("SELECT old_value FROM changes \
+            WHERE issue_id=%s AND field=\"%s\" ORDER BY changed_on LIMIT 1"
                                   % (db_ilog.issue_id, f[0]))
             for v in value:
                 if self.backend_is_bugzilla():
@@ -479,7 +490,7 @@ class IssuesLog():
 
     def backend_is_bugzilla(self):
         return self.backend_name == 'bg'
-    
+
     def backend_is_jira(self):
         return self.backend_name == 'jira'
 
@@ -499,7 +510,8 @@ class IssuesLog():
             db_ilog_bugzilla.date = i.submitted_on
             db_ilog_bugzilla.assigned_to = i.assigned_to
 
-            ib = self.store.find(DBBugzillaIssueExt, DBBugzillaIssueExt.issue_id == db_ilog_bugzilla.issue_id).one()
+            ib = self.store.find(DBBugzillaIssueExt, \
+                                 DBBugzillaIssueExt.issue_id == db_ilog_bugzilla.issue_id).one()
 
             ####
             db_ilog_bugzilla.alias = ib.alias
@@ -528,7 +540,7 @@ class IssuesLog():
             db_ilog_bugzilla.cc = ib.cc
             db_ilog_bugzilla.group_bugzilla = ib.group_bugzilla
             db_ilog_bugzilla.flag = ib.flag
-            db_ilog=db_ilog_bugzilla
+            db_ilog = db_ilog_bugzilla
 
         elif self.backend_is_jira():
             db_ilog = DBJiraIssuesLog(i.issue, i.tracker_id)
@@ -543,7 +555,8 @@ class IssuesLog():
             db_ilog.date = i.submitted_on
             db_ilog.assigned_to = i.assigned_to
 
-            ib = self.store.find(DBJiraIssueExt, DBJiraIssueExt.issue_id == db_ilog.issue_id).one()
+            ib = self.store.find(DBJiraIssueExt, \
+                                 DBJiraIssueExt.issue_id == db_ilog.issue_id).one()
 
             db_ilog.issue_key = ib.issue_key
             db_ilog.link = ib.link
@@ -556,9 +569,9 @@ class IssuesLog():
             db_ilog.project = ib.project
             db_ilog.project_id = ib.project_id
             db_ilog.project_key = ib.project_key
-            
+
         return db_ilog
-        
+
     def run(self):
         issues = self.store.find(DBIssue)
         for i in issues:
@@ -568,10 +581,11 @@ class IssuesLog():
 
             db_ilog = self.build_initial_state(db_ilog)
             self.store.add(db_ilog)
-            
+
             # the code below gets all the changes and insert a row per change
-            changes = self.store.execute("SELECT field, new_value, changed_by, changed_on FROM changes where issue_id=%s" % (db_ilog.issue_id))
-            
+            changes = self.store.execute("SELECT field, new_value, changed_by,\
+            changed_on FROM changes where issue_id=%s" % (db_ilog.issue_id))
+
             for ch in changes:
                 field = ch[0]
                 new_value = ch[1]
@@ -579,7 +593,7 @@ class IssuesLog():
                 date = ch[3]
 
                 db_ilog = self.copy_issue(db_ilog)
-                #db_ilog_bugzilla = self.copy_issue_ext_bugzilla(db_ilog_bugzilla)
+
                 if self.backend_is_bugzilla():
                     # Bugzilla section
                     #
@@ -591,7 +605,7 @@ class IssuesLog():
                         db_ilog.date = date
 
                         if table_field == 'summary':
-                            db_ilog.summary = new_value                    
+                            db_ilog.summary = new_value
                         elif table_field == 'priority':
                             db_ilog.priority = new_value
                         elif table_field == 'type':
@@ -639,7 +653,7 @@ class IssuesLog():
                             self.store.add(db_ilog)
                         except:
                             traceback.print_exc()
-                            
+
                 if self.backend_is_jira():
                     # Jira section
                     #
@@ -651,7 +665,7 @@ class IssuesLog():
                         db_ilog.date = date
 
                         if table_field == 'summary':
-                            db_ilog.summary = new_value                    
+                            db_ilog.summary = new_value
                         elif table_field == 'priority':
                             db_ilog.priority = new_value
                         elif table_field == 'type':
@@ -677,7 +691,4 @@ class IssuesLog():
                         except:
                             traceback.print_exc()
 
-            
             self.store.commit()
-
-        
