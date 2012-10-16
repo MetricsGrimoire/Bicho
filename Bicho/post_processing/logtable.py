@@ -199,63 +199,6 @@ jira_issues_links = {
     "Description":"description",
     "Security":"security"}
 
-
-
-class DBBugzillaIssuesLog(object):
-    """
-    """
-    __storm_table__ = 'issues_log_bugzilla'
-    id = Int(primary=True)
-    #
-    issue_id = Int()
-    issue = Unicode()
-    type = Unicode()
-    summary = Unicode()
-    description = Unicode()
-    status = Unicode()
-    resolution = Unicode()
-    priority = Unicode()
-    submitted_by = Int()
-    date = DateTime()
-    assigned_to = Int()
-    tracker_id = Int()
-    #
-    alias = Unicode()
-    delta_ts = DateTime()
-    reporter_accessible = Unicode()
-    cclist_accessible = Unicode()
-    classification_id = Unicode()
-    classification = Unicode()
-    product = Unicode()
-    component = Unicode()
-    version = Unicode()
-    rep_platform = Unicode()
-    op_sys = Unicode()
-    dup_id = Int()
-    bug_file_loc = Unicode()
-    status_whiteboard = Unicode()
-    target_milestone = Unicode()
-    votes = Int()
-    everconfirmed = Unicode()
-    qa_contact = Unicode()
-    estimated_time = Unicode()
-    remaining_time = Unicode()
-    actual_time = Unicode()
-    deadline = DateTime()
-    keywords = Unicode()
-    cc = Unicode()
-    group_bugzilla = Unicode()
-    flag = Unicode()
-    issue_id = Int()
-
-    tracker = Reference(tracker_id, DBTracker.id)
-    submitted = Reference(submitted_by, DBPeople.id)
-    assigned = Reference(assigned_to, DBPeople.id)
-
-    def __init__(self, issue, tracker_id):
-        self.issue = unicode(issue)
-        self.tracker_id = tracker_id
-
 class DBIssuesLog(object):
     """
     """
@@ -284,6 +227,38 @@ class DBIssuesLog(object):
         self.issue = unicode(issue)
         self.tracker_id = tracker_id
 
+
+class DBBugzillaIssuesLog(DBIssuesLog):
+    """
+    """
+    __storm_table__ = 'issues_log_bugzilla'
+    alias = Unicode()
+    delta_ts = DateTime()
+    reporter_accessible = Unicode()
+    cclist_accessible = Unicode()
+    classification_id = Unicode()
+    classification = Unicode()
+    product = Unicode()
+    component = Unicode()
+    version = Unicode()
+    rep_platform = Unicode()
+    op_sys = Unicode()
+    dup_id = Int()
+    bug_file_loc = Unicode()
+    status_whiteboard = Unicode()
+    target_milestone = Unicode()
+    votes = Int()
+    everconfirmed = Unicode()
+    qa_contact = Unicode()
+    estimated_time = Unicode()
+    remaining_time = Unicode()
+    actual_time = Unicode()
+    deadline = DateTime()
+    keywords = Unicode()
+    cc = Unicode()
+    group_bugzilla = Unicode()
+    flag = Unicode()
+    issue_id = Int()
 
 class DBJiraIssuesLog(DBIssuesLog):
     """
