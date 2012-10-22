@@ -13,6 +13,7 @@ Currently it supports:
 - Allura (unstable)
 - Github (unstable)
 - Google Code (unstable)
+- Redmine (unstable, no changes)
 
 
  License
@@ -90,6 +91,10 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 
 E7. Getting information from a project using Google Code
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b googlecode -u https://code.google.com/feeds/issues/p/apv
+
+E8. Getting information from a project using Google Code
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u https://www.bitergia.net/issues.json
+
 
  Analysis
 ---------
