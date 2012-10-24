@@ -776,6 +776,15 @@ class JiraBackend(Backend):
         bugs = data_url.split("<issue")[1].split('\"/>')[0].split("total=\"")[1]
         return int(bugs)
 
+    # http://stackoverflow.com/questions/8733233/filtering-out-certain-bytes-in-python
+    def valid_XML_char_ordinal(self, i):
+        return ( # conditions ordered by presumed frequency
+            0x20 <= i <= 0xD7FF
+            or i in (0x9, 0xA, 0xD)
+            or 0xE000 <= i <= 0xFFFD
+            or 0x10000 <= i <= 0x10FFFF
+            )
+
 
     def analyze_bug_list(self, nissues, offset, bugsdb, dbtrk_id):
         serverUrl = self.url.split("/browse/")[0]
@@ -784,24 +793,27 @@ class JiraBackend(Backend):
         url_issues  = serverUrl + query + "?pid="+product
         url_issues += "&tempMax=" + str(nissues) + "&pager/start=" + str(offset)
         printdbg(url_issues)
-        parser = xml.sax.make_parser(  )
-        handler = BugsHandler(  )
-        parser.setContentHandler(handler)
+        handler = BugsHandler()
 
         try:
-            parser.parse(url_issues)
+            # we need to clean the XML to be sure it is error free
+            f = urllib.urlopen(url_issues)
+            contents = f.read()
+            cleaned_contents = ''. \
+                join(c for c in contents if self.valid_XML_char_ordinal(ord(c)))
+            # parser.parse(url_issues)
+            xml.sax.parseString(cleaned_contents, handler)
             issues = handler.getIssues()            
             for issue in issues:
                 bugsdb.insert_issue(issue, dbtrk_id)
         except Exception, e:
-            #printerr(e)
             print(e)
 
  
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        issues_per_xml_query = 500
+        issues_per_xml_query = 5
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
