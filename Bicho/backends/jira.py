@@ -813,7 +813,7 @@ class JiraBackend(Backend):
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        issues_per_xml_query = 5
+        issues_per_xml_query = 500
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
