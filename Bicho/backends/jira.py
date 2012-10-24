@@ -26,7 +26,7 @@ import urllib
 import time
 import sys, pprint
 
-from storm.locals import Int, DateTime, Unicode, Reference
+from storm.locals import Int, DateTime, Unicode, Reference, Desc
 
 from dateutil.parser import parse
 from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
@@ -188,6 +188,17 @@ class DBJiraBackend(DBBackend):
         Does nothing
         """
         pass
+
+    def get_last_modification_date(self, store):
+        # get last modification date (day) stored in the database
+        # select date_last_updated as date from issues_ext_bugzilla order by date
+        result = store.find(DBJiraIssueExt)
+        aux = result.order_by(Desc(DBJiraIssueExt.updated))[:1]
+
+        for entry in aux:
+            return entry.updated.strftime('%Y-%m-%d') 
+
+        return None
 
 
 ####################################
@@ -767,10 +778,20 @@ class JiraBackend(Backend):
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
-   
+        
+    def basic_jira_url(self):
+        serverUrl = self.url.split("/browse/")[0]
+        product = self.url.split("/browse/")[1]
+        query = "/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml"
+        url_issues  = serverUrl + query + "?pid="+product
+        url_issues += "&sorter/field=updated&sorter/order=INC"
+        if self.last_mod_date:
+             url_issues += "&updated:after="+self.last_mod_date
+        return url_issues
+
     def bugsNumber(self,url):
-        serverUrl = url.split("/browse/")[0]
-        oneBug = serverUrl + "/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml?jqlQuery=project+%3D+" + url.split("/browse/")[1] + "&tempMax=1"
+        oneBug = self.basic_jira_url()
+        oneBug += "&tempMax=1"
         printdbg("Getting number of issues: " + oneBug)
         data_url = urllib.urlopen(oneBug).read()
         bugs = data_url.split("<issue")[1].split('\"/>')[0].split("total=\"")[1]
@@ -785,12 +806,8 @@ class JiraBackend(Backend):
             or 0x10000 <= i <= 0x10FFFF
             )
 
-
     def analyze_bug_list(self, nissues, offset, bugsdb, dbtrk_id):
-        serverUrl = self.url.split("/browse/")[0]
-        product = self.url.split("/browse/")[1]
-        query = "/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml"
-        url_issues  = serverUrl + query + "?pid="+product
+        url_issues = self.basic_jira_url()
         url_issues += "&tempMax=" + str(nissues) + "&pager/start=" + str(offset)
         printdbg(url_issues)
         handler = BugsHandler()
@@ -843,6 +860,11 @@ class JiraBackend(Backend):
                 print(e)
 
         else:
+            self.last_mod_date = bugsdb.get_last_modification_date()
+            if self.last_mod_date:
+                # self.url = self.url + "&updated:after=" + last_mod_date
+                printdbg("Last bugs cached were modified on: %s" % self.last_mod_date)
+
             bugs_number = self.bugsNumber(self.url)
             print "Total bugs", str(bugs_number)
             remaining = bugs_number
