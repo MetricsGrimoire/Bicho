@@ -325,6 +325,7 @@ class SoupHtmlParser():
     def __init__ (self, html, idBug):
         self.html = html
         self.idBug = idBug
+        self.changes_lost = 0
 
     def remove_comments(self, soup):
         cmts = soup.findAll(text=lambda text:isinstance(text, BFComment))
@@ -346,8 +347,9 @@ class SoupHtmlParser():
     
         for table in tables:
             change_author = table.find("div", {"class": "action-details"})
-            
-            if change_author == None:
+            if change_author == None or len(change_author)<3:
+                self.changes_lost += 1
+                printerr("Change author format not supported. Change lost!")
                 break
             if isinstance(change_author.contents[2], Tag):
                 change_author_str = change_author.contents[2]['rel']
@@ -355,7 +357,8 @@ class SoupHtmlParser():
                 change_author_str = change_author.contents[2]
             else:
                 printerr("Change author format not supported")
-                sys.exit()
+                pprint.pprint(change_author)
+                # sys.exit() for a prob with a change we don't exit for the full ana
             author = People(change_author_str.strip())
             author.set_email(BugsHandler.getUserEmail(change_author_str.strip()))
             if isinstance(change_author.contents[4], Tag):
@@ -826,6 +829,7 @@ class JiraBackend(Backend):
         except Exception, e:
             import traceback
             traceback.print_exc()
+            sys.exit(0)
  
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
