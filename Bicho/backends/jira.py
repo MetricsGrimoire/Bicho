@@ -488,17 +488,17 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_votes = True
         elif name == 'project':
             self.is_project = True
-            self.project_id = str(attrs['id'])
-            self.project_key = str(attrs['key'])
+            self.project_id = attrs['id']
+            self.project_key = attrs['key']
         elif name == 'key':
             self.is_issue_key = True
             self.key_id = attrs['id']
         elif name == 'assignee':
             self.is_assignee = True
-            self.assignee_username = str(attrs['username'])
+            self.assignee_username = attrs['username']
         elif name == 'reporter':
             self.is_reporter = True
-            self.reporter_username = str(attrs['username'])
+            self.reporter_username = attrs['username']
         elif name == 'comment':
             self.is_comment = True
             self.comment_id = attrs['id']
@@ -522,9 +522,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     def characters(self, ch):
         if self.is_title:
-            self.title = str(ch)
+            self.title = ch
         elif self.is_link:
-            self.link = str(ch)
+            self.link = ch
         elif self.is_description:
             #FIXME problems with ascii, not support str() function
             if (self.first_desc == True):
@@ -532,18 +532,17 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             else:
                 self.description = self.description + ch.strip()
         elif self.is_environment:
-            self.environment = self.environment + str(ch)
+            self.environment = self.environment + ch
         elif self.is_summary:
-            self.summary = str(ch)
+            self.summary = ch
         elif self.is_bug_type:
-            self.bug_type = str(ch)
+            self.bug_type = ch
         elif self.is_status:
-            self.status = str(ch)
+            self.status = ch
         elif self.is_resolution:
-            self.resolution = str(ch)
+            self.resolution = ch
         elif self.is_security:
-            print str(ch)
-            self.security = str(ch)
+            self.security = ch
         elif self.is_assignee:
             #FIXME problems with ascii, not support str() function
             self.assignee = ch
@@ -551,19 +550,19 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             #FIXME problems with ascii, not support str() function
             self.reporter = ch
         elif self.is_created:
-            self.created = str(ch)
+            self.created = ch
         elif self.is_updated:
-            self.updated = str(ch)
+            self.updated = ch
         elif self.is_version:
-            self.version = str(ch)
+            self.version = ch
         elif self.is_component:
-            self.component = str(ch)
+            self.component = ch
         elif self.is_votes:
             self.votes = int(ch)
         elif self.is_project:
-            self.project = str(ch)
+            self.project = ch
         elif self.is_issue_key:
-            self.issue_key = str(ch)
+            self.issue_key = ch
         elif self.is_comment:
             #FIXME problems with ascii, not support str() function
             self.comment = self.comment + ch
@@ -685,6 +684,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     @staticmethod
     def getUserEmail(username):
+        return ""
         # http://issues.liferay.com/activity?maxResults=1&streams=user+IS+kalman.vincze
         if not vars(BugsHandler).has_key("_emails"):
             BugsHandler._emails = {}
@@ -824,8 +824,8 @@ class JiraBackend(Backend):
             for issue in issues:
                 bugsdb.insert_issue(issue, dbtrk_id)
         except Exception, e:
-            print(e)
-
+            import traceback
+            traceback.print_exc()
  
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
