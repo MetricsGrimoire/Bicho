@@ -350,15 +350,15 @@ class SoupHtmlParser():
             if change_author == None or len(change_author)<3:
                 self.changes_lost += 1
                 printerr("Change author format not supported. Change lost!")
-                break
+                continue
             if isinstance(change_author.contents[2], Tag):
                 change_author_str = change_author.contents[2]['rel']
             elif isinstance(change_author.contents[2], NavigableString):
                 change_author_str = change_author.contents[2]
             else:
                 printerr("Change author format not supported")
-                pprint.pprint(change_author)
-                # sys.exit() for a prob with a change we don't exit for the full ana
+                printdbg(change_author)
+                continue
             author = People(change_author_str.strip())
             author.set_email(BugsHandler.getUserEmail(change_author_str.strip()))
             if isinstance(change_author.contents[4], Tag):
@@ -367,7 +367,7 @@ class SoupHtmlParser():
                 date_str = change_author.contents[4]
             else:
                 printerr("Change date format not supported")
-                sys.exit()
+                continue
             date = parse(date_str).replace(tzinfo=None)
  
             rows = list(table.findAll('tr'))
@@ -465,6 +465,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_title = True
         elif name == 'link':
             self.is_link = True
+            self.link = ''
         elif name == 'description':
             self.is_description = True
         elif name == 'environment':
@@ -481,6 +482,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_security = True
         elif name == 'created':
             self.is_created = True
+            self.created = ''
         elif name == 'updated':
             self.is_updated = True
         elif name == 'version':
@@ -527,7 +529,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         if self.is_title:
             self.title = ch
         elif self.is_link:
-            self.link = ch
+            self.link += ch
         elif self.is_description:
             #FIXME problems with ascii, not support str() function
             if (self.first_desc == True):
@@ -553,7 +555,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             #FIXME problems with ascii, not support str() function
             self.reporter = ch
         elif self.is_created:
-            self.created = ch
+            self.created += ch
         elif self.is_updated:
             self.updated = ch
         elif self.is_version:
@@ -749,6 +751,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.setResolution(resolution)
 
         bug_activity_url = bug.link + '?page=com.atlassian.jira.plugin.system.issuetabpanels%3Achangehistory-tabpanel'
+        printdbg("Bug activity: " + bug_activity_url)
         data_activity = urllib.urlopen(bug_activity_url).read()
         parser = SoupHtmlParser(data_activity, bug.key_id)
         changes = parser.parse_changes()
