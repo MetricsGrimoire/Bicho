@@ -811,21 +811,41 @@ class JiraBackend(Backend):
             or 0xE000 <= i <= 0xFFFD
             or 0x10000 <= i <= 0x10FFFF
             )
+        
+    def safe_xml_parse(self, url_issues, handler):
+        f = urllib.urlopen(url_issues)
+        parser = xml.sax.make_parser()
+        parser.setContentHandler(handler)
+
+        try:
+            contents = f.read()
+            parser.feed(contents)
+            parser.close()
+        except Exception:
+            # Clean only the invalid XML
+            try:
+                parser2 = xml.sax.make_parser()
+                parser2.setContentHandler(handler)
+                parser2.setContentHandler(handler)
+                printdbg("Cleaning dirty XML")
+                cleaned_contents = ''. \
+                    join(c for c in contents if self.valid_XML_char_ordinal(ord(c)))
+                parser2.feed(cleaned_contents)
+                parser2.close()
+            except Exception:
+                printerr("Error parsing URL: %s" % (bugs_url))
+                raise
+        f.close()
 
     def analyze_bug_list(self, nissues, offset, bugsdb, dbtrk_id):
         url_issues = self.basic_jira_url()
         url_issues += "&tempMax=" + str(nissues) + "&pager/start=" + str(offset)
         printdbg(url_issues)
+        
         handler = BugsHandler()
+        self.safe_xml_parse(url_issues, handler)
 
         try:
-            # we need to clean the XML to be sure it is error free
-            f = urllib.urlopen(url_issues)
-            contents = f.read()
-            cleaned_contents = ''. \
-                join(c for c in contents if self.valid_XML_char_ordinal(ord(c)))
-            # parser.parse(url_issues)
-            xml.sax.parseString(cleaned_contents, handler)
             issues = handler.getIssues()            
             for issue in issues:
                 bugsdb.insert_issue(issue, dbtrk_id)
