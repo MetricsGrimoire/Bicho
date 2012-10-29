@@ -860,7 +860,7 @@ class JiraBackend(Backend):
             parser.setContentHandler(handler)
             try:
                 parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")
-                issue = handler.getIssue()
+                issue = handler.getIssues()[0]
                 bugsdb.insert_issue(issue, dbtrk.id)
             except Exception, e:
                 #printerr(e)
