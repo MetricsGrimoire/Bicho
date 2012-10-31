@@ -24,7 +24,7 @@
 import datetime
 import urllib
 import time
-import sys, pprint
+import sys
 
 from storm.locals import Int, DateTime, Unicode, Reference, Desc
 
@@ -485,6 +485,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.created = ''
         elif name == 'updated':
             self.is_updated = True
+            self.updated = ''
         elif name == 'version':
             self.is_version = True
         elif name == 'component':
@@ -557,7 +558,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif self.is_created:
             self.created += ch
         elif self.is_updated:
-            self.updated = ch
+            self.updated += ch
         elif self.is_version:
             self.version = ch
         elif self.is_component:
@@ -837,7 +838,7 @@ class JiraBackend(Backend):
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        issues_per_xml_query = 500
+        issues_per_xml_query = 10
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
