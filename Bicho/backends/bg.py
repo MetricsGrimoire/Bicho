@@ -922,15 +922,17 @@ class BGBackend (Backend):
 
         result = urlparse.urlparse(url)
 
-        # Some trackers use 'bugzilla' in the path
-        pos = result.path.find('/bugzilla/')
-        newpath = result.path[pos:pos + len('/bugzilla/')]
+        if url.find("show_bug.cgi")>0:
+            pos = result.path.find('show_bug.cgi')
+        elif url.find("buglist.cgi")>0:
+            pos = result.path.find('buglist.cgi')
+
+        newpath = result.path[0:pos]
 
         domain = urlparse.urljoin(result.scheme + '://' + result.netloc + '/',
                                   newpath)
         return domain
     
-
     def get_bugzilla_version(self, url):
         handler = BugzillaHandler()
         parser = xml.sax.make_parser()
@@ -939,9 +941,12 @@ class BGBackend (Backend):
         f = self.__urlopen_auth(url)
 
         printdbg("Getting bugzilla info: %s" % (url))
-
+                
         try:
-            parser.feed(f.read())
+            contents = f.read()
+            cleaned_contents = ''. \
+                join(c for c in contents if self.valid_XML_char_ordinal(ord(c)))
+            parser.feed(cleaned_contents)
         except Exception:
             printerr("Error parsing URL in get_bugzilla info: %s" % (url))
             raise
@@ -950,6 +955,41 @@ class BGBackend (Backend):
         parser.close()
 
         return handler.get_bugzilla_version()
+
+    # http://stackoverflow.com/questions/8733233/filtering-out-certain-bytes-in-python
+    def valid_XML_char_ordinal(self, i):
+        return ( # conditions ordered by presumed frequency
+            0x20 <= i <= 0xD7FF
+            or i in (0x9, 0xA, 0xD)
+            or 0xE000 <= i <= 0xFFFD
+            or 0x10000 <= i <= 0x10FFFF
+        )
+
+    def safe_xml_parse(self, bugs_url, handler):
+
+        f = self.__urlopen_auth(bugs_url)
+        parser = xml.sax.make_parser()
+        parser.setContentHandler(handler)
+
+        try:
+            contents = f.read()
+            parser.feed(contents)
+            parser.close()
+        except Exception:
+            # Clean only the invalid XML
+            try:
+                parser2 = xml.sax.make_parser()
+                parser2.setContentHandler(handler)
+                parser2.setContentHandler(handler)
+                printdbg("Cleaning dirty XML")
+                cleaned_contents = ''. \
+                    join(c for c in contents if self.valid_XML_char_ordinal(ord(c)))
+                parser2.feed(cleaned_contents)
+                parser2.close()
+            except Exception:
+                printerr("Error parsing URL: %s" % (bugs_url))
+                raise   
+        f.close()
 
     def analyze_bug_list (self, bugs_id, url, dbtrk_id, bugsdb):
         #Retrieving main bug information
@@ -961,35 +1001,11 @@ class BGBackend (Backend):
         bugs_url += "ctype=xml"
         
         printdbg(bugs_url)
-
         handler = BugsHandler()
-        parser = xml.sax.make_parser()
-        parser.setContentHandler(handler)
-
-        
-
-        ## In [43]: opener = urllib2.build_opener()
-        ## In [44]: opener.addheaders.append(('Cookie', 'Bugzilla_login=27'))
-        ## In [45]: opener.addheaders.append(('Cookie', 'Bugzilla_logincookie=WBizdtDFtv'))
-        ##
-        ## In [46]: response=urllib2.urlopen('https://bugzilla.libresoft.es/show_bug.cgi?ctype=xml&id=298')
-
-        f = self.__urlopen_auth(bugs_url)
-
-        try:
-            parser.feed(f.read())
-        except Exception:
-            printerr("Error parsing URL: %s" % (bugs_url))
-            raise
-
-        f.close()
-        parser.close()
-        #handler.print_debug_data()
+        self.safe_xml_parse(bugs_url, handler);
         issues = handler.get_issues()
-        # printdbg(" updated at " + issue.delta_ts.isoformat())
 
-        #Retrieving changes
-        
+        #Retrieving changes        
         for bug_id in  issues:        
             bug_activity_url = url + "show_activity.cgi?id=" + bug_id
             printdbg( bug_activity_url )
@@ -1067,14 +1083,17 @@ class BGBackend (Backend):
             self.__login()
 
         # bugzilla version
-        url_bugzilla_info = self.get_domain(self.url) + "show_bug.cgi?id=0&ctype=xml"
+        if self.url.find("show_bug.cgi")>0:
+            url_bugzilla_info = self.url + "&ctype=xml"
+        else:
+            url_bugzilla_info = self.get_domain(self.url) + "show_bug.cgi?id=0&ctype=xml"
         bugzilla_version = self.get_bugzilla_version(url_bugzilla_info)
         printdbg("Bugzilla version: " + bugzilla_version)
         bugsdb.insert_supported_traker("bugzilla", bugzilla_version)
         trk = Tracker (self.get_domain(self.url), "bugzilla", bugzilla_version)
         dbtrk = bugsdb.insert_tracker(trk)
 
-        if (bugzilla_version == "3.2.3"):
+        if (bugzilla_version == "3.2.3" or bugzilla_version == "3.2.2"):
             url = self.url + "&order=Last+Changed&ctype=csv"
         else:
             url = self.url + "&order=changeddate&ctype=csv"
@@ -1085,6 +1104,8 @@ class BGBackend (Backend):
         #The url is a bug            
         if url.find("show_bug.cgi")>0:
             bugs.append(self.url.split("show_bug.cgi?id=")[1])
+            # bugs = ['45911']
+            
         else:
             # TODO: this should be when the gathering starts
             last_mod_date = bugsdb.get_last_modification_date()
