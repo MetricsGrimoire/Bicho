@@ -286,7 +286,7 @@ class SoupHtmlParser():
             if len(table.tr.findAll('th')) == 5:
                 try:
                     for i in table.findAll(remove_tags):
-                        i.replaceWith(i.contents[0])
+                        i.replaceWith(i.text)
                 except:
                     printerr("error removing HTML tags")
                 break
@@ -301,11 +301,25 @@ class SoupHtmlParser():
                 person_email = cols[0].contents[0].strip()
                 person_email = unicode(person_email.replace('&#64;', '@'))
                 date = self._to_datetime_with_secs(cols[1].contents[0].strip())
-                field = unicode(cols[2].contents[0].strip())
+                # when the field contains an Attachment, the list has more
+                #than a field. For example:
+                #
+                # [u'\n', u'Attachment #12723', u'\n              Flag\n            ']
+                #
+                if len(cols[2].contents) > 1:
+                    aux_c = unicode(" ".join(cols[2].contents))
+                    field = unicode(aux_c.replace("\n","").strip())
+                else:
+                    field = unicode(cols[2].contents[0].replace("\n","").strip())
                 removed = unicode(cols[3].contents[0].strip())
                 added = unicode(cols[4].contents[0].strip())
             else:
-                field = cols[0].contents[0].strip()
+                # same as above with the Attachment example
+                if len(cols[0].contents) > 1:
+                    aux_c = unicode(" ".join(cols[0].contents))
+                    field = aux_c.replace("\n","").strip()
+                else:
+                    field = cols[0].contents[0].strip()
                 removed = cols[1].contents[0].strip()
                 added = cols[2].contents[0].strip()
 
