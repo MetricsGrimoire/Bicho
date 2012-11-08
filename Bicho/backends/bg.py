@@ -1136,6 +1136,10 @@ class BGBackend (Backend):
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
 
+        # we want to use pop() to get the oldest first so we must reverse the
+        # order
+        bugs.reverse()
+
         while (bugs):
             query_bugs = []
             while (len(query_bugs) < issues_per_xml_query and bugs):
