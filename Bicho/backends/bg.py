@@ -635,7 +635,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         """
         """
         # TBD attachments and flag, see bugzilla.dtd        
-        self.issues_data = {}
+        #self.issues_data = {}
+        self.issues_data = []
         self.init_bug()
         
     def get_issues(self):
@@ -779,7 +780,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
                 pass
             self.tag_name = None
         elif name == "bug":
-            self.issues_data[self.atags["bug_id"]] = self.get_issue()
+            #self.issues_data[self.atags["bug_id"]] = self.get_issue()
+            self.issues_data.append(self.get_issue())
 
     def print_debug_data(self):
         printdbg("")
@@ -992,6 +994,7 @@ class BGBackend (Backend):
         f.close()
 
     def analyze_bug_list (self, bugs_id, url, dbtrk_id, bugsdb):
+
         #Retrieving main bug information
         # bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
         
@@ -1006,24 +1009,28 @@ class BGBackend (Backend):
         issues = handler.get_issues()
 
         #Retrieving changes        
-        for bug_id in  issues:        
+        for i in issues:
+            bug_id = i.issue            
             bug_activity_url = url + "show_activity.cgi?id=" + bug_id
             printdbg( bug_activity_url )
             data_activity = self.__urlopen_auth(bug_activity_url).read()
             parser = SoupHtmlParser(data_activity, bug_id)
-            #try:
             changes = parser.parse_changes()
             for c in changes:
-                issues[bug_id].add_change(c)
+                #issues[bug_id].add_change(c)
+                i.add_change(c)
+
+            # we store here the bugs once the complete retrieval for each bug
+            #analysis is done
             try:
-                bugsdb.insert_issue(issues[bug_id], dbtrk_id)
+                bugsdb.insert_issue(i, dbtrk_id)
+                printdbg("Issue #%s stored " % (i.issue))
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                % (issues[bug_id].issue))
-            #except Exception, e:
-            #    printerr("error while parsing HTML")
-            # No delay in XML. Need it here
+                         % (issues[bug_id].issue))                
+
             time.sleep(self.delay)
+
         return issues
 
     def __auth_session(self):
@@ -1135,6 +1142,10 @@ class BGBackend (Backend):
         if nbugs == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
+
+        # we want to use pop() to get the oldest first so we must reverse the
+        # order
+        bugs.reverse()
 
         while (bugs):
             query_bugs = []
