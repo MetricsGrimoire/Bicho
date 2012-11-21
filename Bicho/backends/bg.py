@@ -994,16 +994,14 @@ class BGBackend (Backend):
         f.close()
 
     def analyze_bug_list (self, bugs_id, url, dbtrk_id, bugsdb):
-
-        #Retrieving main bug information
-        # bug_url = url + "show_bug.cgi?id=" + bug_id + "&ctype=xml"
-        
+        # Retrieving main bug information
         bugs_url = url + "show_bug.cgi?";
         for id in bugs_id:
             bugs_url += "id="+id+"&"
         bugs_url += "ctype=xml"
-        
+        bugs_url += "&excludefield=attachmentdata"
         printdbg(bugs_url)
+
         handler = BugsHandler()
         self.safe_xml_parse(bugs_url, handler);
         issues = handler.get_issues()
