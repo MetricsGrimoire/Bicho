@@ -975,6 +975,11 @@ class BGBackend (Backend):
 
         try:
             contents = f.read()
+        except Exception:
+            printerr("Error retrieving URL: %s" % (bugs_url))
+            raise
+
+        try:
             parser.feed(contents)
             parser.close()
         except Exception:
