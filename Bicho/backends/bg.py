@@ -30,7 +30,7 @@ import urllib2
 import urlparse
 import xml.sax.handler
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 
 from storm.locals import DateTime, Int, Reference, Unicode, Desc
@@ -232,13 +232,14 @@ class DBBugzillaBackend(DBBackend):
         pass
 
     def get_last_modification_date(self, store):
-        # get last modification date (day) stored in the database
+        # Get last modification date (day) stored in the database
         # select date_last_updated as date from issues_ext_bugzilla order by date
         result = store.find(DBBugzillaIssueExt)
-        aux = result.order_by(Desc(DBBugzillaIssueExt.delta_ts))[:1]
-
-        for entry in aux:
-            return entry.delta_ts.strftime('%Y-%m-%d') 
+        issue_ext = result.order_by(Desc(DBBugzillaIssueExt.delta_ts))[0]
+        # We add one second to the last date to avoid retrieve the same
+        # changes modified at that date.
+        delta_ts = issue_ext.delta_ts + timedelta(seconds=0)
+        return delta_ts.strftime('%Y-%m-%d %H:%M:%S')
 
         return None
 
@@ -1155,7 +1156,7 @@ class BGBackend(Backend):
             url = base_url + "&order=changeddate&ctype=csv"
 
         if from_date:
-            url = url + "&chfieldfrom=" + from_date
+            url = url + "&chfieldfrom=" + from_date.replace(' ', '%20')
         return url
 
     def _get_issues_info_url(self, base_url, ids):
