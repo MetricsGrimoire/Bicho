@@ -126,3 +126,13 @@ def bicho_dot_dir ():
     _dirs['dot'] = dot_dir
 
     return dot_dir
+
+# http://stackoverflow.com/questions/8733233/filtering-out-certain-bytes-in-python
+def valid_XML_char_ordinal(i):
+    return (
+            # Conditions ordered by presumed frequency
+            0x20 <= i <= 0xD7FF
+            or i in (0x9, 0xA, 0xD)
+            or 0xE000 <= i <= 0xFFFD
+            or 0x10000 <= i <= 0x10FFFF
+    )
