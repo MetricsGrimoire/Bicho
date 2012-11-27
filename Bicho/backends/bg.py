@@ -23,7 +23,6 @@
 #          Alvaro del Castillo <acs@bitergia.com>
 
 import string
-import sys
 import time
 import urllib
 import urllib2
@@ -40,7 +39,7 @@ from BeautifulSoup import BeautifulSoup, Comment as BFComment
 from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.common import Tracker, People, Issue, Comment, Change
-from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
 from Bicho.utils import printerr, printdbg, printout, valid_XML_char_ordinal
 
 BUGZILLA = "bugzilla"
@@ -155,7 +154,7 @@ class DBBugzillaBackend(DBBackend):
 
         try:
             db_issue_ext = store.find(DBBugzillaIssueExt,
-                                    DBBugzillaIssueExt.issue_id == issue_id).one()
+                                      DBBugzillaIssueExt.issue_id == issue_id).one()
             if not db_issue_ext:
                 newIssue = True
                 db_issue_ext = DBBugzillaIssueExt(issue_id)
@@ -231,17 +230,21 @@ class DBBugzillaBackend(DBBackend):
         """
         pass
 
-    def get_last_modification_date(self, store):
+    def get_last_modification_date(self, store, trk_id):
         # Get last modification date (day) stored in the database
-        # select date_last_updated as date from issues_ext_bugzilla order by date
-        result = store.find(DBBugzillaIssueExt)
-        issue_ext = result.order_by(Desc(DBBugzillaIssueExt.delta_ts))[0]
-        # We add one second to the last date to avoid retrieve the same
-        # changes modified at that date.
-        delta_ts = issue_ext.delta_ts + timedelta(seconds=0)
-        return delta_ts.strftime('%Y-%m-%d %H:%M:%S')
+        # select date_last_updated as date from issues_ext_bugzilla
+        # order by date
+        result = store.find(DBBugzillaIssueExt,
+                            DBBugzillaIssueExt.issue_id == DBIssue.id,
+                            DBIssue.tracker_id == DBTracker.id,
+                            DBTracker.id == trk_id)
 
-        return None
+        if result.is_empty():
+            return None
+
+        db_issue_ext = result.order_by(Desc(DBBugzillaIssueExt.delta_ts))[0]
+        delta_ts = db_issue_ext.delta_ts
+        return delta_ts
 
 
 class SoupHtmlParser():
@@ -923,6 +926,7 @@ class BGBackend(Backend):
         self.cookies = {}
         self.version = None
         self.tracker = None
+        self.retrieved = {} # retrieved issues on this run
 
         try:
             self.backend_password = Config.backend_password
@@ -942,12 +946,12 @@ class BGBackend(Backend):
         self._set_version()
         self._set_tracker()
 
-        issues = self._process_issues()
+        self._process_issues()
 
-        if not issues:
+        if not self.retrieved:
             printout("No issues found. Did you provide the correct url?")
-            sys.exit(0) # FIXME: exit should be avoided here
-        printout("Done. %d issues retrieved" % (len(issues)))
+        else:
+            printout("Done. %d issues retrieved" % len(self.retrieved))
 
     def _login(self):
         """
@@ -1021,35 +1025,37 @@ class BGBackend(Backend):
             # FIXME: this only works for one issue, if more id parameters
             # are set, those issues will not be processed
             ids = [self.url.split("show_bug.cgi?id=")[1]]
-            printdbg("Bug #%s URL found" % ids[0])
+            printdbg("Issue #%s URL found" % ids[0])
+            url = self._get_domain(self.url)
+            self._retrieve_issues(ids, url, self.tracker.id)
         else:
-            ids = self._retrieve_issues_ids(self.url, self.version)
+            i = 0
+            url = self._get_domain(self.url)
+            last_date, next_date = self._get_last_and_next_dates()
 
-        printout("Total bugs to retrieve: %d" % len(ids))
+            # Some bugzillas limit the number of results that a query can return.
+            # Due to this, bicho will search for new issues/changes until find
+            # no one new.
+            ids = self._retrieve_issues_ids(self.url, self.version, next_date)
 
-        if not ids:
-            return []
+            while(ids):
+                printout("Round #%d - Total issues to retrieve: %d" % (i, len(ids)))
+                self._retrieve_issues(ids, url, self.tracker.id)
+                i += 1
+                # Search new ids, but first, we have to check whether they are
+                # already stored or not
+                last_date, next_date = self._get_last_and_next_dates()
+                ids = self._retrieve_issues_ids(self.url, self.version, last_date)
+                # If there aren't new issues from the same date, ask for a new one
+                if not ids:
+                    printdbg("No issues found for date %s. Trying with %s" % (last_date, next_date))
+                    ids = self._retrieve_issues_ids(self.url, self.version, next_date)
 
-        url = self._get_domain(self.url)
-        # We want to use pop() to get the oldest first so we must reverse the
-        # order
-        ids.reverse()
+            if i > 0:
+                printout("No more issues to retrieve")
 
-        while(ids):
-            query_issues = []
-            while (len(query_issues) < MAX_ISSUES_PER_XML_QUERY and ids):
-                query_issues.append(ids.pop())
-            issues = self._retrieve_issues(query_issues, url, self.tracker.id)
-        return issues
-
-    def _retrieve_issues_ids(self, base_url, version):
-        # TODO: this should be when the gathering starts
-        last_mod_date = self.bugsdb.get_last_modification_date()
-
-        if last_mod_date:
-            printdbg("Last bugs cached were modified on: %s" % last_mod_date)
-
-        url = self._get_issues_list_url(base_url, version, last_mod_date)
+    def _retrieve_issues_ids(self, base_url, version, from_date, not_retrieved=True):
+        url = self._get_issues_list_url(base_url, version, from_date)
         printdbg("Getting bugzilla issues from %s" % url)
 
         f = self._urlopen_auth(url)
@@ -1058,31 +1064,51 @@ class BGBackend(Backend):
         # '"' character. Easier using split.
         # Moreover, we drop the first line of the CSV because it contains
         # the headers
+        ids = []
         csv = f.read().split('\n')[1:]
-        issues = [line.split(',')[0] for line in csv]
-        return issues
+        for line in csv:
+            # 0: bug_id, 7: changeddate
+            values = line.split(',')
+            id = values[0]
+            change_ts = values[7].strip('"')
+
+            # Filter issues already retrieved
+            if not_retrieved:
+                if (not self.retrieved.has_key(id)) or (self.retrieved[id] != change_ts):
+                    ids.append(id)
+            else:
+                ids.append(id)
+        return ids
 
     def _retrieve_issues(self, ids, base_url, trk_id):
-        # Retrieving main bug information
-        url = self._get_issues_info_url(base_url, ids)
-        printdbg("Issues to retrieve from: %s" % url)
+        # We want to use pop() to get the oldest first so we must reverse the
+        # order
+        ids.reverse()
+        while(ids):
+            query_issues = []
+            while (len(query_issues) < MAX_ISSUES_PER_XML_QUERY and ids):
+                query_issues.append(ids.pop())
 
-        handler = BugsHandler()
-        self._safe_xml_parse(url, handler);
-        issues = handler.get_issues()
+            # Retrieving main bug information
+            url = self._get_issues_info_url(base_url, query_issues)
+            printdbg("Issues to retrieve from: %s" % url)
 
-        #Retrieving changes        
-        for i in issues:
-            changes = self._retrieve_issue_activity(base_url, i.issue)
-            for c in changes:
-                i.add_change(c)
+            handler = BugsHandler()
+            self._safe_xml_parse(url, handler);
+            issues = handler.get_issues()
 
-            # We store here the issue  once the complete retrieval
-            # for each bug is done
-            self._store_issue(i, trk_id)
+            # Retrieving changes
+            for issue in issues:
+                changes = self._retrieve_issue_activity(base_url, issue.issue)
+                for c in changes:
+                    issue.add_change(c)
 
-            time.sleep(self.delay)
-        return issues
+                # We store here the issue once the complete retrieval
+                # for each bug is done
+                self._store_issue(issue, trk_id)
+                self.retrieved[issue.issue] = self._timestamp_to_str(issue.delta_ts)
+
+                time.sleep(self.delay)
 
     def _retrieve_issue_activity(self, base_url, id):
         activity_url = self._get_issue_activity_url(base_url, id)
@@ -1100,6 +1126,21 @@ class BGBackend(Backend):
         except UnicodeEncodeError:
             printerr("UnicodeEncodeError: the issue %s couldn't be stored"
                      % issue.issue)
+
+    def _get_last_and_next_dates(self):
+        last_ts = self.bugsdb.get_last_modification_date(self.tracker.id)
+
+        if not last_ts:
+            return None, None
+        printdbg("Last issues cached were modified on: %s" % last_ts)
+
+        last_ts_str = self._timestamp_to_str(last_ts)
+
+        # We add one second to the last date to avoid retrieve the same
+        # changes modified at that date.
+        next_ts = last_ts + timedelta(seconds=1)
+        next_ts_str = self._timestamp_to_str(next_ts)
+        return last_ts_str, next_ts_str
 
     def _urlopen_auth(self, url):
         """
@@ -1201,5 +1242,10 @@ class BGBackend(Backend):
                 printerr("Error parsing URL: %s" % (bugs_url))
                 raise
         f.close()
+
+    def _timestamp_to_str(self, ts):
+        if not ts:
+            return None
+        return ts.strftime('%Y-%m-%d %H:%M:%S')
 
 Backend.register_backend("bg", BGBackend)
