@@ -41,7 +41,7 @@ Latest version:
  * Python >= 2.4
  * Python Storm. Depending on the database driver to be used you'll also need
  one of the following python libraries:
-   - mysqldb or psycopg2 or pysqlite2
+   - mysqldb or psycopg2 or pysqlite2 (unstable with PostgreSQL; MySQL is recommended - default engine should be set to MYISAM)
    - python-launchpadlib (for Launchpad backend)
  * Beautiful Soup library: error-tolerant HTML parser for Python
  * python-feedparser
@@ -67,33 +67,33 @@ delay between bug petitions your IP address could be banned!
 
 E1. Getting information from a project that uses Bugzilla, like Bicho ;)
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b bg -u https://bugzilla.libresoft.es/buglist.cgi?product=bicho
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 bg https://bugzilla.libresoft.es/buglist.cgi?product=bicho
 
 E2. Getting information from a project hosted in sourceforge.net
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b sf -u "http://sourceforge.net/tracker/?atid=516295&group_id=66938"
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 sf "http://sourceforge.net/tracker/?atid=516295&group_id=66938"
 
 E3. Getting information from a project using JIRA
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b jira -u http://support.petalslink.com/browse/PETALSMASTER
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 jira http://support.petalslink.com/browse/PETALSMASTER
 
 E4. Getting information from a project using Launchpad
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b lp -u https://bugs.launchpad.net/openstack
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 lp https://bugs.launchpad.net/openstack
 
 E5. Getting information from a project using Allura
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b allura -u http://sourceforge.net/rest/p/allura/tickets
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 allura http://sourceforge.net/rest/p/allura/tickets
 
 E6. Getting information from a project using Github
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] github https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
 
 E7. Getting information from a project using Google Code
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b googlecode -u https://code.google.com/feeds/issues/p/apv
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 googlecode https://code.google.com/feeds/issues/p/apv
 
-E8. Getting information from a project using Google Code
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u https://www.bitergia.net/issues.json
+E8. Getting information from a project using Redmine
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 redmine https://www.bitergia.net/issues.json
 
 
  Analysis
