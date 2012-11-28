@@ -24,7 +24,6 @@ MySQL database module
 """
 
 import warnings
-import MySQLdb
 
 from storm.locals import Store, create_database
 
@@ -32,6 +31,7 @@ from Bicho.Config import Config
 from Bicho.db.database import DBDatabase, DBTracker, DBPeople, \
     DBIssue, DBIssuesWatchers, DBIssueRelationship, DBComment, DBAttachment, \
     DBChange, DBSupportedTracker, DBIssueTempRelationship
+
 
 class DBMySQL(DBDatabase):
     """

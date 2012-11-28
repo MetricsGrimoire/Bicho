@@ -25,12 +25,13 @@ Database module
 """
 
 import datetime
-from storm.locals import DateTime, Int, Reference, Unicode
-from Bicho.utils import printerr, printdbg, printout
 
+from storm.exceptions import IntegrityError # DatabaseError,
+from storm.locals import DateTime, Int, Reference, Unicode
+
+from Bicho.utils import printdbg
 from Bicho.Config import Config
 
-from storm.exceptions import IntegrityError # DatabaseError, 
 
 class NotFoundError(Exception):
     """
