@@ -31,6 +31,8 @@ from Config import Config, ErrorLoadingConfig, InvalidConfig
 from backends import Backend
 from utils import printerr, printdbg
 
+from post_processing.logtable import IssuesLog
+
 
 def main():
     """
@@ -52,6 +54,9 @@ def main():
         sys.exit(2)
     printdbg ("Bicho object created, options and backend initialized")
     backend.run()
+
+    il = IssuesLog(Config.backend)
+    il.run()
 
 if __name__ == "__main__":
     main()
