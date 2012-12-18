@@ -918,6 +918,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 # Use 1 for legacy working.
 MAX_ISSUES_PER_XML_QUERY = 500
 
+# length of hibernation in seconds
+HIBERNATION_LENGTH = 100
+
 class BGBackend(Backend):
 
     def __init__ (self):
@@ -1146,12 +1149,27 @@ class BGBackend(Backend):
         """
         Opens an URL using an authenticated session
         """
-        if self._is_auth_session():
-            opener = urllib2.build_opener()
-            for c in self.cookies:
-                q = str(c) + '=' + self.cookies[c]
-                opener.addheaders.append(('Cookie', q))
-        return urllib2.urlopen(url)
+        keep_trying = True
+        while keep_trying:
+            if self._is_auth_session():
+                opener = urllib2.build_opener()
+                for c in self.cookies:
+                    q = str(c) + '=' + self.cookies[c]
+                    opener.addheaders.append(('Cookie', q))
+            keep_trying = False
+            try:
+                aux = urllib2.urlopen(url)
+            except urllib2.HTTPError as e:
+                printerr("The server couldn\'t fulfill the request.")
+                printerr("Error code: %s" % e.code)
+            except urllib2.URLError as e:
+                printdbg("Bicho failed to reach the Bugzilla server")
+                printdbg("Reason: %s" % e.reason)
+                printdbg("Bicho goes into hibernation for %s seconds"
+                         % HIBERNATION_LENGTH)
+                time.sleep(HIBERNATION_LENGTH)
+                keep_trying = True
+        return aux
 
     def _is_auth_session(self):
         """
