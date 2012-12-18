@@ -52,8 +52,8 @@ def printwrn (str = '\n'):
 def printdbg (str = '\n'):
     if not Config.debug:
         return
-
-    printout ("DBG: " + str)
+    t = time.strftime("%d/%b/%Y-%X")
+    printout ("DBG: [" + t +"] "+ str)
 
 def get_domain(url):
     strings = url.split('/')
