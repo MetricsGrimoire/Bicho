@@ -177,7 +177,7 @@ class IssuesLog():
                         db_ilog.summary = v[0]
                     elif table_field == 'priority':
                         db_ilog.priority = v[0]
-                    elif table_field == 'assignted_to':
+                    elif table_field == 'assigned_to':
                         db_ilog.assigned_to = v[0]
                     elif table_field == 'status':
                         db_ilog.status = v[0]
