@@ -396,6 +396,8 @@ class Allura():
             self.url_issues += "&page=" + str(start_page) + "&q="
             # A time range with all the tickets
             self.url_issues +=  urllib.quote("mod_date_dt:["+time_window+"]")
+            # Order by mod_date_dt desc
+            self.url_issues +=  "&sort=mod_date_dt+asc"
 
             printdbg("URL for next issues " + self.url_issues) 
 
