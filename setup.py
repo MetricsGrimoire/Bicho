@@ -29,6 +29,7 @@ setup(name = "Bicho",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
       description = "Analysis tool for Issue/Bug Tracking Systems",
       url = "https://projects.libresoft.es/projects/bicho",      
-      packages = ['Bicho', 'Bicho.backends', 'Bicho.db'],
+      packages = ['Bicho', 'Bicho.backends', 'Bicho.db',
+                  'Bicho.post_processing'],
       data_files = [('share/man/man1/',['doc/bicho.1'])],
       scripts = ["bin/bicho"])
