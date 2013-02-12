@@ -1,35 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Bicho by MetricsGrimoire</title>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Bicho : Bicho is a command line based tool used to parse bug/issue tracking systems" />
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Bicho</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1 class="header">Bicho</h1>
-        <p class="header">Bicho is a command line based tool used to parse bug/issue tracking systems</p>
 
-        <ul>
-          <li class="download"><a class="buttons" href="https://github.com/MetricsGrimoire/Bicho/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/MetricsGrimoire/Bicho/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/MetricsGrimoire/Bicho">View On GitHub</a></li>
-        </ul>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/MetricsGrimoire/Bicho">View on GitHub</a>
 
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/MetricsGrimoire">MetricsGrimoire</a></p>
+          <h1 id="project_title">Bicho</h1>
+          <h2 id="project_tagline">Bicho is a command line based tool used to parse bug/issue tracking systems</h2>
 
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/MetricsGrimoire/Bicho/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/MetricsGrimoire/Bicho/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
 
-      </header>
-      <section>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
         <p>Bicho is a command line based tool used to parse bug/issue tracking systems. It gets all the information associated to issues and store them in a relation database.</p>
 
 <p>Currently it supports:</p>
@@ -60,8 +61,12 @@
 <ul>
 <li>Python &gt;= 2.4</li>
 <li>Python Storm. Depending on the database driver to be used you'll also need one of the following python libraries:
-** mysqldb or psycopg2 or pysqlite2
-** python-launchpadlib (for Launchpad backend)</li>
+
+<ul>
+<li>mysqldb or psycopg2 or pysqlite2</li>
+<li>python-launchpadlib (for Launchpad backend)</li>
+</ul>
+</li>
 <li>Beautiful Soup library: error-tolerant HTML parser for Python</li>
 <li>python-feedparser</li>
 </ul><h2>Installing bicho</h2>
@@ -78,7 +83,38 @@ python setup.py install
 $ bicho --help
 </code></p>
 
-<h2>Improving Bicho</h2>
+<h2>Roadmap</h2>
+
+<p>0.93:</p>
+
+<ul>
+<li>Incremental support broken by issues updated during the download bug #28</li>
+<li>Incorrect order downloading issues from Bugzilla #20</li>
+<li>Incoherent number of issues after webkit analysis bug bugzilla support #26</li>
+<li>Error in database character sets while comparing dates #8</li>
+<li>Problem cloning repo in case insensitive systems #12</li>
+<li>Incremental feature doesn't support multiple projects in the same database #30</li>
+</ul><p>1.0:</p>
+
+<ul>
+<li>issues_log for bugzilla and launchpad
+
+<ul>
+<li>Launchad support for issues_log table enhancement launchpad support #24</li>
+<li>More efficient and cleaner code for the table issues_log for bugzilla</li>
+</ul>
+</li>
+<li>New table with information about executions (date, issues downloaded, etc ..)</li>
+<li>Tests, tests and tests</li>
+<li>Improved debug mode with more useful details</li>
+<li>Network fault tolerance (in order to survive to connection issues)</li>
+<li>New backends:
+
+<ul>
+<li>FusionForge</li>
+</ul>
+</li>
+</ul><h2>Improving Bicho</h2>
 
 <p>If you want to report a bug or submit a patch. Use our page in Github <a href="https://github.com/MetricsGrimoire/Bicho">https://github.com/MetricsGrimoire/Bicho</a></p>
 
@@ -144,11 +180,17 @@ git://github.com/MetricsGrimoire/Bicho</li>
 
 <p>Go to <a href="https://github.com/MetricsGrimoire/Bicho/issues">https://github.com/MetricsGrimoire/Bicho/issues</a></p>
       </section>
-      <footer>
-        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Bicho maintained by <a href="https://github.com/MetricsGrimoire">MetricsGrimoire</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
+
+    
+
   </body>
 </html>
