@@ -96,10 +96,27 @@ E8. Getting information from a project using Redmine
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u https://www.bitergia.net/issues.json
 
 
- Analysis
+ Roadmap
 ---------
 
-[To be written]
+0.93:
+* Incremental support broken by issues updated during the download bug #28
+* Incorrect order downloading issues from Bugzilla #20
+* Incoherent number of issues after webkit analysis bug bugzilla support #26
+* Error in database character sets while comparing dates #8
+* Problem cloning repo in case insensitive systems #12
+* Incremental feature doesn't support multiple projects in the same database #30
+
+1.0:
+* issues_log for bugzilla and launchpad
+** Launchad support for issues_log table enhancement launchpad support #24
+** More efficient and cleaner code for the table issues_log for bugzilla
+* New table with information about executions (date, issues downloaded, etc ..)
+* Tests, tests and tests
+* Improved debug mode with more useful details
+* Network fault tolerance (in order to survive to connection issues)
+* New backends:
+** FusionForge
 
 
  Improving Bicho
