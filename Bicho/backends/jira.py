@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2007-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
+# Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 #
 # Authors: Daniel Izquierdo Cortazar <dizquierdo@gsyc.es>
 #          Juan Francisco Gato Luis <jfcogato@libresoft.es>
-#          Luis Cañas Díaz <lcanas@libresoft.es>
+#          Luis Cañas Díaz <lcanas@bitergia.com>
 #          Santiago Dueñas <sduenas@libresoft.es>
 #          Alvaro del Castillo <acs@bitergia.com>
 
@@ -31,7 +31,7 @@ from storm.locals import Int, DateTime, Unicode, Reference, Desc
 from dateutil.parser import parse
 from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
 from Bicho.backends import Backend
-from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
 from Bicho.Config import Config
 from Bicho.utils import printout, printerr, printdbg
 from BeautifulSoup import BeautifulSoup, Tag, NavigableString 
@@ -189,17 +189,19 @@ class DBJiraBackend(DBBackend):
         """
         pass
 
-    def get_last_modification_date(self, store):
+    def get_last_modification_date(self, store, tracker_id):
         # get last modification date (day) stored in the database
         # select date_last_updated as date from issues_ext_bugzilla order by date
-        result = store.find(DBJiraIssueExt)
-        aux = result.order_by(Desc(DBJiraIssueExt.updated))[:1]
+        result = store.find(DBJiraIssueExt,
+                            DBJiraIssueExt.issue_id == DBIssue.id,
+                            DBIssue.tracker_id == DBTracker.id,
+                            DBTracker.id == tracker_id)
 
-        for entry in aux:
-            return entry.updated.strftime('%Y-%m-%d') 
-
-        return None
-
+        if result.is_empty():
+            return None
+        else:
+            db_issue_ext = result.order_by(Desc(DBJiraIssueExt.updated))[0]
+            return db_issue_ext.updated.strftime('%Y-%m-%d')
 
 ####################################
 
@@ -888,7 +890,7 @@ class JiraBackend(Backend):
                 print(e)
 
         else:
-            self.last_mod_date = bugsdb.get_last_modification_date()
+            self.last_mod_date = bugsdb.get_last_modification_date(dbtrk.id)
             if self.last_mod_date:
                 # self.url = self.url + "&updated:after=" + last_mod_date
                 printdbg("Last bugs cached were modified on: %s" % self.last_mod_date)
