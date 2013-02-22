@@ -1019,8 +1019,7 @@ class BGBackend(Backend):
         # FIXME: supported trackers have to be inserted during
         # the initialization
         self.bugsdb.insert_supported_traker(BUGZILLA, self.version)
-        trk_url = self._get_domain(self.url)
-        trk = Tracker(trk_url, BUGZILLA, self.version)
+        trk = Tracker(self.url, BUGZILLA, self.version)
         self.tracker = self.bugsdb.insert_tracker(trk)
 
     def _process_issues(self):
