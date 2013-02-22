@@ -14,7 +14,41 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 # Authors:  Santiago Dueñas <sduenas@libresoft.es>
+#           Luis Cañas Díaz <lcanas@bitergia.com>
 #
+
+import os
+
+
+class LoggerUnknownError (Exception):
+    '''Unkown engine type'''
+
+
+class IssueLogger:
+
+    _loggers = {}
+
+    @staticmethod
+    def register_logger(logger_name, logger_class):
+        IssueLogger._loggers[logger_name] = logger_class
+
+    @staticmethod
+    def _get_logger(logger_name):
+        if logger_name not in IssueLogger._loggers:
+            try:
+                __import__('Bicho.post_processing.issues_log_%s' % logger_name)
+            except ImportError:
+                raise
+
+        if logger_name not in IssueLogger._loggers:
+            raise LoggerUnknownError('Logger type %s not registered'
+                                      % logger_name)
+        return IssueLogger._loggers[logger_name]
+
+    @staticmethod
+    def create_logger(logger_name):
+        logger_class = IssueLogger._get_logger(logger_name)
+        return logger_class()

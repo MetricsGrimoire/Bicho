@@ -31,7 +31,7 @@ from Config import Config, ErrorLoadingConfig, InvalidConfig
 from backends import Backend
 from utils import printerr, printdbg
 
-from post_processing.logtable import IssuesLog
+from post_processing import IssueLogger
 
 
 def main():
@@ -40,23 +40,28 @@ def main():
     # Note: Default values for options are defined on
     # configuration module
     usage = 'Usage: %prog [options]'
-        
+
     try:
         Config.set_config_options(usage)
     except (ErrorLoadingConfig, InvalidConfig), e:
         printerr(str(e))
-        sys.exit(2)        
-    
+        sys.exit(2)
+
     try:
-        backend = Backend.create_backend (Config.backend)
+        backend = Backend.create_backend(Config.backend)
     except ImportError, e:
         printerr("Backend ''" + Config.backend + "'' not exists. " + str(e))
         sys.exit(2)
-    printdbg ("Bicho object created, options and backend initialized")
+    printdbg("Bicho object created, options and backend initialized")
     backend.run()
 
-    il = IssuesLog(Config.backend)
-    il.run()
+    try:
+        ilogger = IssueLogger.create_logger(Config.backend)
+    except ImportError, e:
+        printerr("Logger ''" + Config.backend + "'' doesn't exist. " + str(e))
+        sys.exit(2)
+    printdbg("Bicho logger object created")
+    ilogger.run()
 
 if __name__ == "__main__":
     main()
