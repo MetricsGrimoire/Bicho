@@ -8,7 +8,7 @@ them in a relation database.
 Currently it supports:
 - Bugzilla
 - Sourceforge.net (abandoned)
-- Jira (unstable)
+- Jira
 - Launchpad
 - Allura (unstable)
 - Github (unstable)
@@ -100,6 +100,7 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 ---------
 
 0.93:
+* The updated list of bugs to be fixed can be found here https://github.com/MetricsGrimoire/Bicho/issues?milestone=1&page=1&state=open
 * Incremental support broken by issues updated during the download bug #28
 * Incorrect order downloading issues from Bugzilla #20
 * Incoherent number of issues after webkit analysis bug bugzilla support #26
@@ -108,6 +109,7 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 * Incremental feature doesn't support multiple projects in the same database #30
 
 1.0:
+* https://github.com/MetricsGrimoire/Bicho/issues?milestone=2&page=1&state=open
 * issues_log for bugzilla and launchpad
 ** Launchad support for issues_log table enhancement launchpad support #24
 ** More efficient and cleaner code for the table issues_log for bugzilla
@@ -126,7 +128,7 @@ Source code, wiki and ITS available on Github:
 * https://github.com/MetricsGrimoire/Bicho
 
 Please write to the developers mailing at
-* libresoft-tools-devel _at_ lists.morfeo-project.org
+* metrics-grimoire _at _ lists.libresoft.es
 
 If you want to receive updates about new versions, and keep in touch
 with the development team, consider subscribing to the list. It is a
@@ -166,4 +168,4 @@ backend, we'll try to give you as much information as possible.
 
 F4. How can I submit a bug?
 
-Use our bugzilla at http://bugzilla.libresoft.es/
+Use the github issue tracker https://github.com/MetricsGrimoire/Bicho/issues
