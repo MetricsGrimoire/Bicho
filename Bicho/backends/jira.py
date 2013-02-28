@@ -322,56 +322,56 @@ class Bug():
         self.attachments = []
         self.customfields = []
 
+        
 class SoupHtmlParser():
 
-    def __init__ (self, html, idBug):
+    def __init__(self, html, idBug):
         self.html = html
         self.idBug = idBug
         self.changes_lost = 0
 
     def remove_comments(self, soup):
-        cmts = soup.findAll(text=lambda text:isinstance(text, BFComment))
+        cmts = soup.findAll(text=lambda text: isinstance(text, BFComment))
         [comment.extract() for comment in cmts]
 
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
-        remove_tags = ['a', 'span','i']
+        remove_tags = ['i']
         try:
             [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
         except Exception:
             None
-        
-        changes = []      
+
+        changes = []
         #FIXME The id of the changes are not stored
         tables = soup.findAll("div", {"class": "actionContainer"})
         table = None
-    
+
         for table in tables:
-            change_author = table.find("div", {"class": "action-details"})
-            if change_author == None or len(change_author)<3:
+            author_date_text = table.find("div", {"class": "action-details"})
+
+            if author_date_text is None:
+                # no changes have been performed on the issue
+                continue
+            elif len(author_date_text) < 3:
                 self.changes_lost += 1
                 printerr("Change author format not supported. Change lost!")
                 continue
-            if isinstance(change_author.contents[2], Tag):
-                change_author_str = change_author.contents[2]['rel']
-            elif isinstance(change_author.contents[2], NavigableString):
-                change_author_str = change_author.contents[2]
-            else:
-                printerr("Change author format not supported")
-                printdbg(change_author)
-                continue
-            author = People(change_author_str.strip())
-            author.set_email(BugsHandler.getUserEmail(change_author_str.strip()))
-            if isinstance(change_author.contents[4], Tag):
-                date_str = change_author.contents[4].find('time')['datetime']
-            elif isinstance(change_author.contents[4], NavigableString):
-                date_str = change_author.contents[4]
-            else:
-                printerr("Change date format not supported")
-                continue
-            date = parse(date_str).replace(tzinfo=None)
- 
+
+            a_link = author_date_text.findAll('a')[1]
+            # at this point a_link will be similar to the lines below:
+            #<a id="ch_header_10802_ofabre"
+            #href="/secure/ViewProfile.jspa?name=ofabre">Olivier Fabre</a>
+
+            h_ref = a_link.attrs[1]
+            author_url = h_ref[1]  # u'/secure/ViewProfile.jspa?name=ofabre'
+            author_str_id = author_url[author_url.find('name=') + 5:]
+            author = People(author_str_id)
+
+            raw_date = author_date_text.findAll('span')[0].contents[0]
+            date = parse(raw_date).replace(tzinfo=None)
+
             rows = list(table.findAll('tr'))
             for row in rows:
                 cols = list(row.findAll('td'))
@@ -379,10 +379,19 @@ class SoupHtmlParser():
                     field = unicode(cols[0].contents[0].strip())
                     old = unicode(cols[1].contents[0].strip())
                     new = unicode(cols[2].contents[0].strip())
-                    
+
+                    if field == "Assignee":
+                        # gets the user id from the value between brackets
+                        if len(old) > 0:
+                            old = \
+                            unicode(cols[1].contents[1]).strip().split()[2]
+                        if len(new) > 0:
+                            new = \
+                            unicode(cols[2].contents[1]).strip().split()[2]
                     change = Change(field, old, new, author, date)
                     changes.append(change)
         return changes
+
 
 class BugsHandler(xml.sax.handler.ContentHandler):
 
