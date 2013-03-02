@@ -337,7 +337,7 @@ class SoupHtmlParser():
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
-        remove_tags = ['i','time']
+        remove_tags = ['i']
         try:
             [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
         except Exception:
@@ -370,10 +370,6 @@ class SoupHtmlParser():
             author = People(author_str_id)
 
             raw_date = author_date_text.findAll('span')[0].contents[0]
-            if raw_date.find("Today") >= 0:
-                #FIXME the today date depends on the time zone!!
-                today_str = datetime.date.today().strftime("%d/%m/%y")
-                raw_date = raw_date.replace("Today",today_str)
             date = parse(raw_date).replace(tzinfo=None)
 
             rows = list(table.findAll('tr'))
