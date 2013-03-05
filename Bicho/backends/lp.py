@@ -706,6 +706,18 @@ class LPBackend(Backend):
         strings = url.split('/')
         return strings[0] + "//" + strings[2] + "/"
 
+    def _get_person(self, lpperson):
+        """
+        Returns Bicho People object from Launchpad person object
+        """
+        p = People(lpperson.name)
+        p.set_name(lpperson.display_name)
+        if lpperson.confirmed_email_addresses:
+            for m in lpperson.confirmed_email_addresses:
+                p.set_email(m.email)
+                break
+        return p
+
     def analyze_bug(self, bug):
         #Retrieving main bug information
 
@@ -719,14 +731,11 @@ class LPBackend(Backend):
         bug_type = bug.importance
         summary = bug.bug.title
         desc = bug.bug.description
-        submitted_by = People(bug.owner.name)
-        submitted_by.set_name(bug.owner.display_name)
-
+        submitted_by = self._get_person(bug.owner)
         submitted_on = self.__drop_timezone(bug.date_created)
 
         if bug.assignee:
-            assignee = People(bug.assignee.name)
-            assignee.set_name(bug.assignee.display_name)
+            assignee = self._get_person(bug.assignee)
         else:
             assignee = People("nobody")
 
@@ -845,9 +854,7 @@ class LPBackend(Backend):
                     # we skip the first comment which is the description
                     skip = 0
                     continue
-                by = People(c.owner.name)
-                by.set_name(c.owner.display_name)
-                #by.set_email()
+                by = self._get_person(c.owner)
                 com = Comment(c.content, by, c.date_created)
                 issue.add_comment(com)
 
@@ -875,8 +882,7 @@ class LPBackend(Backend):
             aux = a['message_link']
             comment_id = int(aux[aux.rfind('/')+1:])
             comment = bug.bug.messages[comment_id]
-            a_by = People(comment.owner.name)
-            a_by.set_name(comment.owner.display_name)
+            a_by = self._get_person(comment.owner)
             a_on = self.__drop_timezone(comment.date_created)
 
             #a_desc = a['']
