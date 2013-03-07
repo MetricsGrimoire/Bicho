@@ -122,9 +122,6 @@ class Config:
         for option in vars(options):
             if (vars(options)[option] is not None) and \
               ( not Config.__dict__.has_key(option)) :
-                print("=  %s" % vars(options)[option])
-                if Config.__dict__.has_key(option):
-                    print("^^^^^")
                 clean_opt[option]=vars(options)[option]                    
         return clean_opt
         
