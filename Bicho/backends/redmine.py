@@ -204,7 +204,7 @@ class Redmine():
             f = urllib2.urlopen(author_url)         
             person = json.loads(f.read())
             res = person['user']['mail']
-        except urllib2.HTTPError:
+        except (urllib2.HTTPError, KeyError):
             printdbg("User with id %s has no account information" % author_id)
             res = author_id
         return res
