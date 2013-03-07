@@ -120,8 +120,12 @@ class Config:
     def clean_empty_options(options):
         clean_opt = {};        
         for option in vars(options):
-            if vars(options)[option] is not None:
-                clean_opt[option]=vars(options)[option]
+            if (vars(options)[option] is not None) and \
+              ( not Config.__dict__.has_key(option)) :
+                print("=  %s" % vars(options)[option])
+                if Config.__dict__.has_key(option):
+                    print("^^^^^")
+                clean_opt[option]=vars(options)[option]                    
         return clean_opt
         
     @staticmethod
@@ -210,8 +214,7 @@ class Config:
             Config.backend=args[0]
         if (len(args) == 2):
             Config.url=args[1]
-            
-        # Not remove config file options with empty default values                               
-        Config.__dict__.update(Config.clean_empty_options(options))        
 
+        # Not remove config file options with empty default values
+        Config.__dict__.update(Config.clean_empty_options(options))
         Config.check_config ()
