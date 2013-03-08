@@ -337,7 +337,7 @@ class SoupHtmlParser():
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
-        remove_tags = ['i','time']
+        remove_tags = ['i']
         try:
             [i.replaceWith(i.contents[0]) for i in soup.findAll(remove_tags)]
         except Exception:
@@ -361,21 +361,14 @@ class SoupHtmlParser():
 
             a_link = author_date_text.findAll('a')[1]
             # at this point a_link will be similar to the lines below:
-            #<a id="ch_header_10802_ofabre"
-            #href="/secure/ViewProfile.jspa?name=ofabre">Olivier Fabre</a>
+            #<a class="user-hover user-avatar" rel="kiyoshi.lee"
+            rel = a_link.attrs[1]
+            author_url = rel[1]
+            author = People(author_url)
 
-            h_ref = a_link.attrs[1]
-            author_url = h_ref[1]  # u'/secure/ViewProfile.jspa?name=ofabre'
-            author_str_id = author_url[author_url.find('name=') + 5:]
-            author = People(author_str_id)
-
-            raw_date = author_date_text.findAll('span')[0].contents[0]
-            # FIXME: Today and the name of the days of the current week
-            # must be replaced!
-            # if raw_date.find("Today") >= 0:
-            #     #FIXME the today date depends on the time zone!!
-            #     today_str = datetime.date.today().strftime("%d/%m/%y")
-            #     raw_date = raw_date.replace("Today",today_str)
+            # we look for a string similar to:
+            #<time datetime="2011-11-19T00:27-0800">19/Nov/11 12:27 AM</time>
+            raw_date = author_date_text.findAll('time')[0].attrs[0][1]
             date = parse(raw_date).replace(tzinfo=None)
 
             rows = list(table.findAll('tr'))
