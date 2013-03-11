@@ -908,15 +908,19 @@ class LPBackend(Backend):
         else:
             return dt
 
+    def _get_nickname_from_uri(self, uri):
+        aux = uri.rfind('~') + 1
+        return uri[aux:]
+
     def __get_people_from_uri(self, uri):
         # returns People object from uri (person_link)
-        # uri
-
-        aux = uri.rfind('~') + 1
-        dev_id = uri[aux:]
-        people_lp = self.lp.people[dev_id]
-        people_issue = People(people_lp.name)
-        people_issue.set_name(people_lp.display_name)
+        try:
+            people_lp = self.lp.people[self._get_nickname_from_uri(uri)]
+            people_issue = People(people_lp.name)
+            people_issue.set_name(people_lp.display_name)
+        except KeyError:
+            # user deleted from Launchpad!
+            people_issue = People(self._get_nickname_from_uri(uri))
         return people_issue
 
     def __get_project_from_url(self):
