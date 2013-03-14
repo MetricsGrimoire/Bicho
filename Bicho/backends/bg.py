@@ -1210,11 +1210,17 @@ class BGBackend(Backend):
     def _get_issues_list_url(self, base_url, version, from_date=None):
         if ((version == "3.2.3") or (version == "3.2.2")):
             url = base_url + "&order=Last+Changed&ctype=csv"
+            if from_date:
+                """
+                Firefox ITS (3.2.3) replaces %20 with %2520 that causes
+                Bicho to crash
+                """
+                day = from_date[:from_date.index(' ')]
+                url = url + "&chfieldfrom=" + day
         else:
             url = base_url + "&order=changeddate&ctype=csv"
-
-        if from_date:
-            url = url + "&chfieldfrom=" + from_date.replace(' ', '%20')
+            if from_date:
+                url = url + "&chfieldfrom=" + from_date.replace(' ', '%20')
         return url
 
     def _get_issues_info_url(self, base_url, ids):
