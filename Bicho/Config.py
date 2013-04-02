@@ -108,6 +108,10 @@ class Config:
                                + str(e.msg) + '('+ str(e.code)+')')
         except URLError, e:
             raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
+        
+        except ValueError, e:
+            print ("Not an URL: "  + Config.url)
+            
                 
         if vars(Config).has_key('input') and Config.input == 'db':
             Config.check_params(['db_driver_in', 'db_user_in', 'db_password_in',
@@ -147,6 +151,9 @@ class Config:
                           default='5')
         parser.add_option('-g', '--debug', action='store_true', dest='debug',
                           help='Enable debug mode', default=False)
+        parser.add_option('--gerrit-project', dest='gerrit_project',
+                          help='Project to be analyzed (gerrit backend)',
+                          default=None)
         parser.add_option('-i', '--input', choices=['url', 'db'],
                           dest='input', help='Input format', default='url')
         parser.add_option('-o', '--output', choices=['db'],
