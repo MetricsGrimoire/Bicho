@@ -236,11 +236,11 @@ class Gerrit():
         # return parse(str(str_date)).replace(tzinfo=None)
 
     def analyze_review(self, review):
-        try:                
+        try:
             issue =  self.parse_review(review)
-#            changes = self.analyze_bug_changes(bug_url)
-#            for c in changes:
-#                issue.add_change(c)                 
+            changes = self.analyze_review_changes(review)
+            for c in changes:
+                issue.add_change(c)
             return issue
 
         except Exception, e:
@@ -286,44 +286,35 @@ class Gerrit():
         return issue
                     
         
-    def analyze_bug_changes (self, bug_url):
-        bug_number = bug_url.split('/')[-1]
-        changes_url = bug_url.replace("rest/","")+"/feed.atom"
-
-        printdbg("Analyzing issue changes" + changes_url)
-
-        d = feedparser.parse(changes_url)
-        changes = self.parse_changes(d)
-        
+    def analyze_review_changes (self, review):        
+        changes = self.parse_changes(review['patchSets'])        
         return changes
 
-    def parse_changes (self, activity):
+    # We support now just one patchSets
+    def parse_changes (self, patchSets):
         changesList = []
-        for entry in activity['entries']:
+        activity = patchSets[0]
+        
+        if len(patchSets)>1:
+            printout("More than one patchSets. Only first analyzed.")
+
+        if "approvals" not in activity.keys():
+            return changesList
+                                
+        for entry in activity['approvals']:
             # print "changed_by:" + entry['author']
-            by = People(entry['author'])
+            
+            by = People(entry['by']['username'])
+            by.set_name(entry["by"]["name"])
+            if "email" in entry["by"].keys():
+                by.set_email(entry["by"]["email"])
             # print "changed_on:" + entry['updated']
-            description = entry['description'].split('updated:')
-            changes = description.pop(0)
-            field = changes.rpartition('\n')[2].strip()
-            while description:                
-                changes = description.pop(0).split('\n')
-                values = changes[0].split('=>')                
-                if (len(values) != 2):
-                    printdbg(field + " not supported in changes analysis")
-                    old_value = new_value = ""                    
-                else:
-                    # u'in-progress' => u'closed'
-                    values = changes[0].split('=>')
-                    old_value = self.remove_unicode(values[0].strip())
-                    if old_value == "''": old_value =""
-                    new_value = self.remove_unicode(values[1].strip())
-                    if new_value == "''": new_value =""
-                update = parse(entry['updated'])
-                change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
-                changesList.append(change)
-                if (len(changes)>1):
-                    field = changes[1].strip()
+            field = entry['type'] 
+            new_value = entry['value']
+            old_value = unicode('') # we need it?
+            update = self._convert_to_datetime(entry["grantedOn"])
+            change = Change(field, old_value, new_value, by, update)
+            changesList.append(change)
         return changesList
 
     def remove_unicode(self, str):
