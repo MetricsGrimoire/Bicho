@@ -227,67 +227,61 @@ class Gerrit():
     def __init__(self):
         self.delay = Config.delay
         
-    def _convert_to_datetime(self,str_date):
+    def _convert_to_datetime(self, date):
         """
         Returns datetime object from string
         """
-        return parse(str_date).replace(tzinfo=None)
+        import time
+        return parse(time.strftime('%Y %m %d %H:%M:%S', time.localtime(date)))
+        # return parse(str(str_date)).replace(tzinfo=None)
 
-    def analyze_bug(self, bug_url):
-        #Retrieving main bug information
-        printdbg(bug_url)
-        bug_number = bug_url.split('/')[-1]
+    def analyze_review(self, review):
+        try:                
+            issue =  self.parse_review(review)
+#            changes = self.analyze_bug_changes(bug_url)
+#            for c in changes:
+#                issue.add_change(c)                 
+            return issue
 
-        try:
-            f = urllib.urlopen(bug_url)
-
-            # f = urllib.urlopen(bug_url) 
-            json_ticket = f.read()
-            # print json_ticket
-            try:                
-                issue_gerrit = json.loads(json_ticket)["ticket"]
-                issue =  self.parse_bug(issue_gerrit)
-                changes = self.analyze_bug_changes(bug_url)
-                for c in changes:
-                    issue.add_change(c)                 
-                return issue
-
-            except Exception, e:
-                print "Problems with Ticket format: " + bug_number
-                print e
-                return None
-    
         except Exception, e:
-            printerr("Error in bug analysis: " + bug_url);
-            print(e)
-            raise
+            print "Problems with Review format: " + review['number']            
+            print e
+            return None
+    
         
-    def parse_bug(self, issue_gerrit):
-        people = People(issue_gerrit["reported_by_id"])            
-        people.set_name(issue_gerrit["reported_by"])
-                
-        issue = GerritIssue(issue_gerrit["_id"],
-                            "ticket",
-                            issue_gerrit["summary"],
-                            issue_gerrit["description"],
+    def parse_review(self, review):
+        people = People(review["owner"]["username"])    
+        people.set_name(review["owner"]["name"])
+        people.set_email(review["owner"]["email"])
+
+        description = ""
+        issue = GerritIssue(review["id"],
+                            "review",
+                            review["subject"],
+                            description,
                             people,
-                            self._convert_to_datetime(issue_gerrit["created_date"]))        
-        people =  People(issue_gerrit["assigned_to_id"])
-        people.set_name(issue_gerrit["assigned_to"])
-        issue.assigned_to = people
-        issue.status = issue_gerrit["status"]
+                            self._convert_to_datetime(review["createdOn"])
+                            )     
+#        people =  People(review["assigned_to_id"])
+#        people.set_name(review["assigned_to"])
+#        issue.assigned_to = people
+        issue.status = review["status"]
         # No information from Gerrit for this fields
+        issue.assigned_to = None
         issue.resolution = None
         issue.priority = None
                 
-        # Extended attributes
-        issue.labels = str(issue_gerrit["labels"])
-        issue.private = issue_gerrit["private"]
-        issue.ticket_num = issue_gerrit["ticket_num"]
-        issue.discussion_thread_url = issue_gerrit["discussion_thread_url"]
-        issue.related_artifacts = str(issue_gerrit["related_artifacts"])
-        issue.custom_fields = str(issue_gerrit["custom_fields"])
-        issue.mod_date = self._convert_to_datetime(issue_gerrit["mod_date"])
+        # TODO: Extended attributes: store now the shared with Allura
+        issue.labels = None
+        issue.private = None
+        issue.ticket_num = review["number"]
+        issue.discussion_thread_url = review["url"]
+        if "topic" in review.keys():
+            issue.related_artifacts = str(review["topic"])
+        else:
+            issue.related_artifacts = None  
+        issue.custom_fields = str(review["project"])
+        issue.mod_date = self._convert_to_datetime(review["lastUpdated"])
 
         return issue
                     
@@ -378,14 +372,27 @@ class Gerrit():
         args_gerrit += "--all-approvals --format=JSON"
         cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
         import subprocess 
-        tickets_raw = subprocess.check_output(cmd)
-        tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
-        tickets_raw = tickets_raw.replace(",]","]")
-        tickets = json.loads(tickets_raw)
-        pprint.pprint(tickets)
+        if False:
+            tickets_raw = subprocess.check_output(cmd)
+            tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
+            tickets_raw = tickets_raw.replace(",]","]")
+            pprint.pprint(tickets_raw)
         
+        tickets_test = '[{"project":"openstack/nova","branch":"master","topic":"bug/857209","id":"I660532ee5758c7595138d4dcf5a2825ddf898c65","number":"637","subject":"contrib/nova.sh: Updated to latest \\u0027upstream\\u0027 commit:6a8433a resolves bug 857209","owner":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"url":"https://review.openstack.org/637","createdOn":1316815511,"lastUpdated":1316815646,"sortKey":"0017e78f0000027d","open":false,"status":"ABANDONED","patchSets":[{"number":"1","revision":"95d8d0f75c188f7eabf00ecf6bd5b397852e67b9","ref":"refs/changes/37/637/1","uploader":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"createdOn":1316815511}]},'
+        tickets_test += '{"project":"openstack/nova","branch":"master","id":"I812e95fb0744ad84abd7ea2ad7d11123667abbc8","number":"635","subject":"Made jenkins email pruning more resilient.","owner":{"name":"Monty Taylor","email":"mordred@inaugust.com","username":"mordred"},"url":"https://review.openstack.org/635","createdOn":1316813897,"lastUpdated":1316814951,"sortKey":"0017e7830000027b","open":false,"status":"MERGED","patchSets":[{"number":"1","revision":"c586e4ed23846420177802c164f594e021cceea8","ref":"refs/changes/35/635/1","uploader":{"name":"Monty Taylor","email":"mordred@inaugust.com","username":"mordred"},"createdOn":1316813897,"approvals":[{"type":"SUBM","value":"1","grantedOn":1316814951,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"VRIF","description":"Verified","value":"1","grantedOn":1316814948,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"CRVW","description":"Code Review","value":"2","grantedOn":1316814192,"by":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"}}]}]},'
+        tickets_test += '{"project":"openstack/nova","branch":"master","id":"I495363b44d9da96d66f85c2a621393329830aeb3","number":"630","subject":"Fixing bug 857712","owner":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"},"url":"https://review.openstack.org/630","createdOn":1316810421,"lastUpdated":1316813692,"sortKey":"0017e76e00000276","open":false,"status":"MERGED","patchSets":[{"number":"1","revision":"ddb6945e8fbb8a00d5b67a6a6b8a069b7642022d","ref":"refs/changes/30/630/1","uploader":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"},"createdOn":1316810421,"approvals":[{"type":"SUBM","value":"1","grantedOn":1316813692,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"VRIF","description":"Verified","value":"1","grantedOn":1316813689,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"CRVW","description":"Code Review","value":"1","grantedOn":1316811221,"by":{"name":"Josh Kearney","email":"josh@jk0.org","username":"jk0"}},{"type":"CRVW","description":"Code Review","value":"2","grantedOn":1316812789,"by":{"name":"Brian Lamar","email":"brian.lamar@gmail.com","username":"blamar"}},{"type":"CRVW","description":"Code Review","value":"1","grantedOn":1316810744,"by":{"name":"Mark McLoughlin","email":"markmc@redhat.com","username":"markmc"}}]}]},'
+        tickets_test += '{"type":"stats","rowCount":67,"runTimeMilliseconds":365}]'
+        
+        tickets = json.loads(tickets_test)
+        
+        reviews = []
+        for entry in tickets:
+            if 'project' in entry.keys():
+                reviews.append(entry["number"])
+                review_data = self.analyze_review(entry)
+                bugsdb.insert_issue(review_data, dbtrk.id)
+
         sys.exit(0)
-        
         
         total_issues = int(ticketTotal['count'])
         total_pages = total_issues/issues_per_query
