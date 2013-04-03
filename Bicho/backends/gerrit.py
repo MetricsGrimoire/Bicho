@@ -244,15 +244,26 @@ class Gerrit():
             return issue
 
         except Exception, e:
-            print "Problems with Review format: " + review['number']            
+            print "Problems with Review format: " + review['number']
+            pprint.pprint(review)           
             print e
             return None
     
         
     def parse_review(self, review):
-        people = People(review["owner"]["username"])    
-        people.set_name(review["owner"]["name"])
-        people.set_email(review["owner"]["email"])
+        if "username" in review["owner"].keys():
+            people = People(review['owner']['username'])
+        elif "email" in review["owner"].keys():
+            people = People(review['owner']['email'])
+        elif "name" in review["owner"].keys():
+            people = People(review['owner']['name'])
+        else:
+            people = People(unicode(''))
+    
+        if "name" in review["owner"].keys():
+            people.set_name(review["owner"]["name"])
+        if "email" in review["owner"].keys():
+            people.set_email(review["owner"]["email"])
 
         description = ""
         issue = GerritIssue(review["id"],
@@ -295,17 +306,25 @@ class Gerrit():
         changesList = []
         activity = patchSets[0]
         
-        if len(patchSets)>1:
-            printout("More than one patchSets. Only first analyzed.")
+#        if len(patchSets)>1:
+#            printout("More than one patchSets. Only first analyzed.")
 
         if "approvals" not in activity.keys():
             return changesList
                                 
         for entry in activity['approvals']:
             # print "changed_by:" + entry['author']
+            if "username" in entry["by"].keys():
+                by = People(entry['by']['username'])
+            elif "email" in entry["by"].keys():
+                by = People(entry['by']['email'])
+            elif "name" in entry["by"].keys():
+                by = People(entry['by']['name'])
+            else:
+                by = People(unicode(''))
             
-            by = People(entry['by']['username'])
-            by.set_name(entry["by"]["name"])
+            if "name" in entry["by"].keys():
+                by.set_name(entry["by"]["name"])
             if "email" in entry["by"].keys():
                 by.set_email(entry["by"]["email"])
             # print "changed_on:" + entry['updated']
@@ -316,14 +335,37 @@ class Gerrit():
             change = Change(field, old_value, new_value, by, update)
             changesList.append(change)
         return changesList
+    
+    def getReviews (self, start):
+        
+        issues_per_query = 500 # gerrit default
+        
+        args_gerrit ="gerrit query "
+        args_gerrit += "project:" + Config.gerrit_project
+        args_gerrit += " limit:" + str(issues_per_query) 
+        # args_gerrit += " age:556d "
+        if (start != ""): 
+            args_gerrit += " resume_sortkey:"+start
+            
+        args_gerrit += " --all-approvals --format=JSON"
+        
+        printdbg("Gerrit cmd: " + args_gerrit)
+                
+        cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
+        import subprocess 
+        tickets_raw = subprocess.check_output(cmd)
+        tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
+        tickets_raw = tickets_raw.replace(",]","]")
+        tickets = json.loads(tickets_raw)
+        
+#        tickets_test = '[{"project":"openstack/nova","branch":"master","topic":"bug/857209","id":"I660532ee5758c7595138d4dcf5a2825ddf898c65","number":"637","subject":"contrib/nova.sh: Updated to latest \\u0027upstream\\u0027 commit:6a8433a resolves bug 857209","owner":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"url":"https://review.openstack.org/637","createdOn":1316815511,"lastUpdated":1316815646,"sortKey":"0017e78f0000027d","open":false,"status":"ABANDONED","patchSets":[{"number":"1","revision":"95d8d0f75c188f7eabf00ecf6bd5b397852e67b9","ref":"refs/changes/37/637/1","uploader":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"createdOn":1316815511}]},'
+#        tickets_test += '{"project":"openstack/nova","branch":"master","id":"I812e95fb0744ad84abd7ea2ad7d11123667abbc8","number":"635","subject":"Made jenkins email pruning more resilient.","owner":{"name":"Monty Taylor","email":"mordred@inaugust.com","username":"mordred"},"url":"https://review.openstack.org/635","createdOn":1316813897,"lastUpdated":1316814951,"sortKey":"0017e7830000027b","open":false,"status":"MERGED","patchSets":[{"number":"1","revision":"c586e4ed23846420177802c164f594e021cceea8","ref":"refs/changes/35/635/1","uploader":{"name":"Monty Taylor","email":"mordred@inaugust.com","username":"mordred"},"createdOn":1316813897,"approvals":[{"type":"SUBM","value":"1","grantedOn":1316814951,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"VRIF","description":"Verified","value":"1","grantedOn":1316814948,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"CRVW","description":"Code Review","value":"2","grantedOn":1316814192,"by":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"}}]}]},'
+#        tickets_test += '{"project":"openstack/nova","branch":"master","id":"I495363b44d9da96d66f85c2a621393329830aeb3","number":"630","subject":"Fixing bug 857712","owner":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"},"url":"https://review.openstack.org/630","createdOn":1316810421,"lastUpdated":1316813692,"sortKey":"0017e76e00000276","open":false,"status":"MERGED","patchSets":[{"number":"1","revision":"ddb6945e8fbb8a00d5b67a6a6b8a069b7642022d","ref":"refs/changes/30/630/1","uploader":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"},"createdOn":1316810421,"approvals":[{"type":"SUBM","value":"1","grantedOn":1316813692,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"VRIF","description":"Verified","value":"1","grantedOn":1316813689,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"CRVW","description":"Code Review","value":"1","grantedOn":1316811221,"by":{"name":"Josh Kearney","email":"josh@jk0.org","username":"jk0"}},{"type":"CRVW","description":"Code Review","value":"2","grantedOn":1316812789,"by":{"name":"Brian Lamar","email":"brian.lamar@gmail.com","username":"blamar"}},{"type":"CRVW","description":"Code Review","value":"1","grantedOn":1316810744,"by":{"name":"Mark McLoughlin","email":"markmc@redhat.com","username":"markmc"}}]}]},'
+#        tickets_test += '{"type":"stats","rowCount":67,"runTimeMilliseconds":365}]'        
+#        tickets = json.loads(tickets_test)
 
-    def remove_unicode(self, str):
-        """
-        Cleanup u'' chars indicating a unicode string
-        """
-        if (str.startswith('u\'') and str.endswith('\'')):
-            str = str[2:len(str)-1]
-        return str
+        
+        return tickets
 
 
     def run(self):
@@ -331,10 +373,6 @@ class Gerrit():
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
-        issues_per_query = 500 # gerrit default
-        start_page=0
-
-
         bugs = [];
         bugsdb = get_database (DBGerritBackend())
                 
@@ -344,94 +382,36 @@ class Gerrit():
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_date = bugsdb.get_last_modification_date()
-
         # Date before the first ticket
         time_window_start = "1900-01-01T00:00:00Z" 
         time_window_end = datetime.now().isoformat()+"Z"
-
         if last_mod_date:
             time_window_start = last_mod_date
             printdbg("Last bugs analyzed were modified on: %s" % last_mod_date)
-
         time_window = time_window_start + " TO  " + time_window_end
+
+        issues_per_query = 500 # gerrit default
+        last_item = "";
+        # last_item = "001f672c00002f80";
+        number_results = issues_per_query
+        total_reviews = 0
         
-        # Execute a command and read the results for getting reviews info
+        while (number_results == issues_per_query):        
+            tickets = self.getReviews(last_item)
+                
+            reviews = []
+            for entry in tickets:
+                if 'project' in entry.keys():
+                    reviews.append(entry["number"])
+                    review_data = self.analyze_review(entry)
+                    last_item = entry['sortKey']
+                    bugsdb.insert_issue(review_data, dbtrk.id)
+                elif 'rowCount' in entry.keys():
+                    number_results = entry['rowCount']
+                    total_reviews = total_reviews + int(number_results)
+                    pprint.pprint(entry)
+                    printdbg("CONTINUE FROM: " + last_item)
 
-        args_gerrit ="gerrit query "
-        args_gerrit += "project:" + Config.gerrit_project
-        args_gerrit += " limit:" + str(issues_per_query) +" age:556d "
-        args_gerrit += "--all-approvals --format=JSON"
-        cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
-        import subprocess 
-        if False:
-            tickets_raw = subprocess.check_output(cmd)
-            tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
-            tickets_raw = tickets_raw.replace(",]","]")
-            pprint.pprint(tickets_raw)
-        
-        tickets_test = '[{"project":"openstack/nova","branch":"master","topic":"bug/857209","id":"I660532ee5758c7595138d4dcf5a2825ddf898c65","number":"637","subject":"contrib/nova.sh: Updated to latest \\u0027upstream\\u0027 commit:6a8433a resolves bug 857209","owner":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"url":"https://review.openstack.org/637","createdOn":1316815511,"lastUpdated":1316815646,"sortKey":"0017e78f0000027d","open":false,"status":"ABANDONED","patchSets":[{"number":"1","revision":"95d8d0f75c188f7eabf00ecf6bd5b397852e67b9","ref":"refs/changes/37/637/1","uploader":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"createdOn":1316815511}]},'
-        tickets_test += '{"project":"openstack/nova","branch":"master","id":"I812e95fb0744ad84abd7ea2ad7d11123667abbc8","number":"635","subject":"Made jenkins email pruning more resilient.","owner":{"name":"Monty Taylor","email":"mordred@inaugust.com","username":"mordred"},"url":"https://review.openstack.org/635","createdOn":1316813897,"lastUpdated":1316814951,"sortKey":"0017e7830000027b","open":false,"status":"MERGED","patchSets":[{"number":"1","revision":"c586e4ed23846420177802c164f594e021cceea8","ref":"refs/changes/35/635/1","uploader":{"name":"Monty Taylor","email":"mordred@inaugust.com","username":"mordred"},"createdOn":1316813897,"approvals":[{"type":"SUBM","value":"1","grantedOn":1316814951,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"VRIF","description":"Verified","value":"1","grantedOn":1316814948,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"CRVW","description":"Code Review","value":"2","grantedOn":1316814192,"by":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"}}]}]},'
-        tickets_test += '{"project":"openstack/nova","branch":"master","id":"I495363b44d9da96d66f85c2a621393329830aeb3","number":"630","subject":"Fixing bug 857712","owner":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"},"url":"https://review.openstack.org/630","createdOn":1316810421,"lastUpdated":1316813692,"sortKey":"0017e76e00000276","open":false,"status":"MERGED","patchSets":[{"number":"1","revision":"ddb6945e8fbb8a00d5b67a6a6b8a069b7642022d","ref":"refs/changes/30/630/1","uploader":{"name":"Brian Waldon","email":"bcwaldon@gmail.com","username":"bcwaldon"},"createdOn":1316810421,"approvals":[{"type":"SUBM","value":"1","grantedOn":1316813692,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"VRIF","description":"Verified","value":"1","grantedOn":1316813689,"by":{"name":"Jenkins","username":"jenkins"}},{"type":"CRVW","description":"Code Review","value":"1","grantedOn":1316811221,"by":{"name":"Josh Kearney","email":"josh@jk0.org","username":"jk0"}},{"type":"CRVW","description":"Code Review","value":"2","grantedOn":1316812789,"by":{"name":"Brian Lamar","email":"brian.lamar@gmail.com","username":"blamar"}},{"type":"CRVW","description":"Code Review","value":"1","grantedOn":1316810744,"by":{"name":"Mark McLoughlin","email":"markmc@redhat.com","username":"markmc"}}]}]},'
-        tickets_test += '{"type":"stats","rowCount":67,"runTimeMilliseconds":365}]'
-        
-        tickets = json.loads(tickets_test)
-        
-        reviews = []
-        for entry in tickets:
-            if 'project' in entry.keys():
-                reviews.append(entry["number"])
-                review_data = self.analyze_review(entry)
-                bugsdb.insert_issue(review_data, dbtrk.id)
-
-        sys.exit(0)
-        
-        total_issues = int(ticketTotal['count'])
-        total_pages = total_issues/issues_per_query
-        print("Number of tickets: " + str(total_issues))
-
-        if  total_issues == 0:
-            printout("No bugs found. Did you provide the correct url?")
-            sys.exit(0)
-        remaining = total_issues
-
-        print "ETA ", (total_issues*Config.delay)/(60), "m (", (total_issues*Config.delay)/(60*60), "h)"
-        
-        while start_page <= total_pages:
-            self.url_issues = Config.url + "/search/?limit="+str(issues_per_query)
-            self.url_issues += "&page=" + str(start_page) + "&q="
-            # A time range with all the tickets
-            self.url_issues +=  urllib.quote("mod_date_dt:["+time_window+"]")
-            # Order by mod_date_dt desc
-            self.url_issues +=  "&sort=mod_date_dt+asc"
-
-            printdbg("URL for next issues " + self.url_issues) 
-
-            f = urllib.urlopen(self.url_issues)
-
-            ticketList = json.loads(f.read())
-
-            bugs=[]
-            for ticket in ticketList["tickets"]:
-                bugs.append(ticket["ticket_num"])
-
-            for bug in bugs:
-                try:
-                    issue_url = Config.url+"/"+str(bug)
-                    issue_data = self.analyze_bug(issue_url)
-                    if issue_data is None:
-                        continue
-                    bugsdb.insert_issue(issue_data, dbtrk.id)
-                    remaining -= 1
-                    print "Remaining time: ", (remaining)*Config.delay/60, "m"
-                    time.sleep(self.delay)
-                except Exception, e:
-                    printerr("Error in function analyze_bug " + issue_url)
-                    traceback.print_exc(file=sys.stdout)
-                except UnicodeEncodeError:
-                    printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                          % (issue_data.issue))
-            start_page += 1
-            
-        printout("Done. Bugs analyzed:" + str(total_issues-remaining))
+        print("Done. Number of reviews: " + str(total_reviews))
         
 Backend.register_backend('gerrit', Gerrit)
