@@ -195,10 +195,9 @@ class DBGerritBackend(DBBackend):
         aux = result.order_by(Desc(DBGerritIssueExt.mod_date))[:1]
 
         for entry in aux:
-            return entry.mod_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+            return entry.mod_date.strftime('%Y-%m-%d %H:%M:%S')
 
         return None
-
 
 class GerritIssue(Issue):
     """
@@ -298,16 +297,17 @@ class Gerrit():
                     
         
     def analyze_review_changes (self, review):        
-        changes = self.parse_changes(review['patchSets'])        
+        changes = self.parse_changes(review)        
         return changes
 
     # We support now just one patchSets
-    def parse_changes (self, patchSets):
+    def parse_changes (self, review):
         changesList = []
-        activity = patchSets[0]
+        patchSets = review['patchSets']
+        activity = patchSets[len(patchSets)-1]
         
-#        if len(patchSets)>1:
-#            printout("More than one patchSets. Only first analyzed.")
+        if len(patchSets)>1:
+            printdbg(str(len(patchSets)) + " patchSets: "+review['url'])
 
         if "approvals" not in activity.keys():
             return changesList
@@ -336,17 +336,14 @@ class Gerrit():
             changesList.append(change)
         return changesList
     
-    def getReviews (self, start):
-        
-        issues_per_query = 500 # gerrit default
-        
+    def getReviews (self, limit, start):
+                
         args_gerrit ="gerrit query "
         args_gerrit += "project:" + Config.gerrit_project
-        args_gerrit += " limit:" + str(issues_per_query) 
-        # args_gerrit += " age:556d "
+        args_gerrit += " limit:" + str(limit) 
         if (start != ""): 
             args_gerrit += " resume_sortkey:"+start
-            
+                        
         args_gerrit += " --all-approvals --format=JSON"
         
         printdbg("Gerrit cmd: " + args_gerrit)
@@ -381,36 +378,39 @@ class Gerrit():
         trk = Tracker (Config.url, "gerrit", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
         
-        last_mod_date = bugsdb.get_last_modification_date()
-        # Date before the first ticket
-        time_window_start = "1900-01-01T00:00:00Z" 
-        time_window_end = datetime.now().isoformat()+"Z"
+        last_mod_time = 0        
+        last_mod_date = bugsdb.get_last_modification_date()                
         if last_mod_date:
-            time_window_start = last_mod_date
-            printdbg("Last bugs analyzed were modified on: %s" % last_mod_date)
-        time_window = time_window_start + " TO  " + time_window_end
-
-        issues_per_query = 500 # gerrit default
+            printdbg("Last reviews analyzed were modified on date: %s" 
+                     % last_mod_date)
+            last_mod_time = time.mktime(time.strptime
+                                        (last_mod_date, '%Y-%m-%d %H:%M:%S'))
+            
+        limit = 500 # gerrit default 500
         last_item = "";
         # last_item = "001f672c00002f80";
-        number_results = issues_per_query
+        number_results = limit
         total_reviews = 0
         
-        while (number_results == issues_per_query):        
-            tickets = self.getReviews(last_item)
+        while (number_results == limit):
+            # ordered by lastUpdated        
+            tickets = self.getReviews(limit, last_item)
+            number_results = 0
                 
             reviews = []
             for entry in tickets:
                 if 'project' in entry.keys():
+                    if (entry['lastUpdated']<last_mod_time):
+                        break
                     reviews.append(entry["number"])
                     review_data = self.analyze_review(entry)
                     last_item = entry['sortKey']
                     bugsdb.insert_issue(review_data, dbtrk.id)
+                    number_results = number_results+1
                 elif 'rowCount' in entry.keys():
-                    number_results = entry['rowCount']
-                    total_reviews = total_reviews + int(number_results)
                     pprint.pprint(entry)
                     printdbg("CONTINUE FROM: " + last_item)
+            total_reviews = total_reviews + int(number_results)
 
         print("Done. Number of reviews: " + str(total_reviews))
         
