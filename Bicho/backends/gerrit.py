@@ -50,7 +50,7 @@ class DBGerritIssueExt(object):
     id = Int(primary=True)
     branch = Unicode()
     url = Unicode()
-    ticket_num = Int()
+    change_id = Unicode()
     related_artifacts = Unicode()
     project = Unicode()
     mod_date = DateTime()        
@@ -73,7 +73,7 @@ class DBGerritIssueExtMySQL(DBGerritIssueExt):
                     id INTEGER NOT NULL AUTO_INCREMENT, \
                     branch TEXT, \
                     url TEXT,  \
-                    ticket_num INTEGER NOT NULL, \
+                    change_id TEXT, \
                     related_artifacts TEXT, \
                     project TEXT, \
                     mod_date DATETIME, \
@@ -120,7 +120,7 @@ class DBGerritBackend(DBBackend):
         
             db_issue_ext.branch = issue.branch 
             db_issue_ext.url = issue.url
-            db_issue_ext.ticket_num = int(issue.ticket_num)
+            db_issue_ext.change_id = issue.change_id
             db_issue_ext.related_artifacts = issue.related_artifacts
             db_issue_ext.project = issue.project
             db_issue_ext.mod_date = issue.mod_date
@@ -208,7 +208,7 @@ class Gerrit():
             people.set_email(review["owner"]["email"])
 
         description = ""
-        issue = GerritIssue(review["id"],
+        issue = GerritIssue(review["number"],
                             "review",
                             review["subject"],
                             description,
@@ -227,7 +227,7 @@ class Gerrit():
 
         issue.branch = review["branch"]
         issue.url = review["url"]
-        issue.ticket_num = review["number"]
+        issue.change_id = review["id"]
         if "topic" in review.keys():
             issue.related_artifacts = review["topic"]
         else:
