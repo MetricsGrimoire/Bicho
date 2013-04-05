@@ -247,36 +247,42 @@ class Gerrit():
     def parse_changes (self, review):
         changesList = []
         patchSets = review['patchSets']
-        activity = patchSets[len(patchSets)-1]
         
-        if len(patchSets)>1:
-            printdbg(str(len(patchSets)) + " patchSets: "+review['url'])
-
-        if "approvals" not in activity.keys():
-            return changesList
-                                
-        for entry in activity['approvals']:
-            # print "changed_by:" + entry['author']
-            if "username" in entry["by"].keys():
-                by = People(entry['by']['username'])
-            elif "email" in entry["by"].keys():
-                by = People(entry['by']['email'])
-            elif "name" in entry["by"].keys():
-                by = People(entry['by']['name'])
-            else:
-                by = People(unicode(''))
+        for activity in patchSets: 
+        
+            # activity = patchSets[len(patchSets)-1]
+        
+#            if len(patchSets)>1:
+#                printdbg(str(len(patchSets)) + " patchSets: "+review['url'])
+    
+            if "approvals" not in activity.keys():
+                return changesList
             
-            if "name" in entry["by"].keys():
-                by.set_name(entry["by"]["name"])
-            if "email" in entry["by"].keys():
-                by.set_email(entry["by"]["email"])
-            # print "changed_on:" + entry['updated']
-            field = entry['type'] 
-            new_value = entry['value']
-            old_value = unicode('') # we need it?
-            update = self._convert_to_datetime(entry["grantedOn"])
-            change = Change(field, old_value, new_value, by, update)
-            changesList.append(change)
+            patchSetNumber = activity['number']
+                
+            for entry in activity['approvals']:
+                # print "changed_by:" + entry['author']
+                if "username" in entry["by"].keys():
+                    by = People(entry['by']['username'])
+                elif "email" in entry["by"].keys():
+                    by = People(entry['by']['email'])
+                elif "name" in entry["by"].keys():
+                    by = People(entry['by']['name'])
+                else:
+                    by = People(unicode(''))
+                
+                if "name" in entry["by"].keys():
+                    by.set_name(entry["by"]["name"])
+                if "email" in entry["by"].keys():
+                    by.set_email(entry["by"]["email"])
+                # print "changed_on:" + entry['updated']
+                field = entry['type'] 
+                new_value = entry['value']
+                old_value = patchSetNumber
+                update = self._convert_to_datetime(entry["grantedOn"])
+                change = Change(field, old_value, new_value, by, update)
+                changesList.append(change)
+                
         return changesList
     
     def getReviews (self, limit, start):
