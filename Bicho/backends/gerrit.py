@@ -44,65 +44,18 @@ from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
 
 
 class DBGerritIssueExt(object):
-    # FIXME: Do we really need all this comments? DRY!!!
-    """
-    Maps elements from X{issues_ext_gerrit} table.
 
-    @param labels: issue labels
-    @type labels: C{str}
-    @param private: issue private or not
-    @type private: C{boolean}
-    @param ticket_num: identifier of the issue
-    @type ticket_num: C{int}
-    @param discussion_thread_url: issue url for discussion thread
-    @type discussion_thread_url: L{storm.locals.Unicode}
-    @param related_artifacts: issue related artifacts
-    @type related_artifacts: L{storm.locals.Unicode}
-    @param custom_fields: issue custom fields
-    @type custom_fields: L{storm.locals.Unicode}
-    @param mod_date: issue modification date
-    @type mod_date: L{storm.locals.Date}
-
-    @param issue_id: identifier of the issue
-    @type issue_id: C{int}
-
-
-    @ivar __storm_table__: Name of the database table.
-    @type __storm_table__: C{str}
-
-    @ivar id: Extra issue fields identifier.
-    @type id: L{storm.locals.Int}
-    @ivar labels: issue labels
-    @type labels: L{storm.locals.Unicode}
-    @ivar private: issue private or not
-    @type private: L{storm.locals.Boolean}
-    @ivar ticket_num: Issue identifier.
-    @type ticket_num: L{storm.locals.Int}
-    @ivar discussion_thread_url: issue url for discussion thread
-    @type discussion_thread_url: L{storm.locals.Unicode}
-    @ivar related_artifacts: issue related artifacts
-    @type related_artifacts: L{storm.locals.Unicode}
-    @ivar custom_fields: issue custom fields
-    @type custom_fields: L{storm.locals.Unicode}
-    @ivar mod_date: issue modification date
-    @type mod_date: L{storm.locals.Date}
-    @ivar issue_id: Issue identifier.
-    @type issue_id: L{storm.locals.Int}
-    @ivar issue: Reference to L{DBIssue} object.
-    @type issue: L{storm.locals.Reference}
-    """
-        
     __storm_table__ = 'issues_ext_gerrit'
 
     id = Int(primary=True)
-    labels = Unicode()
-    private = Bool()
+    branch = Unicode()
+    url = Unicode()
     ticket_num = Int()
-    discussion_thread_url = Unicode()
     related_artifacts = Unicode()
-    custom_fields = Unicode()
+    project = Unicode()
     mod_date = DateTime()        
     issue_id = Int()
+    open = Unicode()
             
     issue = Reference(issue_id, DBIssue.id)
     
@@ -118,14 +71,14 @@ class DBGerritIssueExtMySQL(DBGerritIssueExt):
     # If the table is changed you need to remove old from database
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_gerrit ( \
                     id INTEGER NOT NULL AUTO_INCREMENT, \
-                    labels TEXT, \
-                    private BOOLEAN, \
+                    branch TEXT, \
+                    url TEXT,  \
                     ticket_num INTEGER NOT NULL, \
-                    discussion_thread_url TEXT, \
                     related_artifacts TEXT, \
-                    custom_fields TEXT, \
+                    project TEXT, \
                     mod_date DATETIME, \
                     issue_id INTEGER NOT NULL, \
+                    open TEXT, \
                     PRIMARY KEY(id), \
                     FOREIGN KEY(issue_id) \
                     REFERENCES issues (id) \
@@ -165,13 +118,13 @@ class DBGerritBackend(DBBackend):
                 db_issue_ext = DBGerritIssueExt(issue_id)
                 #db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
         
-            db_issue_ext.labels = unicode(issue.labels) 
-            db_issue_ext.private = bool(issue.private)
+            db_issue_ext.branch = issue.branch 
+            db_issue_ext.url = issue.url
             db_issue_ext.ticket_num = int(issue.ticket_num)
-            db_issue_ext.discussion_thread_url = unicode(issue.discussion_thread_url)
-            db_issue_ext.related_artifacts = unicode(issue.related_artifacts)
-            db_issue_ext.custom_fields = unicode(issue.custom_fields)
+            db_issue_ext.related_artifacts = issue.related_artifacts
+            db_issue_ext.project = issue.project
             db_issue_ext.mod_date = issue.mod_date
+            db_issue_ext.open = unicode(issue.open)
         
             if newIssue == True:
                 store.add(db_issue_ext)
@@ -207,16 +160,6 @@ class GerritIssue(Issue):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
         
-        if False:
-            self.labels = None
-            self.private = None
-            self.ticket_num = None
-            
-            self.discussion_thread_url = None
-            self.related_artifacts = None
-            self.custom_fields = None
-            self.mod_date = None
-
     
 class Gerrit():
     
@@ -281,17 +224,17 @@ class Gerrit():
         issue.resolution = None
         issue.priority = None
                 
-        # TODO: Extended attributes: store now the shared with Allura
-        issue.labels = None
-        issue.private = None
+
+        issue.branch = review["branch"]
+        issue.url = review["url"]
         issue.ticket_num = review["number"]
-        issue.discussion_thread_url = review["url"]
         if "topic" in review.keys():
-            issue.related_artifacts = str(review["topic"])
+            issue.related_artifacts = review["topic"]
         else:
             issue.related_artifacts = None  
-        issue.custom_fields = str(review["project"])
+        issue.project = review["project"]
         issue.mod_date = self._convert_to_datetime(review["lastUpdated"])
+        issue.open = review["open"]
 
         return issue
                     
@@ -375,7 +318,7 @@ class Gerrit():
                 
         # still useless in gerrit
         bugsdb.insert_supported_traker("gerrit", "beta")
-        trk = Tracker (Config.url, "gerrit", "beta")
+        trk = Tracker (Config.url+"_"+Config.gerrit_project, "gerrit", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_time = 0        
