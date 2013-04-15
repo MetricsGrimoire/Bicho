@@ -193,7 +193,7 @@ class Redmine():
     #     return issue
 
     def _get_redmine_root(self, url):
-        return url[:url.find('projects')]
+        return url[:url.find('projects/')]
         
     def _get_author_email(self, author_id):
         root = self._get_redmine_root(Config.url)
