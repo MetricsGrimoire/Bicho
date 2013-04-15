@@ -214,8 +214,11 @@ class Redmine():
     def analyze_bug(self, issue_redmine):
         #print(issue_redmine)
         #print("*** %s " % issue_redmine["author"]["id"])
-        people = People(self._get_author_email(issue_redmine["author"]["id"]))
-        people.set_name(issue_redmine["author"]["name"])
+        try:
+            people = People(self._get_author_email(issue_redmine["author"]["id"]))
+            people.set_name(issue_redmine["author"]["name"])
+        except KeyError:
+            people = People("None")
                 
         issue = RedmineIssue(issue_redmine["id"],
                             "ticket",
@@ -229,7 +232,7 @@ class Redmine():
                 people.set_name(issue_redmine["assigned_to"]["name"])
                 issue.assigned_to = people
         except KeyError:
-                people = People("nobody")
+                people = People("None")
                 issue.assigned_to = people
         issue.status = issue_redmine["status"]["name"]
         issue.priority = issue_redmine["priority"]["id"]
