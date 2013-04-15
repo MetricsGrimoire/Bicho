@@ -114,7 +114,7 @@ class DBDatabase:
             self.store.commit()
         return db_tracker
 
-    def insert_people(self, people, tracker_id):
+    def insert_people(self, people):
         """
         Insert the given identity.
 
@@ -125,13 +125,13 @@ class DBDatabase:
         @rtype: L{People}
         """
         try:
-            db_people = DBPeople(people.user_id, tracker_id)
+            db_people = DBPeople(people.user_id)
             db_people.set_name(people.name)
             db_people.set_email(people.email)
             self.store.add(db_people)
             self.store.commit()
         except IntegrityError:
-            db_people = self._get_db_people(people.user_id, tracker_id)
+            db_people = self._get_db_people(people.user_id)
         return db_people
 
     def insert_issue(self, issue, tracker_id):
@@ -164,14 +164,13 @@ class DBDatabase:
             db_issue.status = unicode(issue.status)
             db_issue.resolution = unicode(issue.resolution)
             db_issue.priority = unicode(issue.priority)
-            db_issue.submitted_by = self.insert_people(issue.submitted_by, 
-                                                       tracker_id).id
+            db_issue.submitted_by = self.insert_people(issue.submitted_by).id
+            
 
             db_issue.submitted_on = issue.submitted_on
             
             if issue.assigned_to is not None:
-                db_issue.assigned_to = self.insert_people(issue.assigned_to,
-                                                          tracker_id).id
+                db_issue.assigned_to = self.insert_people(issue.assigned_to).id
 
             #if issue is new, we add to the data base before the flush()
             if newIssue == True:
@@ -305,7 +304,7 @@ class DBDatabase:
         @return: the inserted comment
         @rtype: L{DBComment}
         """
-        submitted_by = self.insert_people(comment.submitted_by, tracker_id)
+        submitted_by = self.insert_people(comment.submitted_by)
 
         db_comment = DBComment(comment.comment, submitted_by.id,
                                comment.submitted_on, issue_id)
@@ -332,8 +331,7 @@ class DBDatabase:
         @rtype: L{DBAttachment}
         """
         if attachment.submitted_by is not None:
-            submitter = self.insert_people(attachment.submitted_by,
-                                           tracker_id)
+            submitter = self.insert_people(attachment.submitted_by)
             submitted_by = submitter.id
         else:
             submitted_by = None
@@ -359,7 +357,7 @@ class DBDatabase:
         @return: the inserted change
         @rtype: L{DBChange}
         """
-        changed_by = self.insert_people(change.changed_by, tracker_id)
+        changed_by = self.insert_people(change.changed_by)
 
         db_change = DBChange(change.field, change.old_value, change.new_value, 
                              changed_by.id, change.changed_on, issue_id)
@@ -374,7 +372,7 @@ class DBDatabase:
         @return: the inserted comment
         @rtype: L{DBComment}
         """
-        watcher = self.insert_people(people, tracker_id)
+        watcher = self.insert_people(people)
 
         db_issues_watchers = DBIssuesWatchers(issue_id, watcher.id)
 
@@ -421,7 +419,7 @@ class DBDatabase:
             raise NotFoundError('Tracker %s not found' % url)
         return db_tracker
 
-    def _get_db_people(self, user_id, tracker_id):
+    def _get_db_people(self, user_id):
         """
         Get the identity based on the given id.
 
@@ -437,10 +435,8 @@ class DBDatabase:
         """
         try:
             db_people = self.store.find(DBPeople,
-                                        DBPeople.user_id == unicode(user_id),
-                                        DBPeople.tracker_id == tracker_id).one()
+                                        DBPeople.user_id == unicode(user_id)).one()
         except Exception, e:
-            print ("petó el find")
             print e
             
         if not db_people:
@@ -658,13 +654,9 @@ class DBPeople(object):
     name = Unicode()
     email = Unicode()
     user_id = Unicode()
-    tracker_id = Int()
 
-    tracker = Reference(tracker_id, DBTracker.id)
-
-    def __init__(self, user_id, tracker_id):
+    def __init__(self, user_id):
         self.user_id = unicode(user_id)
-        self.tracker_id = tracker_id
 
     def set_name(self, name):
         """
