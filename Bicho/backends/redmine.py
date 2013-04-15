@@ -219,11 +219,16 @@ class Redmine():
             people.set_name(issue_redmine["author"]["name"])
         except KeyError:
             people = People("None")
+
+        try:
+            desc = issue_redmine["description"]
+        except KeyError:
+            desc = ""
                 
         issue = RedmineIssue(issue_redmine["id"],
                             "ticket",
                             issue_redmine["subject"],
-                            issue_redmine["description"],
+                            desc,
                             people,
                             self._convert_to_datetime(issue_redmine["created_on"]))        
         try:
