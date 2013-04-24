@@ -26,11 +26,14 @@ from Bicho.utils import create_dir, printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
 from Bicho.common import Tracker, Issue, People, Change
 
+from BeautifulSoup import BeautifulSoup, Comment as BFComment
+
 from dateutil.parser import parse
 from datetime import datetime
 
 import errno, json, os, random, time, traceback, urllib, urllib2, feedparser, base64, sys
 import pprint 
+import re
 
 from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
 
@@ -113,15 +116,15 @@ class DBRedmineBackend(DBBackend):
 
             db_issue_ext.category_id = issue.category_id
             db_issue_ext.done_ratio = issue.done_ratio
-            db_issue_ext.due_date = issue.due_date
-            db_issue_ext.estimated_hours = issue.estimated_hours
+            #db_issue_ext.due_date = issue.due_date
+            #db_issue_ext.estimated_hours = issue.estimated_hours
             db_issue_ext.fixed_version_id = issue.fixed_version_id
-            db_issue_ext.lft = issue.lft
-            db_issue_ext.rgt = issue.rgt
-            db_issue_ext.lock_version = issue.lock_version
-            db_issue_ext.parent_id = issue.parent_id
+            #db_issue_ext.lft = issue.lft
+            #db_issue_ext.rgt = issue.rgt
+            #db_issue_ext.lock_version = issue.lock_version
+            #db_issue_ext.parent_id = issue.parent_id
             db_issue_ext.project_id = issue.project_id
-            db_issue_ext.root_id = issue.root_id
+            #db_issue_ext.root_id = issue.root_id
             db_issue_ext.start_date = issue.start_date
             db_issue_ext.tracker_id = issue.tracker_id        
             db_issue_ext.updated_on = issue.updated_on
@@ -168,6 +171,13 @@ class Redmine():
     
     def __init__(self):
         self.delay = Config.delay
+        try:
+            self.backend_password = Config.backend_password
+            self.backend_user = Config.backend_user
+        except AttributeError:
+            printout("No account provided.")
+            self.backend_password = None
+            self.backend_user = None
         
     def _convert_to_datetime(self,str_date):
         """
@@ -175,18 +185,37 @@ class Redmine():
         """
         return parse(str_date).replace(tzinfo=None)
 
-    def analyze_bug(self, issue_redmine):
-        issue =  self.parse_bug(issue_redmine)
-#        changes = self.analyze_bug_changes(bug_url)
-#        for c in changes:
-#            issue.add_change(c)                 
-        return issue
+    # def analyze_bug(self, issue_redmine):
+    #     issue =  self.parse_bug(issue_redmine)
+    #     #        changes = self.analyze_bug_changes(bug_url)
+    #     #        for c in changes:
+    #     #            issue.add_change(c)                 
+    #     return issue
 
+    def _get_redmine_root(self, url):
+        return url[:url.find('projects/')]
         
-    def parse_bug(self, issue_redmine):
+    def _get_author_email(self, author_id):
+        root = self._get_redmine_root(Config.url)
+        author_url = root + "users/" + str(author_id) + ".json"
+        #print author_url
+        res = None
+        try:
+            f = urllib2.urlopen(author_url)         
+            person = json.loads(f.read())
+            res = person['user']['mail']
+        except (urllib2.HTTPError, KeyError):
+            printdbg("User with id %s has no account information" % author_id)
+            res = author_id
+        return res
+            
+        #return author_id
         
-        people = People(issue_redmine["author_id"])            
-        # people.set_name(issue_redmine["reported_by"])
+    def analyze_bug(self, issue_redmine):
+        #print(issue_redmine)
+        #print("*** %s " % issue_redmine["author"]["id"])
+        people = People(self._get_author_email(issue_redmine["author"]["id"]))
+        people.set_name(issue_redmine["author"]["name"])
                 
         issue = RedmineIssue(issue_redmine["id"],
                             "ticket",
@@ -194,83 +223,117 @@ class Redmine():
                             issue_redmine["description"],
                             people,
                             self._convert_to_datetime(issue_redmine["created_on"]))        
-        people =  People(issue_redmine["assigned_to_id"])
-        # people.set_name(issue_redmine["assigned_to"])
-        issue.assigned_to = people
-        issue.status = issue_redmine["status_id"]
-        issue.priority = issue_redmine["priority_id"]
+        try:
+                #print("<<< %s " % issue_redmine["assigned_to"]["id"])
+                people =  People(self._get_author_email(issue_redmine["assigned_to"]["id"]))
+                people.set_name(issue_redmine["assigned_to"]["name"])
+                issue.assigned_to = people
+        except KeyError:
+                people = People("nobody")
+                issue.assigned_to = people
+        issue.status = issue_redmine["status"]["name"]
+        issue.priority = issue_redmine["priority"]["id"]
         # No information from Redmine for this field. Included in Status
         issue.resolution = None
                 
         # Extended attributes
-        issue.category_id = issue_redmine["category_id"]
+        try:
+            issue.category_id = issue_redmine["category"]["id"]
+        except KeyError:
+            issue.category_id = None
         issue.done_ratio = issue_redmine["done_ratio"]
                 
-        if issue_redmine["due_date"] is None:
-            issue.due_date = None
-        else:
-            issue.due_date = self._convert_to_datetime(issue_redmine["due_date"])
+        # if issue_redmine["due_date"] is None:
+        #     issue.due_date = None
+        # else:
+        #     issue.due_date = self._convert_to_datetime(issue_redmine["due_date"])
         
-        issue.estimated_hours = issue_redmine["estimated_hours"]
-        issue.fixed_version_id = issue_redmine["fixed_version_id"]
-        issue.lft = issue_redmine["lft"]
-        issue.rgt = issue_redmine["rgt"]
-        issue.lock_version = issue_redmine["lock_version"]
-        issue.parent_id = issue_redmine["parent_id"]
-        issue.project_id = issue_redmine["project_id"]
-        issue.root_id = issue_redmine["root_id"]
-        if issue_redmine["start_date"] is None:
-            issue.start_date = None
-        else:
+        #issue.estimated_hours = issue_redmine["estimated_hours"]
+        try:
+            issue.fixed_version_id = issue_redmine["fixed_version"]["id"]
+        except KeyError:
+            issue.fixed_version_id = None
+        #issue.lft = issue_redmine["lft"]
+        #issue.rgt = issue_redmine["rgt"]
+        #issue.lock_version = issue_redmine["lock_version"]
+        #issue.parent_id = issue_redmine["parent_id"]
+        issue.project_id = issue_redmine["project"]["id"]
+        #issue.root_id = issue_redmine["root_id"]
+        # if issue_redmine["start_date"] is None:
+        #     issue.start_date = None
+        # else:
+        #     issue.start_date = self._convert_to_datetime(issue_redmine["start_date"])
+        try:
             issue.start_date = self._convert_to_datetime(issue_redmine["start_date"])
-        issue.tracker_id = issue_redmine["tracker_id"]
-        if issue_redmine["updated_on"] is None:
-            issue.updated_on = None
-        else:
+        except:
+            issue.start_date = None
+        issue.tracker_id = issue_redmine["tracker"]["id"]
+        # if issue_redmine["updated_on"] is None:
+        #     issue.updated_on = None
+        # else:
+        #     issue.updated_on = self._convert_to_datetime(issue_redmine["updated_on"])
+        try:
             issue.updated_on = self._convert_to_datetime(issue_redmine["updated_on"])
+        except KeyError:
+            issue.updated_on = None
+
+        # get changeset
+        changes = self._get_issue_changeset(issue_redmine["id"])
+        for c in changes:
+            issue.add_change(c)
+
+        print("Issue #%s updated on %s" % (issue_redmine["id"], issue.updated_on))
 
         return issue
                     
         
     # Not yet implemented: journals in Redmine 1.1
-    def analyze_bug_changes (self, bug_url):
-        bug_number = bug_url.split('/')[-1]
-        changes_url = bug_url.replace("rest/","")+"/feed.atom"
-
-        printdbg("Analyzing issue changes" + changes_url)
-
-        d = feedparser.parse(changes_url)
+    def _get_issue_changeset(self, bug_id):
+        aux = Config.url.rfind('/')
+        bug_url = Config.url[:aux + 1]
+        bug_url = bug_url + "issues/" + unicode(bug_id) + ".atom"
+        
+        # changes_url = bug_url.replace("rest/","")+"/feed.atom"
+        printdbg("Analyzing issue changes " + bug_url)
+        d = feedparser.parse(bug_url)
         changes = self.parse_changes(d)
         
         return changes
 
+    def _parse_html_change(self, html):
+
+        # several changes can be done at the same time
+        html_changes = html.split('<li>')
+        fields = []
+        for hc in html_changes:        
+            dirchange = {}
+            dirchange["what"] = None
+            dirchange["old_value"] = None
+            dirchange["new_value"] = None
+            soup = BeautifulSoup(hc)
+            txt = soup.text
+            if txt.find('set to') > 0:            
+                mo = re.match(r'(.*)set to(.*)',txt)
+                (dirchange["what"], dirchange["new_value"]) = mo.groups()
+                fields.append(dirchange)
+            elif txt.find('changed from') > 0:
+                mo = re.match(r'(.*)changed from(.*)to(.*)', txt)
+                (dirchange["what"], dirchange["old_value"], dirchange["new_value"]) = mo.groups()
+                fields.append(dirchange)
+        return fields
+        
     def parse_changes (self, activity):
         changesList = []
         for entry in activity['entries']:
-            # print "changed_by:" + entry['author']
-            by = People(entry['author'])
-            # print "changed_on:" + entry['updated']
-            description = entry['description'].split('updated:')
-            changes = description.pop(0)
-            field = changes.rpartition('\n')[2].strip()
-            while description:                
-                changes = description.pop(0).split('\n')
-                values = changes[0].split('=>')                
-                if (len(values) != 2):
-                    printdbg(field + " not supported in changes analysis")
-                    old_value = new_value = ""                    
-                else:
-                    # u'in-progress' => u'closed'
-                    values = changes[0].split('=>')
-                    old_value = self.remove_unicode(values[0].strip())
-                    if old_value == "''": old_value =""
-                    new_value = self.remove_unicode(values[1].strip())
-                    if new_value == "''": new_value =""
-                update = parse(entry['updated'])
-                change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
-                changesList.append(change)
-                if (len(changes)>1):
-                    field = changes[1].strip()
+            try:
+                by = People(entry['author_detail']['email'])
+            except KeyError:
+                by = People(entry['author_detail']['name'])
+            date = parse(entry['updated'])
+            fields = self._parse_html_change(entry['summary'])
+            for f in fields:
+                change = Change(f["what"], f["old_value"], f["new_value"], by, date)
+                changesList.append(change)            
         return changesList
 
     def remove_unicode(self, str):
@@ -299,34 +362,41 @@ class Redmine():
         bugsdb.insert_supported_traker("redmine", "beta")
         trk = Tracker (Config.url, "redmine", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
-        
-        self.url_issues = Config.url+"?status_id=*&page=" + str(last_page)
+
+        if Config.url.find('?') > 0:
+            self.url_issues = Config.url+"&status_id=*&sort=updated_on&page=" + str(last_page)
+        else:
+            self.url_issues = Config.url+"?status_id=*&sort=updated_on&page=" + str(last_page)
         request = urllib2.Request(self.url_issues)
-        base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
-        request.add_header("Authorization", "Basic %s" % base64string)   
+        if self.backend_user:
+            base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
+            request.add_header("Authorization", "Basic %s" % base64string)   
         f = urllib2.urlopen(request)         
         tickets = json.loads(f.read())
-        for ticket in tickets:
+        for ticket in tickets["issues"]:
             issue = self.analyze_bug(ticket)
             bugsdb.insert_issue(issue, dbtrk.id)
         
-        last_ticket=tickets[0]['id']
+        last_ticket=tickets["issues"][0]['id']
         
         while True:  
             last_page += 1
-            self.url_issues = Config.url+"?status_id=*&page="+str(last_page) 
+            if Config.url.find('?') > 0:
+                self.url_issues = Config.url+"&status_id=*&sort=updated_on&page="+str(last_page) 
+            else:
+                self.url_issues = Config.url+"?status_id=*&sort=updated_on&page="+str(last_page) 
             request = urllib2.Request(self.url_issues)
-            base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
-            request.add_header("Authorization", "Basic %s" % base64string)   
+            #base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
+            #request.add_header("Authorization", "Basic %s" % base64string)   
             f = urllib2.urlopen(request)         
             tickets = json.loads(f.read())
             
-            pprint.pprint("Tickets read: " + str(tickets[0]['id']) + " " + str(tickets[-1]['id']))
+            pprint.pprint("Tickets read: " + str(tickets["issues"][0]['id']) + " " + str(tickets["issues"][-1]['id']))
             
-            if tickets[0]['id'] == last_ticket:
+            if tickets["issues"][0]['id'] == last_ticket:
                 break
             
-            for ticket in tickets:
+            for ticket in tickets["issues"]:
                 issue = self.analyze_bug(ticket)
                 bugsdb.insert_issue(issue, dbtrk.id)
                                 
