@@ -924,7 +924,7 @@ HIBERNATION_LENGTH = 100
 class BGBackend(Backend):
 
     def __init__ (self):
-        self.url = Config.url
+        self.url = self._healthy_url(Config.url)
         self.delay = Config.delay
         self.cookies = {}
         self.version = None
@@ -1143,6 +1143,11 @@ class BGBackend(Backend):
         next_ts = last_ts + timedelta(seconds=1)
         next_ts_str = self._timestamp_to_str(next_ts)
         return last_ts_str, next_ts_str
+
+    def _healthy_url(self, url):
+        tokens = url.split('product=')
+        url = tokens[0]+'product='+urllib.quote(tokens[1])
+        return url
 
     def _urlopen_auth(self, url):
         """
