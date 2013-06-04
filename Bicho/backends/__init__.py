@@ -73,14 +73,19 @@ class Backend(object):
 class BackendManager(object):
     """Class for managing backends."""
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, debug=False):
         self._testpath = path or os.path.dirname(__file__)
+        self._debug = debug
         self._backends = {}
         self._load_backends()
 
     @property
     def backends(self):
         return self._backends.keys()
+
+    @property
+    def debug(self):
+        return self._debug
 
     @property
     def path(self):
@@ -115,7 +120,12 @@ class BackendManager(object):
             try:
                 __import__(candidate)
             except Exception, e:
-                raise BackendImportError(candidate, e)
+                ex = BackendImportError(candidate, e)
+
+                if self._debug:
+                    raise ex
+                else:
+                    print ex
 
         # Checks whether the backends were imported from the
         # given modules

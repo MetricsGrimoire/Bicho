@@ -105,10 +105,13 @@ class TestBackendManager(unittest.TestCase):
 
     def test_readonly_properties(self):
         dirpath = os.path.join(self.testpath, EMPTY_DIRNAME)
-        manager = BackendManager(path=dirpath)
+        manager = BackendManager(path=dirpath, debug=True)
 
         self.assertRaises(AttributeError, setattr, manager, 'path', '')
         self.assertEqual(dirpath, manager.path)
+
+        self.assertRaises(AttributeError, setattr, manager, 'debug', False)
+        self.assertEqual(True, manager.debug)
 
         self.assertRaises(AttributeError, setattr, manager, 'backends', '')
         self.assertListEqual([], manager.backends)
@@ -128,10 +131,22 @@ class TestBackendManager(unittest.TestCase):
         self.assertListEqual([], manager.backends)
 
     def test_invalid_python_module(self):
+        # In debug mode, prints an error when trying to import
+        # an invalid python module
+        if not hasattr(sys.stdout, 'getvalue'):
+            self.fail('need to run in buffered mode')
+
+        dirpath = os.path.join(self.testpath, INVALID_MODULE_DIRNAME)
+        manager = BackendManager(path=dirpath)
+        output = sys.stdout.getvalue().strip()
+        self.assertRegexpMatches(output, 'error importing backend invalid')
+        self.assertListEqual([], manager.backends)
+
+    def test_invalid_python_module_debug_mode(self):
         # Raises an ImportError exception trying to
         # import an invalid python module
         dirpath = os.path.join(self.testpath, INVALID_MODULE_DIRNAME)
-        self.assertRaises(BackendImportError, BackendManager, path=dirpath)
+        self.assertRaises(BackendImportError, BackendManager, path=dirpath, debug=True)
 
     def test_subdirs(self):
         # Make sure the manager does not fail nor load any backend from
@@ -205,4 +220,4 @@ class TestBackendManager(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(buffer=True, exit=False)
