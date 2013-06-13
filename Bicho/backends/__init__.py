@@ -74,7 +74,7 @@ class BackendManager(object):
     """Class for managing backends."""
 
     def __init__(self, path=None, debug=False):
-        self._testpath = path or os.path.dirname(__file__)
+        self._path = path or os.path.dirname(__file__)
         self._debug = debug
         self._backends = {}
         self._load_backends()
@@ -89,7 +89,7 @@ class BackendManager(object):
 
     @property
     def path(self):
-        return self._testpath
+        return self._path
 
     def get(self, name):
         try:
@@ -104,17 +104,15 @@ class BackendManager(object):
             self._backends[b.name] = b
 
     def _find_backends(self):
-        filenames = [fn for fn in os.listdir(self._testpath)]
-        files = [fn for fn in filenames \
-                 if os.path.isfile(os.path.join(self._testpath, fn)) \
-                 and fn.endswith('.py')]
-        candidates = [c.split('.py')[0] for c in files]
+        filenames = [fn for fn in os.listdir(self._path)]
+        candidates = [fn for fn in filenames \
+                      if os.path.isdir(os.path.join(self._path, fn))]
         backends = self._import_backends(candidates)
         return backends
 
     def _import_backends(self, candidates):
-        if not self._testpath in sys.path:
-            sys.path.append(self._testpath)
+        if not self._path in sys.path:
+            sys.path.append(self._path)
 
         for candidate in candidates:
             try:
