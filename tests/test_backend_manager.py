@@ -35,11 +35,15 @@ from Bicho.backends import Backend, BackendManager, BackendImportError, BackendD
 # Name of directory where the test input files are stored
 TEST_FILES_DIRNAME = 'backend_manager'
 
+# Directory names for testing cases
 EMPTY_DIRNAME = 'empty'
-NO_PYTHON_DIRNAME = 'no_py_files'
-INVALID_MODULE_DIRNAME = 'invalid'
-VALID_PYTHON_DIR = 'py_files'
-BACKENDS_DIRNAME = 'backends'
+NO_PYTHON_PACKAGE_DIRNAME = 'no_package'
+NO_PACKAGES_DIRNAME = 'without_packages'
+EMPTY_PACKAGE_DIRNAME = 'empty_package'
+INVALID_BACKEND_DIRNAME = 'invalid'
+ANOTHER_INVALID_BACKEND_DIRNAME = 'invalid2'
+BACKENDS_DIRNAME = 'test_backends'
+ALT_BACKENDS_DIRNAME = 'alt_backends'
 
 
 class TestBackendImportError(unittest.TestCase):
@@ -77,25 +81,68 @@ class TestBackendManager(unittest.TestCase):
         # Setup an empty directory
         os.mkdir(os.path.join(cls.testpath, EMPTY_DIRNAME))
 
-        # Setup a directory with no python modules inside
-        dirpath = os.path.join(cls.testpath, NO_PYTHON_DIRNAME)
-        os.mkdir(dirpath)
+        # Setup a directory that is not a package
+        dirpath = os.path.join(cls.testpath, NO_PYTHON_PACKAGE_DIRNAME,
+                               NO_PYTHON_PACKAGE_DIRNAME)
+        os.makedirs(dirpath)
         shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'note.txt'),
                     dirpath)
         shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'text.txt'),
                     dirpath)
-
-        # Setup a directory containing an invalid python module
-        dirpath = os.path.join(cls.testpath, INVALID_MODULE_DIRNAME)
-        os.mkdir(dirpath)
-        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'invalid.py'),
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'test_backends.py'),
                     dirpath)
+
+        # Setup a directory not containing packages
+        dirpath = os.path.join(cls.testpath, NO_PACKAGES_DIRNAME,
+                               NO_PACKAGES_DIRNAME)
+        os.makedirs(dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'text.txt'),
+                    dirpath)
+        os.mkdir(os.path.join(dirpath, 'dir1'))
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'test_backends.py'),
+                    os.path.join(dirpath, 'dir1'))
+        os.mkdir(os.path.join(dirpath, 'dir2'))
+
+        # Setup a package not containing backends
+        dirpath = os.path.join(cls.testpath, EMPTY_PACKAGE_DIRNAME,
+                               EMPTY_PACKAGE_DIRNAME)
+        os.makedirs(dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'empty.py'),
+                    os.path.join(dirpath, '__init__.py'))
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'text.txt'),
+                    dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'test_backends.py'),
+                    dirpath)
+
+        # Setup a directory containing an invalid backend
+        dirpath = os.path.join(cls.testpath, INVALID_BACKEND_DIRNAME,
+                               INVALID_BACKEND_DIRNAME)
+        os.makedirs(dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'invalid.py'),
+                    os.path.join(dirpath, '__init__.py'))
+
+        # Setup another directory containing an invalid backend
+        dirpath = os.path.join(cls.testpath, ANOTHER_INVALID_BACKEND_DIRNAME,
+                               ANOTHER_INVALID_BACKEND_DIRNAME)
+        os.makedirs(dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'invalid.py'),
+                    os.path.join(dirpath, '__init__.py'))
 
         # Setup the backends test directory
-        dirpath = os.path.join(cls.testpath, BACKENDS_DIRNAME)
-        os.mkdir(dirpath)
-        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'fake_backends.py'),
+        dirpath = os.path.join(cls.testpath, BACKENDS_DIRNAME,
+                               BACKENDS_DIRNAME)
+        os.makedirs(dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'test_backends.py'),
+                    os.path.join(dirpath, '__init__.py'))
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'alt_backends.py'),
                     dirpath)
+
+        # Setup a second backend directory
+        dirpath = os.path.join(cls.testpath, ALT_BACKENDS_DIRNAME,
+                               ALT_BACKENDS_DIRNAME)
+        os.makedirs(dirpath)
+        shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'alt_backends.py'),
+                    os.path.join(dirpath, '__init__.py'))
         shutil.copy(os.path.join(TEST_FILES_DIRNAME, 'other_backends.py'),
                     dirpath)
 
@@ -123,52 +170,78 @@ class TestBackendManager(unittest.TestCase):
         manager = BackendManager(path=dirpath)
         self.assertListEqual([], manager.backends)
 
-    def test_no_python_dir(self):
-        # Check if the manager fails while searching backends
-        # in a directory that does not contain any python module
-        dirpath = os.path.join(self.testpath, NO_PYTHON_DIRNAME)
+    def test_no_python_package(self):
+        # Check if the manager does not import any backend from
+        # a directory that is not a python package
+        dirpath = os.path.join(self.testpath, NO_PYTHON_PACKAGE_DIRNAME)
+        manager = BackendManager(path=dirpath)
+        self.assertListEqual([], manager.backends)
+
+    def test_dir_without_packages(self):
+        # Check whether the manager nor import any backend from a directory
+        # that does not contain packages
+        dirpath = os.path.join(self.testpath, NO_PACKAGES_DIRNAME)
+        manager = BackendManager(path=dirpath)
+        self.assertListEqual([], manager.backends)
+
+    def test_empty_package(self):
+        # Check if the manager does not import any backend from
+        # a package that does not store backends in __init__.py file
+        dirpath = os.path.join(self.testpath, EMPTY_PACKAGE_DIRNAME)
         manager = BackendManager(path=dirpath)
         self.assertListEqual([], manager.backends)
 
     def test_invalid_python_module(self):
         # In debug mode, prints an error when trying to import
-        # an invalid python module
+        # an invalid backend
         if not hasattr(sys.stdout, 'getvalue'):
             self.fail('need to run in buffered mode')
 
-        dirpath = os.path.join(self.testpath, INVALID_MODULE_DIRNAME)
+        dirpath = os.path.join(self.testpath, INVALID_BACKEND_DIRNAME)
         manager = BackendManager(path=dirpath)
         output = sys.stdout.getvalue().strip()
         self.assertRegexpMatches(output, 'error importing backend invalid')
         self.assertListEqual([], manager.backends)
 
     def test_invalid_python_module_debug_mode(self):
-        # Raises an ImportError exception trying to
-        # import an invalid python module
-        dirpath = os.path.join(self.testpath, INVALID_MODULE_DIRNAME)
-        self.assertRaises(BackendImportError, BackendManager, path=dirpath, debug=True)
+        # Raises an BackendImportError exception trying to
+        # import an invalid backend
+        dirpath = os.path.join(self.testpath, ANOTHER_INVALID_BACKEND_DIRNAME)
+        self.assertRaises(BackendImportError, BackendManager,
+                          path=dirpath, debug=True)
 
-    def test_subdirs(self):
-        # Make sure the manager does not fail nor load any backend from
-        # a tree directory that contains files with backends
-        manager = BackendManager(path=self.testpath)
-        self.assertListEqual([], manager.backends)
-
-    def test_backends_dir(self):
-        # Test whether the manager imports all the backends
+    def test_backends_package(self):
+        # Test whether the manager imports all the backends of a package
         dirpath = os.path.join(self.testpath, BACKENDS_DIRNAME)
         manager = BackendManager(path=dirpath)
         backends = manager.backends
         backends.sort()
-        self.assertListEqual(['A', 'B', 'C'] , backends)
+        self.assertListEqual(['A', 'B'] , backends)
+
+    def test_backends_not_in_init(self):
+        # Test if the manager only imports those backends
+        # stored in __init__.py and not in other modules
+        dirpath = os.path.join(self.testpath,  ALT_BACKENDS_DIRNAME)
+        manager = BackendManager(path=dirpath)
+        backends = manager.backends
+        backends.sort()
+        self.assertListEqual(['C'] , backends)
+
+    def test_subdirs(self):
+        # Make sure the manager does not fail loading backends
+        # from a tree of directories
+        manager = BackendManager(path=self.testpath)
+        backends = manager.backends
+        backends.sort()
+        self.assertListEqual(['A', 'B', 'C'], backends)
 
     def test_get(self):
         dirpath = os.path.join(self.testpath, BACKENDS_DIRNAME)
         manager = BackendManager(path=dirpath)
 
-        backend = manager.get('C')
+        backend = manager.get('B')
         self.assertIsInstance(backend, Backend)
-        self.assertEqual('C', backend.name)
+        self.assertEqual('B', backend.name)
 
         self.assertRaises(BackendDoesNotExist, manager.get, 'H')
 
@@ -176,29 +249,25 @@ class TestBackendManager(unittest.TestCase):
         dirpath = os.path.join(self.testpath, BACKENDS_DIRNAME)
         manager = BackendManager(path=dirpath)
 
-        backend = manager.get('C')
-        self.assertIsInstance(backend, Backend)
-        self.assertEqual('C', backend.name)
-
-        self.assertRaises(BackendDoesNotExist, manager.get, 'Z')
-
         backend = manager.get('A')
         self.assertIsInstance(backend, Backend)
         self.assertEqual('A', backend.name)
+
+        self.assertRaises(BackendDoesNotExist, manager.get, 'Z')
 
         backend = manager.get('B')
         self.assertIsInstance(backend, Backend)
         self.assertEqual('B', backend.name)
 
-        self.assertRaises(BackendDoesNotExist, manager.get, 'J')
-
         backend = manager.get('A')
         self.assertIsInstance(backend, Backend)
         self.assertEqual('A', backend.name)
 
-        backend = manager.get('C')
+        self.assertRaises(BackendDoesNotExist, manager.get, 'C')
+
+        backend = manager.get('A')
         self.assertIsInstance(backend, Backend)
-        self.assertEqual('C', backend.name)
+        self.assertEqual('A', backend.name)
 
         backend = manager.get('B')
         self.assertIsInstance(backend, Backend)

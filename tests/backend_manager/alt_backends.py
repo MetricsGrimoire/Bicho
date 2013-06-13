@@ -23,7 +23,7 @@
 from Bicho.backends import Backend
 
 
-class D(Backend):
+class C(Backend):
 
     def __init__(self):
-        super(D, self).__init__('D')
+        super(C, self).__init__('C')

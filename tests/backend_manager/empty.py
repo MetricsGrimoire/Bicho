@@ -19,11 +19,3 @@
 # Authors:
 #         Santiago Dueñas <sduenas@libresoft.es>
 #
-
-from Bicho.backends import Backend
-
-
-class D(Backend):
-
-    def __init__(self):
-        super(D, self).__init__('D')
