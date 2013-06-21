@@ -42,7 +42,7 @@ class UnnamedBackend(Backend):
         super(UnnamedBackend, self).__init__()
 
 
-class BackendTest(unittest.TestCase):
+class TestBackend(unittest.TestCase):
 
     def test_backend(self):
         backend = FakeBackend()
