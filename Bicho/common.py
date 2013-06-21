@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2007-2011  GSyC/LibreSoft, Universidad Rey Juan Carlos
+# Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,367 +16,337 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Authors: Santiago Dueñas <sduenas@libresoft.es>
-#          Daniel Izquierdo Cortázar <dizquierdo@libresoft.es>
+# Authors:
+#         Santiago Dueñas <sduenas@libresoft.es>
+#         Daniel Izquierdo Cortázar <dizquierdo@bitergia.com>
 #
 
 """
-Symbols and classes shared by Bicho's modules
+Symbols and classes shared by Bicho modules
 """
 
 import datetime
 
 
-class People:
-    """
-    Identity on a issue tracking system.
+class Identity(object):
+    """Identity on a issue tracking system.
 
-    @param user_id: identifier of the user
-    @type user_id: C{str}
+    :param user_id: user identifier of the identity
+    :type user_id: str
+    :param name: name of the identity
+    :type name: str
+    :param email: email of the identity
+    :type email: str
     """
-    def __init__(self, user_id):
-        self.name = None
-        self.email = None
+    def __init__(self, user_id, name=None, email=None):
         self.user_id = user_id
-
-    def set_name(self, name):
-        """
-        Set the name of the identity.
-
-        @param name: name of the identity
-        @type name: C{str}
-        """
         self.name = name
-
-    def set_email(self, email):
-        """
-        Set the email of the identity.
-
-        @param email: email of the identity
-        @type email: C{str} 
-        """
         self.email = email
 
 
-class Tracker:
-    """
-    Issue tracker instance.
-b
-    @param url: URL of the issue tracker
-    @type url: C{str}
-    @param name: name or type of the issue tracker
-    @type name: C{str}
-    @param version: version of the issue tracker
-    @type version: C{str}
+class Tracker(object):
+    """Issue tracker instance.
+
+    :param url: URL of the issue tracker
+    :type url: str
+    :param name: name or type of the issue tracker
+    :type name: str
+    :param version: version of the issue tracker
+    :type version: str
     """
     def __init__(self, url, name, version):
-        self.url = url
-        self.name = name
-        self.version = version
+        self._url = url
+        self._name = name
+        self._version = version
+
+    @property
+    def url(self):
+        return self._url
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def version(self):
+        return self._version
 
 
-class Issue:
+class Issue(object):
+    """Generic object for managing issues.
+
+    :param issue: identifier of the issue
+    :type issue: str
+    :param issue_type: type of the issue
+    :type issue_type: str
+    :param summary: brief description of the issue
+    :type summary: str
+    :param description: long description of the issue
+    :type description: str
+    :param submitted_by: identity that submitted the issue
+    :type submitted_by: Identity
+    :param submitted_on: date when the issue was submitted
+    :type submitted_on: datetime.datetime
+    :param status: status of the issue
+    :type status: str
+    :param resolution: resolution of the issue
+    :type resolution: str
+    :param priority: priority level of the issue
+    :type priority: str
+    :param assigned_to: identity assigned to the issue
+    :type assigned_to: Identity
+
+    :raises: TypeError: when the type of the parameters is not valid.
     """
-    Generic object for managing issues. 
-
-    @param issue: identifier of the issue
-    @type issue: C{str}
-    @param type: type of the issue
-    @type type: C{str}
-    @param summary: brief description of the issue
-    @type summary: C{str}
-    @param desc: long description of the issue
-    @type desc: C{str}
-    @param submitted_by: identity that submitted the issue
-    @type submitted_by: L{People}
-    @param submitted_on: date when the issue was submitted
-    @type submitted_on: L{datetime.datetime}
-
-    @raise ValueError: when the type of the parameters is not valid.
-    """
-    def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
-        self.issue = issue
-        self.type = type
-        self.summary = summary
-        self.description = desc
-        self.status = None
-        self.resolution = None
-        self.priority = None
-        self.assigned_to = None
-
-        if not isinstance(submitted_by, People):
-            raise ValueError('Parameter "submitted_by" should be a %s instance. %s given.' %
-                             ('People', submitted_by.__class__.__name__,))
+    def __init__(self, issue, issue_type, summary, description,
+                 submitted_by, submitted_on,
+                 status=None, resolution=None, priority=None,
+                 assigned_to=None):
+        if not isinstance(submitted_by, Identity):
+            raise TypeError('Parameter "submitted_by" should be a %s instance. %s given.' %
+                            ('Identity', submitted_by.__class__.__name__,))
 
         if not isinstance(submitted_on, datetime.datetime):
-            raise ValueError('Parameter "submitted_on" should be a %s instance. %s given.' %
-                             ('datetime', input.__class__.__name__))
+            raise TypeError('Parameter "submitted_on" should be a %s instance. %s given.' %
+                            ('datetime', submitted_on.__class__.__name__))
 
-        self.submitted_by = submitted_by
-        self.submitted_on = submitted_on
-
-        self.comments = []
-        self.attachments = []
-        self.changes = []
-        self.relationships = []
-        self.temp_relationships = []
-        self.watchers = []
-
-    def set_priority(self, priority):
-        """
-        Set the priority of the issue.
-
-        @param priority: priority of the issue
-        @type priority: C{str}
-        """
-        self.priority = priority
-
-    def set_status(self, status, resolution=None):
-        """
-        Set the status of the issue. Additionally, the resolution
-        can also be set.
-
-        @param status: status of the issue
-        @type status: C{str}
-        @param resolution: resolution of the issue
-        @type resolution: C{str}
-        """
+        self.issue = issue
+        self.issue_type = issue_type
+        self.summary = summary
+        self.description = description
+        self._submitted_by = submitted_by
+        self._submitted_on = submitted_on
         self.status = status
-
-        if resolution is not None:
-            self.resolution = resolution
-
-    def set_assigned(self, assigned_to):
-        """
-        Set the identity assigned to the issue.
-
-        @param assigned_to: identity assigned to the bug
-        @param type: L{People}
-
-        @raise ValueError: raised if the type of X{assigned_to}}
-         is not valid. 
-        """
-        if not isinstance(assigned_to, People):
-            raise ValueError('Parameter "assigned_to" should be a %s instance. %s given.' %
-                             ('People', assigned_to.__class__.__name__,))
+        self.resolution = resolution
+        self.priority = priority
         self.assigned_to = assigned_to
+        self._comments = []
+        self._attachments = []
+        self._changes = []
+        self._relationships = []
+        self._temp_relationships = []
+        self._watchers = []
+
+    @property
+    def submitted_by(self):
+        return self._submitted_by
+
+    @property
+    def submitted_on(self):
+        return self._submitted_on
+
+    @property
+    def assigned_to(self):
+        return self._assigned_to
+
+    @assigned_to.setter
+    def assigned_to(self, value):
+        if value is not None and not isinstance(value, Identity):
+            raise TypeError('Parameter "assigned_by" should be a %s instance. %s given.' %
+                            ('Identity', value.__class__.__name__,))
+        self._assigned_to = value
+
+    @property
+    def comments(self):
+        return self._comments
 
     def add_comment(self, comment):
-        """
-        Add a comment to the issue.
+        """Add a comment to the issue.
 
-        @param comment: a comment of the issue 
-        @type comment: L{Comment}
+        :param comment: a comment of the issue
+        :type comment: Comment
 
-        @raise ValueError: raised if the type of X{comment} is not valid.
+        :raise TypeError: raised if the type of comment is not valid.
         """
         if not isinstance(comment, Comment):
-            raise ValueError('Parameter "comment" should be a %s instance. %s given.' %
-                             ('Comment', comment.__class__.__name__,))
-        self.comments.append(comment)
+            raise TypeError('Parameter "comment" should be a %s instance. %s given.' %
+                            ('Comment', comment.__class__.__name__,))
+        self._comments.append(comment)
+
+    @property
+    def attachments(self):
+        return self._attachments
 
     def add_attachment(self, attachment):
-        """
-        Add an attachment to the issue.
+        """Add an attachment to the issue.
 
-        @param attachment: an attachment of the issue 
-        @type attachment: L{Attachment}
+        :param attachment: an attachment of the issue
+        :type attachment: Attachment
 
-        @raise ValueError: raised if the type of X{attachment} is not valid.
+        :raise TypeError: raised if the type of attachment is not valid.
         """
         if not isinstance(attachment, Attachment):
-            raise ValueError('Parameter "attachment" should be a %s instance. %s given.' %
-                             ('Attachment', attachment.__class__.__name__,))
-        self.attachments.append(attachment)
+            raise TypeError('Parameter "attachment" should be a %s instance. %s given.' %
+                            ('Attachment', attachment.__class__.__name__,))
+        self._attachments.append(attachment)
+
+    @property
+    def changes(self):
+        return self._changes
 
     def add_change(self, change):
-        """
-        Add a change to the issue.
+        """Add a change to the issue.
 
-        @param change: a change of the issue 
-        @type change: L{Change}
+        :param change: a change of the issue
+        :type change: L{Change}
 
-        @raise ValueError: raised if the type of X{change} is not valid.
+        :raise TypeError: raised if the type of change is not valid.
         """
         if not isinstance(change, Change):
-            raise ValueError('Parameter "change" should be a %s instance. %s given.' %
-                             ('Change', change.__class__.__name__,))
-        self.changes.append(change)
+            raise TypeError('Parameter "change" should be a %s instance. %s given.' %
+                            ('Change', change.__class__.__name__,))
+        self._changes.append(change)
 
-    def add_relationship(self, issue, type):
-        """
-        Add a relationship to the issue.
-
-        @param issue: an issue related to this issue
-        @type issue: C{str}
-        @param type: type of the relationship
-        @type type: C{str}
-        """
-        self.relationships.append((issue, type))
-
-    def add_temp_relationship(self, relationship):
-        """
-        Add a relationship to the issue.
-
-        @param issue: an issue related to this issue
-        @type issue: C{str}
-        @param type: type of the relationship
-        @type type: C{str}
-        """
-        if not isinstance(relationship, TempRelationship):
-            raise ValueError('Parameter "relationship" should be a %s instance. %s given.' %
-                             ('TempRelationship', relationship.__class__.__name__,))
-        self.temp_relationships.append(relationship)
-
-
-    def set_resolution(self, resolution):
-        """
-        Set the resolution of the issue.
-
-        @param resolution: resolution of the issue
-        @type resolution: C{str}
-        """
-        self.resolution = resolution
+    @property
+    def watchers(self):
+        return self._watchers
 
     def add_watcher(self, watcher):
+        """Set a watcher assigned to the issue.
+
+        :param watcher: identity watching the bug
+        :type watcher: Identity
+
+        :raise TypeError: raised if the type of assigned_to is not valid.
         """
-        Set the identity assigned to the issue.
-
-        @param watcher: identity watching the bug
-        @param type: L{People}
-
-        @raise ValueError: raised if the type of X{assigned_to}}
-        is not valid.
-        """
-        if not isinstance(watcher, People):
-            raise ValueError('Parameter "assigned_to" should be a %s instance. %s given.' %
-                             ('People', watcher.__class__.__name__,))
-        self.watchers.append(watcher)
+        if not isinstance(watcher, Identity):
+            raise TypeError('Parameter "watcher" should be a %s instance. %s given.' %
+                            ('Identity', watcher.__class__.__name__,))
+        self._watchers.append(watcher)
 
 
-class Comment:
+class Comment(object):
+    """Comment to an issue.
+
+    :param text: text of the comment
+    :type text: str
+    :param submitted_by: identity that submitted the comment
+    :type submitted_by: Identity
+    :param submitted_on: date when the comment was submitted
+    :type submitted_on: datetime.datetime
+
+    :raise TypeError: raised when the type of the parameters is not valid.
     """
-    Comment instance.
-
-    @param comment: brief description of the issue
-    @type comment: C{str}
-    @param submitted_by: identity that submitted the comment
-    @type submitted_by: L{People}
-    @param submitted_on: date when the comment was submitted
-    @type submitted_on: L{datetime.datetime}
-
-    @raise ValueError: raised when the type of the parameters
-     is not valid.
-    """
-    def __init__(self, comment, submitted_by, submitted_on):
-        self.comment = comment
-
-        if not isinstance(submitted_by, People):
-            raise ValueError('Parameter "submitted_by" should be a %s instance. %s given.' %
-                             ('People', submitted_by.__class__.__name__,))
+    def __init__(self, text, submitted_by, submitted_on):
+        if not isinstance(submitted_by, Identity):
+            raise TypeError('Parameter "submitted_by" should be a %s instance. %s given.' %
+                            ('Identity', submitted_by.__class__.__name__,))
 
         if not isinstance(submitted_on, datetime.datetime):
-            raise ValueError('Parameter "submitted_on" should be a %s instance. %s given.' %
-                             ('datetime', input.__class__.__name__))
+            raise TypeError('Parameter "submitted_on" should be a %s instance. %s given.' %
+                            ('datetime', submitted_on.__class__.__name__))
 
-        self.submitted_by = submitted_by
-        self.submitted_on = submitted_on
+        self._text = text
+        self._submitted_by = submitted_by
+        self._submitted_on = submitted_on
+
+    @property
+    def text(self):
+        return self._text
+
+    @property
+    def submitted_by(self):
+        return self._submitted_by
+
+    @property
+    def submitted_on(self):
+        return self._submitted_on
 
 
-class Attachment:
+class Attachment(object):
+    """Attachment instance.
+
+    :param url: URL of the attachment
+    :type url: str
+    :param name: name of the attachemnt
+    :type name: str
+    :param description: description of the attachment
+    :type description: str
+    :param submitted_by: submitter of the attachment
+    :type submitted_by: Identity
+    :param submitted_on: date when the attachment was submitted
+    :type submitted_on: datetime.datetime
+
+    :raise TypeError: raised when the type of the parameters is not valid.
     """
-    Attachment instance.
-
-    @param url: URL of the attachment
-    @type url: C{str}
-    @param submitted_by: submitter of the attachment
-    @type submitted_by: L{People}
-    @param submitted_on: date when the attachment was submitted
-    @type submitted_on: L{datetime.datetime}
-
-    @raise ValueError: raised when the type of the parameters
-     is not valid.
-    """
-    def __init__(self, url, submitted_by=None, submitted_on=None):
-        self.name = None
-        self.description = None
+    def __init__(self, url, name=None, description=None,
+                 submitted_by=None, submitted_on=None):
         self.url = url
-
-        if submitted_by is not None and not isinstance(submitted_by, People):
-            raise ValueError('Parameter "submitted_by" should be a %s instance. %s given.' %
-                             ('People', submitted_by.__class__.__name__,))
-
-        if submitted_on is not None and not isinstance(submitted_on, datetime.datetime):
-            raise ValueError('Parameter "submitted_on" should be a %s instance. %s given.' %
-                             ('datetime', input.__class__.__name__))
-
+        self.name = name
+        self.description = description
         self.submitted_by = submitted_by
         self.submitted_on = submitted_on
 
-    def set_name(self, name):
-        """
-        Set the name of the attachment.
+    @property
+    def submitted_by(self):
+        return self._submitted_by
 
-        @param name: name of the attachemnt
-        @type name: C{str}
-        """
-        self.name = name
+    @submitted_by.setter
+    def submitted_by(self, value):
+        if value is not None and not isinstance(value, Identity):
+            raise TypeError('Parameter "submitted_by" should be a %s instance. %s given.' %
+                            ('Identity', value.__class__.__name__,))
+        self._submitted_by = value
 
-    def set_description(self, desc):
-        """
-        Set the description of the attachment.
+    @property
+    def submitted_on(self):
+        return self._submitted_on
 
-        @param desc: description of the attachment
-        @type desc: C{str}
-        """
-        self.description = desc
+    @submitted_on.setter
+    def submitted_on(self, value):
+        if value is not None and not isinstance(value, datetime.datetime):
+            raise TypeError('Parameter "submitted_on" should be a %s instance. %s given.' %
+                             ('datetime', value.__class__.__name__))
+        self._submitted_on = value
 
 
-class Change:
-    """
-    A change performed during the issue lifecycle.
+class Change(object):
+    """A change performed during the issue lifecycle.
 
-    @param field: name of the field that was changed
-    @type field: C{str}
-    @param old_value: old value of the field
-    @type old_value: C{str}
-    @param new_value: new value of the field
-    @type new_value: C{str}
-    @param changed_by: submitter of the change
-    @type changed_by: L{People}
-    @param changed_on: date when the attachment was submitted
-    @type changed_on: C{datetime.datetime}
+    :param field: name of the field that was changed
+    :type field: str
+    :param old_value: old value of the field
+    :type old_value: str
+    :param new_value: new value of the field
+    :type new_value: str
+    :param changed_by: submitter of the change
+    :type changed_by: Identity
+    :param changed_on: date when the attachment was submitted
+    :type changed_on: datetime.datetime
+
+    :raise TypeError: raised when the type of the parameters is not valid.
     """
     def __init__(self, field, old_value, new_value, changed_by, changed_on):
-        self.field = field
-        self.old_value = old_value
-        self.new_value = new_value
-
-        if not isinstance(changed_by, People):
-            raise ValueError('Parameter "changed_by" should be a %s instance. %s given.' %
-                             ('People', changed_by.__class__.__name__,))
+        if not isinstance(changed_by, Identity):
+            raise TypeError('Parameter "changed_by" should be a %s instance. %s given.' %
+                            ('Identity', changed_by.__class__.__name__,))
 
         if not isinstance(changed_on, datetime.datetime):
-            raise ValueError('Parameter "changed_on" should be a %s instance. %s given.' %
-                             ('datetime', input.__class__.__name__))
+            raise TypeError('Parameter "changed_on" should be a %s instance. %s given.' %
+                            ('datetime', changed_on.__class__.__name__))
 
-        self.changed_by = changed_by
-        self.changed_on = changed_on
+        self._field = field
+        self._old_value = old_value
+        self._new_value = new_value
+        self._changed_by = changed_by
+        self._changed_on = changed_on
 
+    @property
+    def field(self):
+        return self._field
 
-class TempRelationship:
-    """
-    """
-    def __init__(self, issue, type, related_to):
-        self.issue = issue
-        self.type = type
-        self.related_to = related_to
+    @property
+    def old_value(self):
+        return self._old_value
 
+    @property
+    def new_value(self):
+        return self._new_value
 
-class Relationship:
-    """
-    """
-    def __init__(self, issue, type, related_to):
-        self.issue = issue
-        self.type = type
-        self.related_to = related_to
+    @property
+    def changed_by(self):
+        return self._changed_by
+
+    @property
+    def changed_on(self):
+        return self._changed_on
