@@ -98,7 +98,7 @@ class Issue(object):
 
     :raises: TypeError: when the type of the parameters is not valid.
     """
-    def __init__(self, issue, issue_type, summary, description,
+    def __init__(self, issue_id, issue_type, summary, description,
                  submitted_by, submitted_on,
                  status=None, resolution=None, priority=None,
                  assigned_to=None):
@@ -110,7 +110,7 @@ class Issue(object):
             raise TypeError('Parameter "submitted_on" should be a %s instance. %s given.' %
                             ('datetime', submitted_on.__class__.__name__))
 
-        self.issue = issue
+        self.issue_id = issue_id
         self.issue_type = issue_type
         self.summary = summary
         self.description = description

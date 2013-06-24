@@ -97,7 +97,7 @@ class TestIssue(unittest.TestCase):
                            JOHN_DOE)
 
     def test_issue(self):
-        self.assertEqual('1', self.issue.issue)
+        self.assertEqual('1', self.issue.issue_id)
         self.assertEqual('bug', self.issue.issue_type)
         self.assertEqual('issue unit test', self.issue.summary)
         self.assertEqual( 'unit test for issue class', self.issue.description)
@@ -204,22 +204,22 @@ class TestIssue(unittest.TestCase):
 
     def test_invalid_init(self):
         self.assertRaisesRegexp(TypeError, SUBMITTED_BY_NONE_ERROR,
-                                Issue, issue='1', issue_type='bug',
+                                Issue, issue_id='1', issue_type='bug',
                                 summary='issue unit test',
                                 description='unit test for issue class',
                                 submitted_by=None, submitted_on=None)
         self.assertRaisesRegexp(TypeError, SUBMITTED_BY_STR_ERROR,
-                                Issue, issue='1', issue_type='bug',
+                                Issue, issue_id='1', issue_type='bug',
                                 summary='issue unit test',
                                 description='unit test for issue class',
                                 submitted_by='John Doe', submitted_on=None)
         self.assertRaisesRegexp(TypeError, SUBMITTED_ON_NONE_ERROR,
-                                Issue, issue='1', issue_type='bug',
+                                Issue, issue_id='1', issue_type='bug',
                                 summary='issue unit test',
                                 description='unit test for issue class',
                                 submitted_by=JANE_ROE, submitted_on=None)
         self.assertRaisesRegexp(TypeError, SUBMITTED_ON_STR_ERROR,
-                                Issue, issue='1', issue_type='bug',
+                                Issue, issue_id='1', issue_type='bug',
                                 summary='issue unit test',
                                 description='unit test for issue class',
                                 submitted_by=JANE_ROE, submitted_on=MOCK_DATETIME_STR)
