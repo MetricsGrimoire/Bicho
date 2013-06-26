@@ -1032,6 +1032,7 @@ class BGBackend(Backend):
             self._retrieve_issues(ids, url, self.tracker.id)
         else:
             i = 0
+            max_rounds = 50 # 50*10000
             url = self._get_domain(self.url)
             last_date, next_date = self._get_last_and_next_dates()
 
@@ -1041,6 +1042,7 @@ class BGBackend(Backend):
             ids = self._retrieve_issues_ids(self.url, self.version, next_date)
 
             while(ids):
+                if (i>=max_rounds): break
                 printout("Round #%d - Total issues to retrieve: %d" % (i, len(ids)))
                 self._retrieve_issues(ids, url, self.tracker.id)
                 i += 1
