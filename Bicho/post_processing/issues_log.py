@@ -107,24 +107,22 @@ class IssuesLog():
     def _drop_db(self):
         self.store.execute(self._get_sql_drop())
 
-    def _get_people_id(self, email, tracker_id):
+    def _get_people_id(self, email):
         """
         Gets the id of an user
         """
         try:
-            p = self.store.find(DBPeople, DBPeople.email == email,
-                                DBPeople.tracker_id == tracker_id).one()
+            p = self.store.find(DBPeople, DBPeople.email == email).one()
             return p.id
         except (AttributeError, NotOneError):
-            p = self.store.find(DBPeople, DBPeople.user_id == email,
-                                DBPeople.tracker_id == tracker_id).one()
+            p = self.store.find(DBPeople, DBPeople.user_id == email).one()
             try:
                 return p.id
             except AttributeError:
                 # no person was found in People with the email above, so
                 # we include it
                 printdbg("Person not found. Inserted with email %s " % (email))
-                dp = DBPeople(email, tracker_id)
+                dp = DBPeople(email)
                 self.store.add(dp)
                 self.store.commit()
                 return dp.id

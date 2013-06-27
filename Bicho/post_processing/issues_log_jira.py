@@ -134,8 +134,7 @@ class JiraIssuesLog(IssuesLog):
             elif table_field == 'type':
                 db_ilog.type = value
             elif table_field == 'assigned_to':
-                db_ilog.assigned_to = self._get_people_id(value,
-                    self._get_tracker_id(db_ilog.issue_id))
+                db_ilog.assigned_to = self._get_people_id(value)
             elif table_field == 'status':
                 db_ilog.status = value
             elif table_field == 'resolution':
