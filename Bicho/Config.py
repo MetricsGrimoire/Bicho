@@ -164,6 +164,9 @@ class Config:
         parser.add_option('-u', '--url', dest='url',
                           help='URL to get issues from using the backend',
                           default=None)
+        parser.add_option('-l', '--logtable', action='store_true', dest='logtable',
+                          help='Enable generation of issues log table',
+                          default=False)
     
         # Options for output database
         group = OptionGroup(parser, 'Output database specific options')

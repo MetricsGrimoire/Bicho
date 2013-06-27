@@ -55,13 +55,14 @@ def main():
     printdbg("Bicho object created, options and backend initialized")
     backend.run()
 
-    try:
-        ilogger = IssueLogger.create_logger(Config.backend)
-    except ImportError, e:
-        printerr("Logger ''" + Config.backend + "'' doesn't exist. " + str(e))
-        sys.exit(2)
-    printdbg("Bicho logger object created")
-    ilogger.run()
+    if Config.logtable:
+        try:
+            ilogger = IssueLogger.create_logger(Config.backend)
+        except ImportError, e:
+            printerr("Logger ''" + Config.backend + "'' doesn't exist. " + str(e))
+            sys.exit(2)
+        printdbg("Bicho logger object created")
+        ilogger.run()
 
 if __name__ == "__main__":
     main()
