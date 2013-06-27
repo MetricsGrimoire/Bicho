@@ -23,13 +23,12 @@
 import os.path
 import sys
 import unittest
-import xml.sax
 
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
 from Bicho.backends.bugzilla.model import BugzillaMetadata
-from Bicho.backends.bugzilla.parsers import BugzillaMetadataHandler
+from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser
 
 
 # Name of directory where the test input files are stored
@@ -46,21 +45,17 @@ def read_file(filename):
     return content
 
 
-class TestBugzillaMetadataHandler(unittest.TestCase):
-
-    def setUp(self):
-        self.handler = BugzillaMetadataHandler()
-        self.parser = xml.sax.make_parser()
-        self.parser.setContentHandler(self.handler)
+class TestBugzillaMetadataParser(unittest.TestCase):
 
     def test_xml_valid_metadata(self):
         # Test whether the handler parses correctly
         # a Bugzilla metadata XML stream
         filepath = os.path.join(TEST_FILES_DIRNAME, METADATA_FILE)
-        content = read_file(filepath)
-        self.parser.feed(content)
+        xml = read_file(filepath)
+        parser = BugzillaMetadataParser(xml)
+        parser.parse()
 
-        metadata = self.handler.metadata
+        metadata = parser.metadata
         self.assertIsInstance(metadata, BugzillaMetadata)
         self.assertEqual(u'4.2.1', metadata.version)
         self.assertEqual(u'https://bugzilla.example.com/', metadata.urlbase)
@@ -71,18 +66,16 @@ class TestBugzillaMetadataHandler(unittest.TestCase):
         # Test whether the handler parses correctly
         # an empty Bugzilla metadata XML stream
         filepath = os.path.join(TEST_FILES_DIRNAME, EMPTY_METADATA_FILE)
-        content = read_file(filepath)
-        self.parser.feed(content)
+        xml = read_file(filepath)
+        parser = BugzillaMetadataParser(xml)
+        parser.parse()
 
-        metadata = self.handler.metadata
+        metadata = parser.metadata
         self.assertIsInstance(metadata, BugzillaMetadata)
         self.assertEqual(None, metadata.version)
         self.assertEqual(None, metadata.urlbase)
         self.assertEqual(None, metadata.maintainer)
         self.assertEqual(None, metadata.exporter)
-
-    def tearDown(self):
-        self.parser.close()
 
 
 if __name__ == '__main__':

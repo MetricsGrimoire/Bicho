@@ -26,41 +26,30 @@
 Parsers for Bugzilla tracker.
 """
 
-import xml.sax.handler
-
+from Bicho.backends.parsers import XMLParser
 from Bicho.backends.bugzilla.model import BugzillaMetadata
 
 
-BUGZILLA_TOKEN = 'bugzilla'
+# Tokens
+VERSION_TOKEN = 'version'
+URLBASE_TOKEN = 'urlbase'
+MAINTAINER_TOKEN = 'maintainer'
+EXPORTER_TOKEN = 'exporter'
 
 
-class BugzillaMetadataHandler(xml.sax.handler.ContentHandler):
-    """XML handler for parsing Bugzilla metadata."""
+class BugzillaMetadataParser(XMLParser):
+    """XML parser for parsing Bugzilla metadata."""
 
-    def __init__ (self):
-        self._init_metadata()
+    def __init__(self, xml):
+        XMLParser.__init__(self, xml)
 
     @property
     def metadata(self):
-        return BugzillaMetadata(self._metadata['version'],
-                                self._metadata['urlbase'],
-                                self._metadata['maintainer'],
-                                self._metadata['exporter'])
+        return self._marshal()
 
-    def startDocument(self):
-        self._init_metadata()
+    def _marshal(self):
+        return BugzillaMetadata(self._data.get(VERSION_TOKEN),
+                                self._data.get(URLBASE_TOKEN),
+                                self._data.get(MAINTAINER_TOKEN),
+                                self._data.get(EXPORTER_TOKEN))
 
-    def startElement(self, name, attrs):
-        if name != BUGZILLA_TOKEN:
-            return
-
-        for name, value in attrs.items():
-            self._metadata[name] = unicode(value)
-
-    def _init_metadata(self):
-        self._metadata = {
-                          'version' : None,
-                          'urlbase' : None,
-                          'maintainer' : None,
-                          'exporter' : None
-                         }
