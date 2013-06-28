@@ -23,7 +23,7 @@ from Bicho.Config import Config
 
 from Bicho.backends import Backend
 from Bicho.utils import create_dir, printdbg, printout, printerr
-from Bicho.db.database import DBIssue, DBBackend, get_database
+from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
 from Bicho.common import Tracker, Issue, People, Change
 
 from dateutil.parser import parse
@@ -141,10 +141,13 @@ class DBGerritBackend(DBBackend):
         """
         pass
 
-    def get_last_modification_date(self, store):
+    def get_last_modification_date(self, store, trk_id):
         # get last modification date (day) stored in the database
         # select date_last_updated as date from issues_ext_gerrit order by date
-        result = store.find(DBGerritIssueExt)
+        result = store.find(DBGerritIssueExt, 
+                            DBGerritIssueExt.issue_id == DBIssue.id,
+                            DBIssue.tracker_id == DBTracker.id,
+                            DBTracker.id == trk_id)
         aux = result.order_by(Desc(DBGerritIssueExt.mod_date))[:1]
 
         for entry in aux:
@@ -328,7 +331,7 @@ class Gerrit():
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_time = 0        
-        last_mod_date = bugsdb.get_last_modification_date()                
+        last_mod_date = bugsdb.get_last_modification_date(dbtrk.id)                
         if last_mod_date:
             printdbg("Last reviews analyzed were modified on date: %s" 
                      % last_mod_date)
