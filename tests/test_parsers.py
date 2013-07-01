@@ -28,7 +28,7 @@ import lxml.objectify
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.parsers import XMLParser, XMLParserError
+from Bicho.backends.parsers import UnmarshallingError, XMLParserError, XMLParser
 
 
 # Name of directory where the test input files are stored
@@ -46,11 +46,28 @@ def read_file(filename):
     return content
 
 
-class TestXMLParserError(unittest.TestCase):
+class TestUnmarshallingError(unittest.TestCase):
 
     def test_type(self):
         # Check whether raises a TypeError exception when
         # is not given an Exception class as second parameter
+        self.assertRaises(TypeError, UnmarshallingError, 'Identity', True)
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = UnmarshallingError('Comment')
+        self.assertEqual('error unmarshalling object to Comment.', str(e))
+
+        e = UnmarshallingError('Identity', AttributeError())
+        self.assertEqual('error unmarshalling object to Identity. AttributeError()',
+                         str(e))
+
+
+class TestXMLParserError(unittest.TestCase):
+
+    def test_type(self):
+        # Check whether raises a TypeError exception when
+        # is not given an Exception class as first parameter
         self.assertRaises(TypeError, XMLParserError, 'error')
 
     def test_error_message(self):
