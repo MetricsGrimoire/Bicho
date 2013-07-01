@@ -298,9 +298,8 @@ class Gerrit():
                         
         args_gerrit += " --all-approvals --format=JSON"
         
-        printdbg("Gerrit cmd: " + args_gerrit)
-                
         cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
+        printdbg("Gerrit cmd: " + "ssh "+ "-p 29418 "+ Config.url+" "+ args_gerrit)
         import subprocess 
         tickets_raw = subprocess.check_output(cmd)
         tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
@@ -344,7 +343,8 @@ class Gerrit():
         number_results = limit
         total_reviews = 0
         
-        while (number_results == limit):
+        while (number_results == limit or
+               number_results == limit+1): # wikimedia gerrit returns limit+1
             # ordered by lastUpdated        
             tickets = self.getReviews(limit, last_item)
             number_results = 0
