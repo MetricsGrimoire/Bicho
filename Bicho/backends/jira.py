@@ -334,6 +334,19 @@ class SoupHtmlParser():
         cmts = soup.findAll(text=lambda text: isinstance(text, BFComment))
         [comment.extract() for comment in cmts]
 
+    def _get_identifier(self, td_html):
+        # gets TD HTML Beautiful object and return id or email
+        #
+        # Example: <td width="40%" class="activity-old-val"> SE Support <span class="hist-value">[ <a href="mailto:support-lep@liferay.com">support-lep@liferay.com</a> ]</span></td>
+        # Example: <td width="40%" class="activity-new-val"> Ryan Park <span class="hist-value">[    ryan.park ]</span> </td>
+        myaux = td_html.find('span')
+        if myaux.find('a'):
+            identifier = myaux.find('a').contents[0]
+        else:
+            aux = myaux.text
+            identifier = aux.replace('[','').replace(']','').strip()
+        return identifier
+
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
@@ -376,17 +389,14 @@ class SoupHtmlParser():
                 cols = list(row.findAll('td'))
                 if len(cols) == 3:
                     field = unicode(cols[0].contents[0].strip())
-                    old = unicode(cols[1].contents[0].strip())
-                    new = unicode(cols[2].contents[0].strip())
 
                     if field == "Assignee":
-                        # gets the user id from the value between brackets
-                        if len(old) > 0:
-                            old = \
-                            unicode(cols[1].contents[1]).strip().split()[2]
-                        if len(new) > 0:
-                            new = \
-                            unicode(cols[2].contents[1]).strip().split()[2]
+                        old = unicode(self._get_identifier(cols[1]))
+                        new = unicode(self._get_identifier(cols[2]))
+                    else:
+                        old = unicode(cols[1].contents[0].strip())
+                        new = unicode(cols[2].contents[0].strip())
+
                     change = Change(field, old, new, author, date)
                     changes.append(change)
         return changes
