@@ -266,7 +266,7 @@ class TestAttachment(unittest.TestCase):
         self.attachment = Attachment('http://example.com/file', 'attachment',
                                      'An attachment', JOHN_SMITH, MOCK_DATETIME)
 
-    def test_simple_identity(self):
+    def test_simple_attachment(self):
         attachment = Attachment('http://example.com/file')
         self.assertEqual('http://example.com/file', attachment.url)
         self.assertEqual(None, attachment.name)
@@ -274,7 +274,7 @@ class TestAttachment(unittest.TestCase):
         self.assertEqual(None, attachment.submitted_by)
         self.assertEqual(None, attachment.submitted_on)
 
-    def test_attchment(self):
+    def test_attachment(self):
         self.assertEqual('http://example.com/file', self.attachment.url)
         self.assertEqual('attachment', self.attachment.name)
         self.assertEqual('An attachment', self.attachment.description)
