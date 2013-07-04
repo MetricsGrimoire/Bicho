@@ -256,10 +256,10 @@ class Comment(object):
 class Attachment(object):
     """Attachment instance.
 
-    :param url: URL of the attachment
-    :type url: str
     :param name: name of the attachemnt
     :type name: str
+    :param url: URL of the attachment
+    :type url: str
     :param description: description of the attachment
     :type description: str
     :param submitted_by: submitter of the attachment
@@ -269,10 +269,10 @@ class Attachment(object):
 
     :raise TypeError: raised when the type of the parameters is not valid.
     """
-    def __init__(self, url, name=None, description=None,
+    def __init__(self, name, url=None, description=None,
                  submitted_by=None, submitted_on=None):
-        self.url = url
         self.name = name
+        self.url = url
         self.description = description
         self.submitted_by = submitted_by
         self.submitted_on = submitted_on

@@ -157,8 +157,8 @@ class TestIssue(unittest.TestCase):
         self.assertListEqual([c1, c2, c3, c2, c3, c1], self.issue.comments)
 
     def test_attachments(self):
-        a1 = Attachment('http://example.com/file1')
-        a2 = Attachment('http://example.com/file2', submitted_by=JOHN_DOE)
+        a1 = Attachment('file1')
+        a2 = Attachment('file2', submitted_by=JOHN_DOE)
 
         self.issue.add_attachment(a2)
         self.issue.add_attachment(a1)
@@ -263,20 +263,20 @@ class TestComment(unittest.TestCase):
 class TestAttachment(unittest.TestCase):
 
     def setUp(self):
-        self.attachment = Attachment('http://example.com/file', 'attachment',
+        self.attachment = Attachment('attachment', 'http://example.com/file',
                                      'An attachment', JOHN_SMITH, MOCK_DATETIME)
 
     def test_simple_attachment(self):
-        attachment = Attachment('http://example.com/file')
-        self.assertEqual('http://example.com/file', attachment.url)
-        self.assertEqual(None, attachment.name)
+        attachment = Attachment('attachment')
+        self.assertEqual('attachment', attachment.name)
+        self.assertEqual(None, attachment.url)
         self.assertEqual(None, attachment.description)
         self.assertEqual(None, attachment.submitted_by)
         self.assertEqual(None, attachment.submitted_on)
 
     def test_attachment(self):
-        self.assertEqual('http://example.com/file', self.attachment.url)
         self.assertEqual('attachment', self.attachment.name)
+        self.assertEqual('http://example.com/file', self.attachment.url)
         self.assertEqual('An attachment', self.attachment.description)
         self.assertEqual(JOHN_SMITH, self.attachment.submitted_by)
         self.assertEqual(MOCK_DATETIME, self.attachment.submitted_on)
@@ -303,12 +303,14 @@ class TestAttachment(unittest.TestCase):
 
     def test_invalid_init(self):
         self.assertRaisesRegexp(TypeError, SUBMITTED_BY_STR_ERROR,
-                                Attachment, url='http://example.com/file',
-                                name='attachment', description='an attachment',
+                                Attachment, name='attachment',
+                                url='http://example.com/file',
+                                description='an attachment',
                                 submitted_by='John Doe', submitted_on=None)
         self.assertRaisesRegexp(TypeError, SUBMITTED_ON_STR_ERROR,
-                                Attachment, url='http://example.com/file',
-                                name='attachment', description='an attachment',
+                                Attachment, name='attachment',
+                                url='http://example.com/file',
+                                description='an attachment',
                                 submitted_by=None, submitted_on=MOCK_DATETIME_STR)
 
 
