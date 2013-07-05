@@ -30,6 +30,27 @@ if not '..' in sys.path:
 from Bicho.common import Identity, Tracker, Issue, Comment, Attachment, Change
 
 
+# Mock identities for testing
+JOHN_SMITH = Identity('john_smith', 'John Smith', 'jsmith@example.com')
+JOHN_DOE = Identity('john_doe', 'John Doe', 'johndoe@example.com')
+JANE_ROE = Identity('jane_roe', 'Jane Roe', 'jr@example.com')
+
+# Mock dates for testing
+MOCK_DATETIME = datetime.datetime.utcnow()
+MOCK_DATETIME_STR = '1970-01-01T00:00:01'
+
+# RegExps for testing TypeError exceptions
+TYPE_ERROR_REGEXP = '.+%s.+ should be a %s instance\. %s given'
+SUBMITTED_BY_NONE_ERROR = TYPE_ERROR_REGEXP % ('submitted_by', 'Identity', 'NoneType')
+SUBMITTED_BY_STR_ERROR = TYPE_ERROR_REGEXP % ('submitted_by', 'Identity', 'str')
+SUBMITTED_ON_NONE_ERROR = TYPE_ERROR_REGEXP % ('submitted_on', 'datetime', 'NoneType')
+SUBMITTED_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('submitted_on', 'datetime', 'str')
+CHANGED_BY_NONE_ERROR = TYPE_ERROR_REGEXP % ('changed_by', 'Identity', 'NoneType')
+CHANGED_BY_STR_ERROR = TYPE_ERROR_REGEXP % ('changed_by', 'Identity', 'str')
+CHANGED_ON_NONE_ERROR = TYPE_ERROR_REGEXP % ('changed_on', 'datetime', 'NoneType')
+CHANGED_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('changed_on', 'datetime', 'str')
+
+
 class TestIdentity(unittest.TestCase):
 
     def test_simple_identity(self):
@@ -64,27 +85,6 @@ class TestTracker(unittest.TestCase):
 
         self.assertRaises(AttributeError, setattr, self.tracker, 'version', 'v2.0')
         self.assertEqual('v1.0', self.tracker.version)
-
-
-# Mock identities for testing
-JOHN_SMITH = Identity('john_smith', 'John Smith', 'jsmith@example.com')
-JOHN_DOE = Identity('john_doe', 'John Doe', 'johndoe@example.com')
-JANE_ROE = Identity('jane_roe', 'Jane Roe', 'jr@example.com')
-
-# Mock dates for testing
-MOCK_DATETIME = datetime.datetime.utcnow()
-MOCK_DATETIME_STR = '1970-01-01T00:00:01'
-
-# RegExps for testing TypeError exceptions
-TYPE_ERROR_REGEXP = '.+%s.+ should be a %s instance\. %s given'
-SUBMITTED_BY_NONE_ERROR = TYPE_ERROR_REGEXP % ('submitted_by', 'Identity', 'NoneType')
-SUBMITTED_BY_STR_ERROR = TYPE_ERROR_REGEXP % ('submitted_by', 'Identity', 'str')
-SUBMITTED_ON_NONE_ERROR = TYPE_ERROR_REGEXP % ('submitted_on', 'datetime', 'NoneType')
-SUBMITTED_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('submitted_on', 'datetime', 'str')
-CHANGED_BY_NONE_ERROR = TYPE_ERROR_REGEXP % ('changed_by', 'Identity', 'NoneType')
-CHANGED_BY_STR_ERROR = TYPE_ERROR_REGEXP % ('changed_by', 'Identity', 'str')
-CHANGED_ON_NONE_ERROR = TYPE_ERROR_REGEXP % ('changed_on', 'datetime', 'NoneType')
-CHANGED_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('changed_on', 'datetime', 'str')
 
 
 class TestIssue(unittest.TestCase):
