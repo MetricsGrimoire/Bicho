@@ -65,9 +65,9 @@ class BugzillaMetadataParser(XMLParser):
 
     @property
     def metadata(self):
-        return self._marshal()
+        return self._unmarshal()
 
-    def _marshal(self):
+    def _unmarshal(self):
         return BugzillaMetadata(self._data.get(VERSION_TOKEN),
                                 self._data.get(URLBASE_TOKEN),
                                 self._data.get(MAINTAINER_TOKEN),
