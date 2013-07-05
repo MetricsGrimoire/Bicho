@@ -30,8 +30,17 @@ from Bicho.common import Identity, Issue, Attachment
 
 
 class BugzillaMetadata(object):
-    """Issue tracker metadata"""
+    """Issue tracker metadata
 
+    :param version: version of the tracker
+    :type version: str
+    :param urlbase: url of the tracker
+    :type urlbase: str
+    :param maintainer: user id set as maintainer of the tracker
+    :type maintainer: str
+    :param exporter: user used to retrieve information from the tracker
+    :type exporter: str
+    """
     def __init__(self, version, urlbase, maintainer, exporter):
         self.version = version
         self.urlbase = urlbase
