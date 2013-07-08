@@ -24,6 +24,7 @@
 Generic parsers for backends.
 """
 
+from bs4 import BeautifulSoup, Comment
 from lxml import objectify
 
 
@@ -46,6 +47,21 @@ class UnmarshallingError(Exception):
         return msg
 
 
+class HTMLParserError(Exception):
+    """Exception raised when an error occurs parsing a HTML stream."""
+
+    def __init__(self, error=None):
+        if error is not None and not isinstance(error, Exception):
+            raise TypeError('expected type Exception in error parameter.')
+        self.error = error
+
+    def __str__(self):
+        msg = 'error parsing HTML.'
+        if self.error is not None:
+            msg += ' %s' % repr(self.error)
+        return msg
+
+
 class XMLParserError(Exception):
     """Exception raised when an error occurs parsing a XML stream."""
 
@@ -59,6 +75,44 @@ class XMLParserError(Exception):
         if self.error is not None:
             msg += ' %s' % repr(self.error)
         return msg
+
+
+class HTMLParser(object):
+    """Generic HTML parser
+
+    :param html: stream to parse
+    :type html: str
+    """
+    def __init__(self, html):
+        self.html = html
+        self._data = None
+
+    def parse(self):
+        """Parse the HTML stream
+
+        :raises: TypeError: when the html to parse is not a instance of str.
+        :raises: HTMLParserError: when an error occurs parsing the stream.
+        """
+        if not isinstance(self.html, str):
+            raise TypeError('expected type str in html parameter.')
+
+        try:
+            self._data = BeautifulSoup(self.html)
+            self._remove_comments()
+        except Exception, e:
+            raise HTMLParserError(e)
+
+    @property
+    def data(self):
+        """Returns the parsed data.
+
+        :rtype: bs4.BeautifulSoup
+        """
+        return self._data
+
+    def _remove_comments(self):
+        comments = self._data.findAll(text=lambda text:isinstance(text, Comment))
+        [comment.extract() for comment in comments]
 
 
 class XMLParser(object):

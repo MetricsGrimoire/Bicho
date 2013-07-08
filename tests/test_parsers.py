@@ -23,18 +23,23 @@
 import os.path
 import sys
 import unittest
+
+import bs4
 import lxml.objectify
 
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.parsers import UnmarshallingError, XMLParserError, XMLParser
+from Bicho.backends.parsers import UnmarshallingError,\
+    HTMLParserError, XMLParserError, HTMLParser, XMLParser
 
 
 # Name of directory where the test input files are stored
 TEST_FILES_DIRNAME = 'parsers_data'
 
 # Test files
+HTML_VALID_FILE = 'html_valid.html'
+HTML_UTF8_FILE = 'html_utf8.html'
 XML_VALID_FILE = 'valid_xml.xml'
 XML_INVALID_FILE = 'invalid_xml.xml'
 XML_UTF8_FILE = 'utf8_xml.xml'
@@ -70,6 +75,64 @@ class TestUnmarshallingError(unittest.TestCase):
         e = UnmarshallingError('Comment', cause='Invalid date')
         self.assertEqual('error unmarshalling object to Comment. Invalid date.',
                          str(e))
+
+
+class TestHTMLParserError(unittest.TestCase):
+
+    def test_type(self):
+        # Check whether raises a TypeError exception when
+        # is not given an Exception class as first parameter
+        self.assertRaises(TypeError, HTMLParserError, 'error')
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = HTMLParserError()
+        self.assertEqual('error parsing HTML.', str(e))
+
+        e = HTMLParserError(Exception())
+        self.assertEqual('error parsing HTML. Exception()', str(e))
+
+
+class TestHTMLParser(unittest.TestCase):
+
+    def test_readonly_properties(self):
+        parser = HTMLParser('<html><h1>Test</h1></html>')
+        self.assertRaises(AttributeError, setattr, parser, 'data', '')
+        self.assertEqual(None, parser.data)
+
+    def test_parse_invalid_type_stream(self):
+        parser = HTMLParser(None)
+        self.assertRaises(TypeError, parser.parse)
+
+    def test_parse_valid_html(self):
+        # Check whether it parses a valid HTML stream
+        filepath = os.path.join(TEST_FILES_DIRNAME, HTML_VALID_FILE)
+        html = read_file(filepath)
+
+        parser = HTMLParser(html)
+        parser.parse()
+
+        bug = parser.data
+        self.assertIsInstance(bug, bs4.BeautifulSoup)
+
+        self.assertEqual(u'Bug 348 \u2013 Testing KESI component', bug.title.string)
+        self.assertEqual(u'Last modified: 2013-07-03 11:28:03 CEST',
+                         bug.find(id='information').p.string)
+        self.assertEqual(10, len(bug.find_all('table')))
+
+    def test_parse_uf8_characters_html(self):
+        # Check whether it parses a valid HTML stream that
+        # contains UFT-8 characters
+        filepath = os.path.join(TEST_FILES_DIRNAME, HTML_UTF8_FILE)
+        html = read_file(filepath)
+
+        parser = HTMLParser(html)
+        parser.parse()
+        root = parser.data
+
+        self.assertEqual(u'sdueñas', root.h1.string)
+        self.assertEqual(u'\nEn el Este, éste está,está éste en el Este, pero el Este, ¿dónde está?\n',
+                         root.p.string)
 
 
 class TestXMLParserError(unittest.TestCase):
