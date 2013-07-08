@@ -96,7 +96,7 @@ class Issue(object):
     :param assigned_to: identity assigned to the issue
     :type assigned_to: Identity
 
-    :raises: TypeError: when the type of the parameters is not valid.
+    :raises: TypeError: when any type of the parameters is not valid.
     """
     def __init__(self, issue_id, issue_type, summary, description,
                  submitted_by, submitted_on,
@@ -124,7 +124,6 @@ class Issue(object):
         self._attachments = []
         self._changes = []
         self._relationships = []
-        self._temp_relationships = []
         self._watchers = []
 
     @property
@@ -188,7 +187,7 @@ class Issue(object):
         """Add a change to the issue.
 
         :param change: a change of the issue
-        :type change: L{Change}
+        :type change: Change
 
         :raise TypeError: raised if the type of change is not valid.
         """
@@ -202,17 +201,34 @@ class Issue(object):
         return self._watchers
 
     def add_watcher(self, watcher):
-        """Set a watcher assigned to the issue.
+        """Add a watcher assigned to the issue.
 
-        :param watcher: identity watching the bug
+        :param watcher: identity watching the issue
         :type watcher: Identity
 
-        :raise TypeError: raised if the type of assigned_to is not valid.
+        :raise TypeError: raised if the type of watcher is not valid.
         """
         if not isinstance(watcher, Identity):
             raise TypeError('Parameter "watcher" should be a %s instance. %s given.' %
                             ('Identity', watcher.__class__.__name__,))
         self._watchers.append(watcher)
+
+    @property
+    def relationships(self):
+        return self._relationships
+
+    def add_relationship(self, relationship):
+        """Add a relationship with other issue.
+
+        :param relationship: relationship with other issue
+        :type watcher: Identity
+
+        :raise TypeError: raised if the type of relationship is not valid.
+        """
+        if not isinstance(relationship, IssueRelationship):
+            raise TypeError('Parameter "relationship" should be a %s instance. %s given.' %
+                            ('Identity', relationship.__class__.__name__,))
+        self._relationships.append(relationship)
 
 
 class Comment(object):
@@ -350,3 +366,16 @@ class Change(object):
     @property
     def changed_on(self):
         return self._changed_on
+
+
+class IssueRelationship(object):
+    """Class to map the relationship between two issues.
+
+    :param rel_type: type of relationship
+    :type rel_type: str
+    :param related_to: identifier of the issue
+    :type related_to: str
+    """
+    def __init__(self, rel_type, related_to):
+        self.rel_type = rel_type
+        self.related_to = related_to

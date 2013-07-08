@@ -27,7 +27,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.common import Identity, Tracker, Issue, Comment, Attachment, Change
+from Bicho.common import Identity, Tracker, Issue, Comment, Attachment, Change, IssueRelationship
 
 
 # Mock identities for testing
@@ -111,6 +111,7 @@ class TestIssue(unittest.TestCase):
         self.assertListEqual([], self.issue.attachments)
         self.assertListEqual([], self.issue.changes)
         self.assertListEqual([], self.issue.watchers)
+        self.assertListEqual([], self.issue.relationships)
 
     def test_readonly_properties(self):
         self.assertRaises(AttributeError, setattr, self.issue, 'submitted_by', JANE_ROE)
@@ -130,6 +131,9 @@ class TestIssue(unittest.TestCase):
 
         self.assertRaises(AttributeError, setattr, self.issue, 'watchers', '')
         self.assertListEqual([], self.issue.watchers)
+
+        self.assertRaises(AttributeError, setattr, self.issue, 'relationships', '')
+        self.assertListEqual([], self.issue.relationships)
 
     def test_assigned_to(self):
         self.assertRaises(TypeError, setattr, self.issue, 'assigned_to', 'John Doe')
@@ -201,6 +205,26 @@ class TestIssue(unittest.TestCase):
         self.assertListEqual([w2, w3, w1, w2, w1], self.issue.watchers)
         self.assertRaises(TypeError, self.issue.add_watcher, watcher='John Doe')
         self.assertListEqual([w2, w3, w1, w2, w1], self.issue.watchers)
+
+    def test_relationships(self):
+        rel1 = IssueRelationship('DEPENDS ON', '1')
+        rel2 = IssueRelationship('BLOCKED BY', '2')
+        rel3 = IssueRelationship('BLOCKS', '3')
+        rel4 = IssueRelationship('DEPENDS ON', '4')
+
+        self.issue.add_relationship(rel1)
+        self.issue.add_relationship(rel3)
+        self.issue.add_relationship(rel4)
+        self.issue.add_relationship(rel3)
+        self.issue.add_relationship(rel2)
+        self.issue.add_relationship(rel1)
+        self.issue.add_relationship(rel3)
+
+        self.assertListEqual([rel1, rel3, rel4, rel3, rel2, rel1, rel3],
+                             self.issue.relationships)
+        self.assertRaises(TypeError, self.issue.add_relationship, relationship=None)
+        self.assertListEqual([rel1, rel3, rel4, rel3, rel2, rel1, rel3],
+                             self.issue.relationships)
 
     def test_invalid_init(self):
         self.assertRaisesRegexp(TypeError, SUBMITTED_BY_NONE_ERROR,
@@ -355,6 +379,14 @@ class TestChange(unittest.TestCase):
         self.assertRaisesRegexp(TypeError, CHANGED_ON_STR_ERROR,
                                 Change, field='status', old_value='open', new_value='closed',
                                 changed_by=JOHN_SMITH, changed_on=MOCK_DATETIME_STR)
+
+
+class TestIssueRelationship(unittest.TestCase):
+
+    def test_relationship(self):
+        relationship = IssueRelationship('BLOCKED BY', '8')
+        self.assertEqual('BLOCKED BY', relationship.rel_type)
+        self.assertEqual('8', relationship.related_to)
 
 
 if __name__ == "__main__":
