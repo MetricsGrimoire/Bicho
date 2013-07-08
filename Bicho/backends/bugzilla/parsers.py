@@ -27,18 +27,21 @@ Parsers for Bugzilla tracker.
 import dateutil.parser
 
 from Bicho.backends.parsers import UnmarshallingError, XMLParser
-from Bicho.backends.bugzilla.model import BugzillaMetadata, BugzillaIssue, BugzillaAttachment
-from Bicho.common import Identity, Comment
+from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
+    BugzillaMetadata, BugzillaIssue, BugzillaAttachment
+from Bicho.common import Identity, Comment, IssueRelationship
 
 
 # Tokens
 ALIAS_TOKEN = 'alias'
 ATTACHMENT_TOKEN = 'attachment'
+BLOCKED_TOKEN = 'blocked'
 BUG_TOKEN = 'bug'
 BUG_FILE_LOC_TOKEN = 'bug_file_loc'
 CC_TOKEN = 'cc'
 DEADLINE_TOKEN = 'deadline'
 DELTA_TS_TOKEN = 'delta_ts'
+DEPENDS_ON_TOKEN = 'dependson'
 DUP_ID_TOKEN = 'dup_id'
 EVERCONFIRMED_TOKEN = 'everconfirmed'
 ESTIMATED_TIME_TOKEN = 'estimated_time'
@@ -83,6 +86,7 @@ class BugzillaIssuesParser(XMLParser):
                           DUP_ID_TOKEN, EVERCONFIRMED_TOKEN,
                           STATUS_WHITEBOARD_TOKEN,
                           TARGET_MILESTONE_TOKEN, VOTES_TOKEN]
+    BG_RELATIONSHIP_TAGS = [BLOCKED_TOKEN, DEPENDS_ON_TOKEN]
 
     def __init__(self, xml):
         XMLParser.__init__(self, xml)
@@ -123,6 +127,8 @@ class BugzillaIssuesParser(XMLParser):
             attachments = self._unmarshal_issue_attachments(bg_issue)
             # Unmarshal watchers
             watchers = self._unmarshal_issue_watchers(bg_issue)
+            # Unmarshal issue relationships
+            relationships = self._unmarshal_relationships(bg_issue)
 
             # Create issue instance
             issue = BugzillaIssue(issue_id, issue_type, summary, desc,
@@ -134,6 +140,8 @@ class BugzillaIssuesParser(XMLParser):
                 issue.add_attachment(attachment)
             for watcher in watchers:
                 issue.add_watcher(watcher)
+            for relationship in relationships:
+                issue.add_relationship(relationship)
             self._unmarshal_issue_custom_tags(bg_issue, issue)
 
             return issue
@@ -228,6 +236,29 @@ class BugzillaIssuesParser(XMLParser):
 
     def _unmarshal_watcher(self, bg_watcher):
         return self._unmarshal_identity(bg_watcher)
+
+    def _unmarshal_relationships(self, bg_issue):
+        relationships = []
+
+        for tag in BugzillaIssuesParser.BG_RELATIONSHIP_TAGS:
+            bg_rels = bg_issue.iterchildren(tag=tag)
+            rels = [self._unmarshal_relationship(bg_rel)
+                    for bg_rel in bg_rels]
+            relationships.extend(rels)
+
+        return relationships
+
+    def _unmarshal_relationship(self, bg_rel):
+        if bg_rel.tag == BLOCKED_TOKEN:
+            rel_type = BG_RELATIONSHIP_BLOCKED
+        elif bg_rel.tag == DEPENDS_ON_TOKEN:
+            rel_type = BG_RELATIONSHIP_DEPENDS_ON
+        else:
+            cause = 'unknown relationship type: %s' % bg_rel.tag
+            raise UnmarshallingError('IssueRelationship', cause=cause)
+
+        related_to = self._unmarshal_str(bg_rel)
+        return IssueRelationship(rel_type, related_to)
 
     def _unmarshal_str(self, s, not_empty=False):
         if s is None:

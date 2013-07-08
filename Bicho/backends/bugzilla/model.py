@@ -29,6 +29,11 @@ import datetime
 from Bicho.common import Identity, Issue, Attachment
 
 
+# Bugzilla relationships types
+BG_RELATIONSHIP_BLOCKED = u'BLOCKED'
+BG_RELATIONSHIP_DEPENDS_ON = u'DEPENDS ON'
+
+
 class BugzillaMetadata(object):
     """Issue tracker metadata
 
