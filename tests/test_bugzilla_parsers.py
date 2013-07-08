@@ -39,7 +39,7 @@ TEST_FILES_DIRNAME = 'bugzilla_data'
 
 # Test files
 METADATA_FILE = 'metadata.xml'
-EMPTY_METADATA_FILE = 'empty_metadata.xml'
+EMPTY_METADATA_FILE = 'metadata_empty.xml'
 ISSUE_AUTH_FILE = 'issue_auth.xml'
 ISSUE_NO_AUTH_FILE = 'issue_no_auth.xml'
 ISSUE_NO_VALUE_TAGS_FILE = 'issue_no_value_tags.xml'
