@@ -40,9 +40,9 @@ TEST_FILES_DIRNAME = 'parsers_data'
 # Test files
 HTML_VALID_FILE = 'html_valid.html'
 HTML_UTF8_FILE = 'html_utf8.html'
-XML_VALID_FILE = 'valid_xml.xml'
-XML_INVALID_FILE = 'invalid_xml.xml'
-XML_UTF8_FILE = 'utf8_xml.xml'
+XML_VALID_FILE = 'xml_valid.xml'
+XML_INVALID_FILE = 'xml_invalid.xml'
+XML_UTF8_FILE = 'xml_utf8.xml'
 
 
 def read_file(filename):
