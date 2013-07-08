@@ -52,23 +52,23 @@ class TestUnmarshallingError(unittest.TestCase):
         # Check whether raises a TypeError exception when
         # is not given an Exception class as third parameter
         self.assertRaises(TypeError, UnmarshallingError,
-                          'Identity', 'invalid name', True)
+                          'Identity', True, 'invalid name',)
 
     def test_error_message(self):
         # Make sure that prints the correct error
         e = UnmarshallingError('Attachment')
         self.assertEqual('error unmarshalling object to Attachment.', str(e))
 
-        e = UnmarshallingError('Comment', 'Invalid date')
-        self.assertEqual('error unmarshalling object to Comment. Invalid date.',
+        e = UnmarshallingError('Identity', AttributeError())
+        self.assertEqual('error unmarshalling object to Identity. AttributeError()',
                          str(e))
 
-        e = UnmarshallingError('Identity', 'Invalid email address', AttributeError())
+        e = UnmarshallingError('Identity', AttributeError(), 'Invalid email address')
         self.assertEqual('error unmarshalling object to Identity. Invalid email address. AttributeError()',
                          str(e))
 
-        e = UnmarshallingError('Identity', error=AttributeError())
-        self.assertEqual('error unmarshalling object to Identity. AttributeError()',
+        e = UnmarshallingError('Comment', cause='Invalid date')
+        self.assertEqual('error unmarshalling object to Comment. Invalid date.',
                          str(e))
 
 
