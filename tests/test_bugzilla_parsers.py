@@ -29,7 +29,8 @@ if not '..' in sys.path:
     sys.path.insert(0, '..')
 
 from Bicho.backends.parsers import UnmarshallingError
-from Bicho.backends.bugzilla.model import BugzillaMetadata, BugzillaIssue
+from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
+    BugzillaMetadata, BugzillaIssue
 from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesParser
 
 
@@ -50,12 +51,13 @@ ISSUE_INVALID_ATTACHMENT_BOOL_FILE = 'issue_invalid_attachment_bool.xml'
 ISSUE_NO_ATTACHMENTS_FILE = 'issue_no_attachments.xml'
 ISSUE_NO_QA_CONTACT = 'issue_no_qa_contact.xml'
 ISSUE_NO_WATCHERS_FILE = 'issue_no_watchers.xml'
+ISSUE_NO_RELATIONSHIPS_FILE = 'issue_no_relationships.xml'
 ISSUES_100 = 'issues_evince_100.xml'
 ISSUES_250 = 'issues_firefox_250.xml'
 ISSUES_500 = 'issues_solid_500.xml'
 
 # RegExps for testing TypeError exceptions
-UNMARSHALLING_ERROR_REGEXP = 'error unmarshalling object to %s. %s'
+UNMARSHALLING_ERROR_REGEXP = 'error unmarshalling object to %s.+%s'
 DATETIME_MONTH_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'month must be in 1..12')
 COMMENT_WHO_ERROR = UNMARSHALLING_ERROR_REGEXP % ('Comment', 'no such child: who.')
 ATTACHMENT_FILENAME_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaAttachment', 'no such child: filename.')
@@ -339,6 +341,34 @@ class TestBugzillaIssuesParser(unittest.TestCase):
         # without watcher tags
         issue = self._parse(ISSUE_NO_WATCHERS_FILE)[0]
         self.assertEqual(0, len(issue.watchers))
+
+    def test_relationships(self):
+        # Test the relationships parsing process
+        issue = self._parse(ISSUE_NO_AUTH_FILE)[0]
+        relationships = issue.relationships
+        self.assertEqual(4, len(relationships))
+
+        relationship = relationships[0]
+        self.assertEqual(BG_RELATIONSHIP_BLOCKED, relationship.rel_type)
+        self.assertEqual('349', relationship.related_to)
+
+        relationship = relationships[1]
+        self.assertEqual(BG_RELATIONSHIP_BLOCKED, relationship.rel_type)
+        self.assertEqual('354', relationship.related_to)
+
+        relationship = relationships[2]
+        self.assertEqual(BG_RELATIONSHIP_DEPENDS_ON, relationship.rel_type)
+        self.assertEqual('348', relationship.related_to)
+
+        relationship = relationships[3]
+        self.assertEqual(BG_RELATIONSHIP_DEPENDS_ON, relationship.rel_type)
+        self.assertEqual('350', relationship.related_to)
+
+    def test_no_relationships(self):
+        # Test if nothing is parsed from a stream
+        # without relationships tags
+        issue = self._parse(ISSUE_NO_RELATIONSHIPS_FILE)[0]
+        self.assertEqual(0, len(issue.relationships))
 
     def test_auth_identities(self):
         # Test whether identities are parsed from a XML stream.
