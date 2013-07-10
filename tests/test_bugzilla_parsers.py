@@ -31,7 +31,8 @@ if not '..' in sys.path:
 from Bicho.backends.parsers import UnmarshallingError
 from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
     BugzillaMetadata, BugzillaIssue
-from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesParser
+from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesParser,\
+    BugzillaChangesParser
 
 
 # Name of directory where the test input files are stored
@@ -55,6 +56,9 @@ ISSUE_NO_RELATIONSHIPS_FILE = 'issue_no_relationships.xml'
 ISSUES_100 = 'issues_evince_100.xml'
 ISSUES_250 = 'issues_firefox_250.xml'
 ISSUES_500 = 'issues_solid_500.xml'
+CHANGES_NO_AUTH_FILE = 'changes_no_auth.html'
+CHANGES_AUTH_FILE = 'changes_auth.html'
+CHANGES_EMPTY_FILE = 'changes_empty.html'
 
 # RegExps for testing TypeError exceptions
 UNMARSHALLING_ERROR_REGEXP = 'error unmarshalling object to %s.+%s'
@@ -465,6 +469,180 @@ class TestBugzillaIssuesParser(unittest.TestCase):
         self.parser = BugzillaIssuesParser(xml)
         self.parser.parse()
         return self.parser.issues
+
+
+class TestBugzillaChangesParser(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = None
+
+    def test_changes(self):
+        # Test whether there is no fail parsing the changes
+        # from an issue
+        changes = self._parse(CHANGES_NO_AUTH_FILE)
+        self.assertEqual(14, len(changes))
+
+        change = changes[0]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 11:57:23', unicode(change.changed_on))
+        self.assertEqual(u'Attachment #172 Attachment is obsolete', unicode(change.field))
+        self.assertEqual(u'0', change.old_value)
+        self.assertEqual(u'1', change.new_value)
+
+        # Changes from #1 to #11 should have same values in 'changed_by'
+        # and 'changed_on' attribs
+        change = changes[3]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 11:59:07', unicode(change.changed_on))
+        self.assertEqual(u'CC', change.field)
+        self.assertEqual(u'kesitesting', change.old_value)
+        self.assertEqual(None, change.new_value)
+
+        change = changes[4]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 11:59:07', unicode(change.changed_on))
+        self.assertEqual(u'Hardware', change.field)
+        self.assertEqual(u'All', change.old_value)
+        self.assertEqual(u'Macintosh', change.new_value)
+
+        change = changes[10]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 11:59:07', unicode(change.changed_on))
+        self.assertEqual(u'Severity', change.field)
+        self.assertEqual(u'normal', change.old_value)
+        self.assertEqual(u'trivial', change.new_value)
+
+        change = changes[12]
+        self.assertEqual(u'dizquierdo', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 12:04:11', unicode(change.changed_on))
+        self.assertEqual(u'Blocks', change.field)
+        self.assertEqual(None, change.old_value)
+        self.assertEqual(u'354 , 349', change.new_value)
+
+    def test_no_values_tags(self):
+        # We consider the default Bugzilla value '---', in a tag,
+        # like None. In addition, tags with no content have to
+        # be parsed as None.
+        # Test whether this value is set to None in the test cases.
+        changes = self._parse(CHANGES_NO_AUTH_FILE)
+
+        change = changes[6]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 11:59:07', unicode(change.changed_on))
+        self.assertEqual(u'Depends on', change.field)
+        self.assertEqual(u'350', change.old_value)
+        self.assertEqual(None, change.new_value)
+
+        change = changes[8]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 11:59:07', unicode(change.changed_on))
+        self.assertEqual(u'Resolution', change.field)
+        self.assertEqual(None, change.old_value)
+        self.assertEqual('FIXED', change.new_value)
+
+        change = changes[13]
+        self.assertEqual(u'dizquierdo', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2013-06-25 12:04:11', unicode(change.changed_on))
+        self.assertEqual(u'Depends on', change.field)
+        self.assertEqual(None, change.old_value)
+        self.assertEqual(u'350', change.new_value)
+
+    def test_identities_no_auth(self):
+        # Test whether there is no fail parsing identities from
+        # no auth streams
+        changes = self._parse(CHANGES_NO_AUTH_FILE)
+
+        change = changes[0]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+
+        change = changes[1]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+
+        change = changes[11]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+
+        change = changes[12]
+        self.assertEqual(u'dizquierdo', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+
+        change = changes[13]
+        self.assertEqual(u'dizquierdo', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+
+    def test_identities_auth(self):
+        # Test whether there is no fail parsing identities from
+        # auth streams
+        changes = self._parse(CHANGES_AUTH_FILE)
+
+        change = changes[0]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(u'sduenas@example.org', change.changed_by.email)
+
+        change = changes[1]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(u'sduenas@example.org', change.changed_by.email)
+
+        change = changes[11]
+        self.assertEqual(u'sduenas', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(u'sduenas@example.org', change.changed_by.email)
+
+        change = changes[12]
+        self.assertEqual(u'dizquierdo', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(u'dizquierdo@example.com', change.changed_by.email)
+
+        change = changes[13]
+        self.assertEqual(u'dizquierdo', change.changed_by.user_id)
+        self.assertEqual(None, change.changed_by.name)
+        self.assertEqual(u'dizquierdo@example.com', change.changed_by.email)
+
+    def test_no_changes(self):
+        # Test if nothing is parsed from a stream without a
+        # table of changes
+        changes = self._parse(CHANGES_EMPTY_FILE)
+        self.assertEqual(0, len(changes))
+
+    def _parse(self, filename):
+        """Generic method to parse changes on Bugzilla issues
+        from a HTML stream
+
+        :param filename: path of the file to parse
+        :type filename: str
+        :return: a set of issues parsed from Bugzilla
+        :rtype: list of Change
+        """
+        filepath = os.path.join(TEST_FILES_DIRNAME, filename)
+        html = read_file(filepath)
+        self.parser = BugzillaChangesParser(html)
+        self.parser.parse()
+        return self.parser.changes
 
 
 if __name__ == '__main__':
