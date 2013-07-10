@@ -43,6 +43,7 @@ METADATA_FILE = 'metadata.xml'
 METADATA_EMPTY_FILE = 'metadata_empty.xml'
 ISSUE_AUTH_FILE = 'issue_auth.xml'
 ISSUE_NO_AUTH_FILE = 'issue_no_auth.xml'
+ISSUE_EMPTY_FILE = 'issue_empty.xml'
 ISSUE_NO_VALUE_TAGS_FILE = 'issue_no_value_tags.xml'
 ISSUE_INVALID_DATE_FILE = 'issue_invalid_date.xml'
 ISSUE_INVALID_COMMENT_FILE = 'issue_invalid_comment.xml'
@@ -156,11 +157,17 @@ class TestBugzillaIssuesParser(unittest.TestCase):
         self.assertEqual(u'0', issue.status_whiteboard)
         self.assertEqual(u'core', issue.target_milestone)
         self.assertEqual(None, issue.votes)
-        self.assertEqual('2013-06-25 12:04:11', unicode(issue.delta_ts))
+        self.assertEqual(u'2013-06-25 12:04:11', unicode(issue.delta_ts))
         self.assertEqual(None, issue.estimated_time)
         self.assertEqual(None, issue.remaining_time)
         self.assertEqual(None, issue.actual_time)
         self.assertEqual(None, issue.deadline)
+
+    def test_no_issues(self):
+        # Test if nothing is parsed from a stream that does not
+        # contain bug tags
+        issues = self._parse(ISSUE_EMPTY_FILE)
+        self.assertListEqual([], issues)
 
     def test_no_value_tags(self):
         # We consider the default Bugzilla value '---', in a tag,
