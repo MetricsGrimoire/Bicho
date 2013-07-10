@@ -18,6 +18,8 @@
 #
 # Authors:
 #         Santiago Dueñas <sduenas@libresoft.es>
+#         Juan Francisco Gato Luis <jfcogato@libresoft.es>
+#         Luis Cañas Díaz <lcanas@libresoft.es>
 #
 
 """
@@ -26,10 +28,10 @@ Parsers for Bugzilla tracker.
 
 import dateutil.parser
 
-from Bicho.backends.parsers import UnmarshallingError, XMLParser
+from Bicho.backends.parsers import UnmarshallingError, HTMLParser, XMLParser
 from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
     BugzillaMetadata, BugzillaIssue, BugzillaAttachment
-from Bicho.common import Identity, Comment, IssueRelationship
+from Bicho.common import Identity, Comment, Change, IssueRelationship
 
 
 # Tokens
@@ -53,7 +55,9 @@ MAINTAINER_TOKEN = 'maintainer'
 NAME_TOKEN = 'name'
 NO_VALUE_TOKEN = '---'
 QA_CONTACT_TOKEN = 'qa_contact'
+ROWSPAN_TOKEN = 'rowspan'
 STATUS_WHITEBOARD_TOKEN = 'status_whiteboard'
+TABLE_TOKEN = 'table'
 TARGET_MILESTONE_TOKEN = 'target_milestone'
 URLBASE_TOKEN = 'urlbase'
 VERSION_TOKEN = 'version'
@@ -290,6 +294,107 @@ class BugzillaIssuesParser(XMLParser):
             name = self._unmarshal_str(bg_id.get(NAME_TOKEN))
 
             return Identity(user_id, name, email)
+        except Exception, e:
+            raise UnmarshallingError('Identity', e)
+
+    def _unmarshal_timestamp(self, bg_ts):
+        try:
+            str_ts = self._unmarshal_str(bg_ts)
+            return dateutil.parser.parse(str_ts).replace(tzinfo=None)
+        except Exception, e:
+            raise UnmarshallingError('datetime', e)
+
+
+class BugzillaChangesParser(HTMLParser):
+    """HTML handler for parsing changes on Bugzilla issues"""
+
+    # Tags to remove from the fields
+    HTML_TAGS_TO_REMOVE = ['a', 'i', 'span']
+
+    def __init__(self, html):
+        HTMLParser.__init__(self, html)
+
+    @property
+    def changes(self):
+        return self._unmarshal()
+
+    def _unmarshal(self):
+        contents = self._find_changes_table()
+        return self._unmarshal_changes(contents)
+
+    def _unmarshal_changes(self, bg_changes):
+        changes = []
+
+        while bg_changes != []:
+            # The first two fields are 'who' change the issue
+            # and 'when'.
+            who = bg_changes.pop(0)
+            changed_by = self._unmarshal_identity(who)
+            changed_on = self._unmarshal_timestamp(bg_changes.pop(0))
+
+            # The attribute 'rowspan' of 'who' field tells how many
+            # changes were made in the same date.
+            n = int(who.get(ROWSPAN_TOKEN))
+
+            # Next fields are split into chunks of three elements that are:
+            # 'what' was changed and 'old' and 'new' values. These chunks
+            # share 'who' and 'when' values.
+            for i in range(n):
+                field = self._unmarshal_str(bg_changes.pop(0))
+                old_value = self._unmarshal_str(bg_changes.pop(0))
+                new_value = self._unmarshal_str(bg_changes.pop(0))
+                change = Change(field, old_value, new_value, changed_by, changed_on)
+                changes.append(change)
+        return changes
+
+    def _find_changes_table(self):
+        table = None
+        found = False
+        tables = self._data.find_all(TABLE_TOKEN)
+
+        # The first table with 5 columns is the table of changes
+        while (not found) and (tables != []):
+            table = tables.pop(0)
+            nheaders = len(table.tr.find_all('th', recursive=False))
+
+            if nheaders == 5:
+                found = True
+
+        if not found:
+            return []
+
+        self._remove_tags_from_table(table)
+
+        # Return the contents of the table
+        contents = table.find_all('td')
+        return contents
+
+    def _remove_tags_from_table(self, table):
+        # Clean the table of unnecessary tags
+        try:
+            [tag.replaceWith(tag.text)\
+            for tag in table.find_all(BugzillaChangesParser.HTML_TAGS_TO_REMOVE)]
+        except:
+            # TODO: printerr("error removing HTML tags")
+            pass
+
+    def _unmarshal_str(self, bg_str):
+        strings = [s.strip(' \n\t') for s in bg_str.stripped_strings]
+        s = u' '.join(strings)
+
+        if s == NO_VALUE_TOKEN or s == u'':
+            return None
+        return s
+
+    def _unmarshal_identity(self, bg_id):
+        try:
+            user_id = self._unmarshal_str(bg_id)
+            if '@' in user_id:
+                email = user_id
+                user_id = user_id.split('@')[0]
+            else:
+                email = None
+            return Identity(user_id, None, email)
         except Exception, e:
             raise UnmarshallingError('Identity', e)
 
