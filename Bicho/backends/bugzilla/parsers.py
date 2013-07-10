@@ -286,8 +286,8 @@ class BugzillaIssuesParser(XMLParser):
         try:
             user_id = self._unmarshal_str(bg_id)
             if '@' in user_id:
+                email = user_id
                 user_id = user_id.split('@')[0]
-                email = self._unmarshal_str(bg_id)
             else:
                 email = None
 
