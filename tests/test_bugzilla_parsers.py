@@ -40,7 +40,7 @@ TEST_FILES_DIRNAME = 'bugzilla_data'
 
 # Test files
 METADATA_FILE = 'metadata.xml'
-EMPTY_METADATA_FILE = 'metadata_empty.xml'
+METADATA_EMPTY_FILE = 'metadata_empty.xml'
 ISSUE_AUTH_FILE = 'issue_auth.xml'
 ISSUE_NO_AUTH_FILE = 'issue_no_auth.xml'
 ISSUE_NO_VALUE_TAGS_FILE = 'issue_no_value_tags.xml'
@@ -101,7 +101,7 @@ class TestBugzillaMetadataParser(unittest.TestCase):
     def test_xml_empty_metadata(self):
         # Test whether the handler parses correctly
         # an empty Bugzilla metadata XML stream
-        filepath = os.path.join(TEST_FILES_DIRNAME, EMPTY_METADATA_FILE)
+        filepath = os.path.join(TEST_FILES_DIRNAME, METADATA_EMPTY_FILE)
         xml = read_file(filepath)
         parser = BugzillaMetadataParser(xml)
         parser.parse()
