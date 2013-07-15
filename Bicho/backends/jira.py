@@ -340,12 +340,15 @@ class SoupHtmlParser():
         # Example: <td width="40%" class="activity-old-val"> SE Support <span class="hist-value">[ <a href="mailto:support-lep@liferay.com">support-lep@liferay.com</a> ]</span></td>
         # Example: <td width="40%" class="activity-new-val"> Ryan Park <span class="hist-value">[    ryan.park ]</span> </td>
         myaux = td_html.find('span')
-        if myaux.find('a'):
-            identifier = myaux.find('a').contents[0]
+        if myaux:
+            if myaux.find('a'):
+                identifier = myaux.find('a').contents[0]
+            else:
+                aux = myaux.text
+                identifier = aux.replace('[','').replace(']','').strip()
+            return identifier
         else:
-            aux = myaux.text
-            identifier = aux.replace('[','').replace(']','').strip()
-        return identifier
+            return ''
 
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
