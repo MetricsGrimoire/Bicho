@@ -392,7 +392,6 @@ class SoupHtmlParser():
                 cols = list(row.findAll('td'))
                 if len(cols) == 3:
                     field = unicode(cols[0].contents[0].strip())
-
                     if field == "Assignee":
                         old = unicode(self._get_identifier(cols[1]))
                         new = unicode(self._get_identifier(cols[2]))
@@ -881,7 +880,7 @@ class JiraBackend(Backend):
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        issues_per_xml_query = 10
+        issues_per_xml_query = 500
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
