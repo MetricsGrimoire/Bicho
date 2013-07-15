@@ -201,7 +201,7 @@ class DBJiraBackend(DBBackend):
             return None
         else:
             db_issue_ext = result.order_by(Desc(DBJiraIssueExt.updated))[0]
-            return db_issue_ext.updated.strftime('%Y-%m-%d')
+            return db_issue_ext.updated.strftime('%Y-%m-%d %H:%M')
 
 ####################################
 
@@ -911,15 +911,15 @@ class JiraBackend(Backend):
             self.last_mod_date = bugsdb.get_last_modification_date(dbtrk.id)
             if self.last_mod_date:
                 # self.url = self.url + "&updated:after=" + last_mod_date
-                printdbg("Last bugs cached were modified on: %s" % self.last_mod_date)
+                printdbg("Last bugs cached were modified at: %s" % self.last_mod_date)
 
             bugs_number = self.bugsNumber(self.url)
-            print "Total bugs", str(bugs_number)
+            print "Tickets to be retrieved:", str(bugs_number)
             remaining = bugs_number
             while (remaining>0):
                 self.analyze_bug_list(issues_per_xml_query, bugs_number-remaining, bugsdb, dbtrk.id)
                 remaining -= issues_per_xml_query
-                print "Remaining time: ", (remaining/issues_per_xml_query)*Config.delay/60, "m", "(",remaining,")"
+                #print "Remaining time: ", (remaining/issues_per_xml_query)*Config.delay/60, "m", "(",remaining,")"
                 time.sleep(self.delay)
 
             printout("Done. %s bugs analyzed" % (bugs_number))
