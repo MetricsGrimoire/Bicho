@@ -225,7 +225,7 @@ class IssuesLog():
         raise NotImplementedError
 
     def _get_changes(self, issue_id):
-        aux = self.store.execute("SELECT change_id, field, new_value, changed_by, \
+        aux = self.store.execute("SELECT id, field, new_value, changed_by, \
         changed_on FROM changes where issue_id=%s" % (issue_id))
         return aux  
 
