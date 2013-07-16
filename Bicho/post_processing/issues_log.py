@@ -223,7 +223,7 @@ class IssuesLog():
         raise NotImplementedError
 
     def _get_changes(self, issue_id):
-        aux = self.store.execute("SELECT field, new_value, changed_by, \
+        aux = self.store.execute("SELECT change_id, field, new_value, changed_by, \
         changed_on FROM changes where issue_id=%s" % (issue_id))
         return aux  
 
@@ -242,10 +242,11 @@ class IssuesLog():
             changes = self._get_changes(db_ilog.issue_id)
             
             for ch in changes:
-                field = ch[0]
-                new_value = ch[1]
-                changed_by = ch[2]
-                date = ch[3]
+                change_id = ch[0]
+                field = ch[1]
+                new_value = ch[2]
+                changed_by = ch[3]
+                date = ch[4]
                 # we need a new object to be inserted in the database
                 db_ilog = self._copy_issue(db_ilog)
                 db_ilog.date = date

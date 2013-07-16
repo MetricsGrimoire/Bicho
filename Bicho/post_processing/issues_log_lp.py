@@ -28,6 +28,7 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_launchpad (\
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      tracker_id INTEGER NOT NULL, \
                      issue_id INTEGER NOT NULL, \
+                     change_id INTEGER NOT NULL, \
                      issue VARCHAR(255) NOT NULL, \
                      type VARCHAR(32) NULL, \
                      summary VARCHAR(255) NOT NULL, \
@@ -180,7 +181,7 @@ class LaunchpadIssuesLog(IssuesLog):
             return text[offset:]
 
     def _get_changes(self, issue_id):
-        aux = self.store.execute("SELECT field, new_value, changed_by, \
+        aux = self.store.execute("SELECT change_id, field, new_value, changed_by, \
         changed_on FROM changes \
         WHERE (changes.issue_id=%s AND field NOT LIKE '%%:%%') \
         OR (changes.issue_id=%s AND field LIKE '%%%s:%%')" %
