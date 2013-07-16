@@ -182,11 +182,15 @@ class LaunchpadIssuesLog(IssuesLog):
             return text[offset:]
 
     def _get_changes(self, issue_id):
+        #aux = self.store.execute("SELECT id, field, new_value, changed_by, \
+        #changed_on FROM changes \
+        #WHERE (changes.issue_id=%s AND field NOT LIKE '%%:%%') \
+        #OR (changes.issue_id=%s AND field LIKE '%%%s:%%')" %
+        #(issue_id, issue_id, self._project_name))
         aux = self.store.execute("SELECT id, field, new_value, changed_by, \
         changed_on FROM changes \
-        WHERE (changes.issue_id=%s AND field NOT LIKE '%%:%%') \
-        OR (changes.issue_id=%s AND field LIKE '%%%s:%%')" %
-        (issue_id, issue_id, self._project_name))
+        WHERE changes.issue_id=%s" %
+        (issue_id))
         return aux
 
     def _get_dbissues_object(self, issue_name, tracker_id):
