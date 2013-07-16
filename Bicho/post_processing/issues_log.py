@@ -66,6 +66,7 @@ class DBIssuesLog(object):
     date = DateTime()
     assigned_to = Int()
     tracker_id = Int()
+    change_id = Int()
 
     tracker = Reference(tracker_id, DBTracker.id)
     submitted = Reference(submitted_by, DBPeople.id)
@@ -159,6 +160,7 @@ class IssuesLog():
         """
         aux = self._get_dbissues_object(db_ilog.issue, db_ilog.tracker_id)
         aux.issue_id = db_ilog.issue_id
+        aux.change_id = db_ilog.change_id
         aux.type = db_ilog.type
         aux.summary = db_ilog.summary
         aux.description = db_ilog.description
@@ -250,6 +252,7 @@ class IssuesLog():
                 # we need a new object to be inserted in the database
                 db_ilog = self._copy_issue(db_ilog)
                 db_ilog.date = date
+                db_ilog.change_id = change_id
                 db_ilog = self._assign_values(db_ilog, field, new_value)
 
                 try:

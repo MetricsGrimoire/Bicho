@@ -144,8 +144,9 @@ class LaunchpadIssuesLog(IssuesLog):
             #    db_ilog.type = value
             elif table_field == 'assigned_to':
                 uid = self._get_user_id(value)
-                db_ilog.assigned_to = self._get_people_id(uid,
-                    self._get_tracker_id(db_ilog.issue_id))
+                #db_ilog.assigned_to = self._get_people_id(uid,
+                #    self._get_tracker_id(db_ilog.issue_id))
+                db_ilog.assigned_to = self._get_people_id(uid)
             elif table_field == 'status':
                 db_ilog.status = value
             elif table_field == 'affects':
@@ -181,7 +182,7 @@ class LaunchpadIssuesLog(IssuesLog):
             return text[offset:]
 
     def _get_changes(self, issue_id):
-        aux = self.store.execute("SELECT change_id, field, new_value, changed_by, \
+        aux = self.store.execute("SELECT id, field, new_value, changed_by, \
         changed_on FROM changes \
         WHERE (changes.issue_id=%s AND field NOT LIKE '%%:%%') \
         OR (changes.issue_id=%s AND field LIKE '%%%s:%%')" %
