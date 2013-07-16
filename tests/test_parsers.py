@@ -20,6 +20,7 @@
 #         Santiago Dueñas <sduenas@libresoft.es>
 #
 
+import csv
 import os.path
 import sys
 import unittest
@@ -31,13 +32,16 @@ if not '..' in sys.path:
     sys.path.insert(0, '..')
 
 from Bicho.backends.parsers import UnmarshallingError,\
-    HTMLParserError, XMLParserError, HTMLParser, XMLParser
+    CSVParserError, HTMLParserError, XMLParserError,\
+    CSVParser, HTMLParser, XMLParser
 
 
 # Name of directory where the test input files are stored
 TEST_FILES_DIRNAME = 'parsers_data'
 
 # Test files
+CSV_VALID_FILE = 'csv_valid.csv'
+CSV_DIALECT_FILE = 'csv_dialect.csv'
 HTML_VALID_FILE = 'html_valid.html'
 HTML_UTF8_FILE = 'html_utf8.html'
 XML_VALID_FILE = 'xml_valid.xml'
@@ -77,6 +81,22 @@ class TestUnmarshallingError(unittest.TestCase):
                          str(e))
 
 
+class TestCSVParserError(unittest.TestCase):
+
+    def test_type(self):
+        # Check whether raises a TypeError exception when
+        # is not given an Exception class as first parameter
+        self.assertRaises(TypeError, CSVParserError, 'error')
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = CSVParserError()
+        self.assertEqual('error parsing CSV.', str(e))
+
+        e = CSVParserError(Exception())
+        self.assertEqual('error parsing CSV. Exception()', str(e))
+
+
 class TestHTMLParserError(unittest.TestCase):
 
     def test_type(self):
@@ -91,6 +111,92 @@ class TestHTMLParserError(unittest.TestCase):
 
         e = HTMLParserError(Exception())
         self.assertEqual('error parsing HTML. Exception()', str(e))
+
+
+class TestCSVParser(unittest.TestCase):
+
+    def test_readonly_properties(self):
+        parser = CSVParser('', )
+        self.assertRaises(AttributeError, setattr, parser, 'data', '')
+        self.assertEqual(None, parser.data)
+
+    def test_parse_invalid_type_stream(self):
+        parser = CSVParser(None)
+        self.assertRaises(TypeError, parser.parse)
+
+    def test_parse_valid_csv(self):
+        # Check whether it parses a valid CSV stream
+        filepath = os.path.join(TEST_FILES_DIRNAME, CSV_VALID_FILE)
+        content = read_file(filepath)
+
+        parser = CSVParser(content)
+        parser.parse()
+        self.assertIsInstance(parser.data, csv.DictReader)
+
+        rows = [d for d in parser.data]
+        self.assertEqual(5, len(rows))
+
+        row = rows[0]
+        self.assertEqual('15', row['bug_id'])
+        self.assertEqual('LibreGeoSocial (Android)', row['product'])
+        self.assertEqual('general', row['component'])
+        self.assertEqual('rocapal', row['assigned_to'])
+        self.assertEqual('RESOLVED', row['bug_status'])
+        self.assertEqual('FIXED', row['resolution'])
+        # Really useful assertion, a comma is included in description
+        self.assertEqual('The location service runs in GPS mode, always', row['short_desc'])
+        self.assertEqual('2009-07-22 15:27:25', row['changeddate'])
+
+        row = rows[3]
+        self.assertEqual('20', row['bug_id'])
+        self.assertEqual('jcaden', row['assigned_to'])
+        self.assertEqual('ASSIGNED', row['bug_status'])
+        self.assertEqual('---', row['resolution'])
+
+        row = rows[4]
+        self.assertEqual('carlosgc', row['assigned_to'])
+        self.assertEqual('---', row['resolution'])
+
+    def test_parse_valid_cvs_using_defined_dialect(self):
+        # Check whether it parses a valid CSV stream
+        # using user defined parameters
+        filepath = os.path.join(TEST_FILES_DIRNAME, CSV_DIALECT_FILE)
+        content = read_file(filepath)
+
+        parser = CSVParser(content, fieldnames=['id', 'country', 'city'],
+                           delimiter=';', quotechar='\'')
+        self.assertEqual(['id', 'country', 'city'], parser.fieldnames)
+        self.assertEqual(';', parser.delimiter)
+        self.assertEqual('\'', parser.quotechar)
+
+        parser.parse()
+        rows = [d for d in parser.data]
+        self.assertEqual(8, len(rows))
+
+        row = rows[0]
+        self.assertEqual('1', row['id'])
+        self.assertEqual('Spain', row['country'])
+        self.assertEqual('Madrid', row['city'])
+
+        row = rows[1]
+        self.assertEqual('2', row['id'])
+        self.assertEqual('France', row['country'])
+        self.assertEqual('Paris', row['city'])
+
+        row = rows[2]
+        self.assertEqual('10', row['id'])
+        self.assertEqual('England', row['country'])
+        self.assertEqual('London', row['city'])
+
+        row = rows[5]
+        self.assertEqual('201', row['id'])
+        self.assertEqual('Norway', row['country'])
+        self.assertEqual('Oslo', row['city'])
+
+        row = rows[7]
+        self.assertEqual('500', row['id'])
+        self.assertEqual('Iceland', row['country'])
+        self.assertEqual('Reykjavik', row['city'])
 
 
 class TestHTMLParser(unittest.TestCase):

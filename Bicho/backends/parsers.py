@@ -24,6 +24,8 @@
 Generic parsers for backends.
 """
 
+from csv import DictReader
+
 from bs4 import BeautifulSoup, Comment
 from lxml import objectify
 
@@ -42,6 +44,21 @@ class UnmarshallingError(Exception):
         msg = 'error unmarshalling object to %s.' % self.instance
         if self.cause is not None:
             msg += ' %s.' % self.cause
+        if self.error is not None:
+            msg += ' %s' % repr(self.error)
+        return msg
+
+
+class CSVParserError(Exception):
+    """Exception raised when an error occurs parsing a CSV stream."""
+
+    def __init__(self, error=None):
+        if error is not None and not isinstance(error, Exception):
+            raise TypeError('expected type Exception in error parameter.')
+        self.error = error
+
+    def __str__(self):
+        msg = 'error parsing CSV.'
         if self.error is not None:
             msg += ' %s' % repr(self.error)
         return msg
@@ -75,6 +92,52 @@ class XMLParserError(Exception):
         if self.error is not None:
             msg += ' %s' % repr(self.error)
         return msg
+
+
+class CSVParser(object):
+    """"Generic CSV parser
+
+    :param csv: stream to parse
+    :type html: str
+    :param fieldnames: name of each column
+    :type list of str
+    :param delimiter: delimiter of fields, by default it is set to comma
+    :type delimiter: str
+    :param quotechar: delimiter of string fields, by default it is set to
+      doble quote
+    :type quotechar: str
+    """
+    def __init__(self, csv, fieldnames=None, delimiter=',', quotechar='"'):
+        self.csv = csv
+        self.fieldnames = fieldnames
+        self.delimiter = delimiter
+        self.quotechar = quotechar
+        self._data = None
+
+    def parse(self):
+        """Parse the CSV stream
+
+        :raises: TypeError: when the cvs to parse is not a instance of str.
+        :raises: CSVParserError: when an error occurs parsing the stream.
+        """
+        if not isinstance(self.csv, str):
+            raise TypeError('expected type str in csv parameter.')
+
+        try:
+            rows = self.csv.split('\n')
+            self._data = DictReader(rows, fieldnames=self.fieldnames,
+                                    delimiter=self.delimiter,
+                                    quotechar=self.quotechar)
+        except Exception, e:
+            raise CSVParserError(e)
+
+    @property
+    def data(self):
+        """Returns the parsed data.
+
+        :rtype: csv.DictReader
+        """
+        return self._data
 
 
 class HTMLParser(object):
