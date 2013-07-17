@@ -39,19 +39,22 @@ SHOW_BUG_SUFFIX = 'show_bug.cgi'
 
 # URL parameters
 CHFIELDFROM_PARAM = 'chfieldfrom'
+COLUMNLIST_PARAM = 'columnlist'
 CTYPE_PARAM = 'ctype'
 EXCLUDEFIELD_PARAM = 'excludefield'
 ISSUES_ID_PARAM = 'id'
 ORDER_PARAM = 'order'
 PRODUCT_PARAM = 'product'
 
+# Column list values
+COLUMN_ATTACHMENT_DATA = 'attachmentdata'
+COLUMN_BUG_ID = 'bug_id'
+COLUMN_DATE_NEW_STYLE = 'changeddate'
+COLUMN_DATE_OLD_STYLE = 'Last+Changed'
+
 # Content-type values
 CTYPE_CSV = 'csv'
 CTYPE_XML = 'xml'
-
-# Order values
-ORDER_NEW_STYLE = 'changeddate'
-ORDER_OLD_STYLE = 'Last+Changed'
 
 
 class InvalidBaseURLError(Exception):
@@ -99,18 +102,19 @@ class BugzillaURLGenerator(object):
         qs = {CTYPE_PARAM : CTYPE_XML}
         return self._get_url(SHOW_BUG_SUFFIX, qs)
 
-    def get_issues_list_url(self, product=None, from_date=None):
+    def get_issues_summary_url(self, product=None, from_date=None):
         if self.version in OLD_STYLE_VERSIONS:
-            order = ORDER_OLD_STYLE
+            order = COLUMN_DATE_OLD_STYLE
             # TODO: try to check this
             # if from_date is not None:
             #    day = from_date[:from_date.index(' ')]
             #    date = day
         else:
-            order = ORDER_NEW_STYLE
+            order = COLUMN_DATE_NEW_STYLE
 
         qs = {CTYPE_PARAM : CTYPE_CSV,
-              ORDER_PARAM : order}
+              ORDER_PARAM : order,
+              COLUMNLIST_PARAM : '%s,%s' % (COLUMN_BUG_ID, order)}
 
         if product:
             qs[PRODUCT_PARAM] = product
@@ -124,7 +128,7 @@ class BugzillaURLGenerator(object):
             raise ValueError('issues cannot be None or empty')
 
         qs = {CTYPE_PARAM : CTYPE_XML,
-              EXCLUDEFIELD_PARAM : 'attachmentdata',
+              EXCLUDEFIELD_PARAM : COLUMN_ATTACHMENT_DATA,
               ISSUES_ID_PARAM: issues}
         return self._get_url(SHOW_BUG_SUFFIX, qs)
 

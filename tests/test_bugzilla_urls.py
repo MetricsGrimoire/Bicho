@@ -62,21 +62,32 @@ class TestBugzillaURLGenerator(unittest.TestCase):
         self.assertEqual('http://bugzilla.example.com/issues/show_bug.cgi?ctype=xml',
                          generator.get_metadata_url())
 
-    def test_issues_list_url(self):
+    def test_issues_summary_url(self):
         generator = BugzillaURLGenerator(BUGZILLA_URL)
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?order=changeddate&ctype=csv',
-                         generator.get_issues_list_url())
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2Cchangeddate&order=changeddate&ctype=csv',
+                         generator.get_issues_summary_url())
 
-    def test_issues_list_url_with_params(self):
+    def test_issues_summary_url_with_params(self):
         generator = BugzillaURLGenerator(BUGZILLA_URL)
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?chfieldfrom=2001-01-01&order=changeddate&ctype=csv',
-                         generator.get_issues_list_url(from_date=ISSUE_DATE))
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?chfieldfrom=2003-06-27+22%3A10%3A08&order=changeddate&ctype=csv',
-                         generator.get_issues_list_url(from_date=ISSUE_TIMESTAMP))
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?product=fake-product&order=changeddate&ctype=csv',
-                         generator.get_issues_list_url(product='fake-product'))
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?product=fake-product&chfieldfrom=2003-06-27+22%3A10%3A08&order=changeddate&ctype=csv',
-                         generator.get_issues_list_url(product='fake-product', from_date=ISSUE_TIMESTAMP))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2Cchangeddate&chfieldfrom=2001-01-01&order=changeddate&ctype=csv',
+                         generator.get_issues_summary_url(from_date=ISSUE_DATE))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2Cchangeddate&chfieldfrom=2003-06-27+22%3A10%3A08&order=changeddate&ctype=csv',
+                         generator.get_issues_summary_url(from_date=ISSUE_TIMESTAMP))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2Cchangeddate&product=fake-product&order=changeddate&ctype=csv',
+                         generator.get_issues_summary_url(product='fake-product'))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2Cchangeddate&product=fake-product&chfieldfrom=2003-06-27+22%3A10%3A08&order=changeddate&ctype=csv',
+                         generator.get_issues_summary_url(product='fake-product', from_date=ISSUE_TIMESTAMP))
+
+    def test_old_style_issues_summary_url(self):
+        generator = BugzillaURLGenerator(BUGZILLA_URL, version='3.2.3')
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2CLast%2BChanged&chfieldfrom=2001-01-01&order=Last%2BChanged&ctype=csv',
+                         generator.get_issues_summary_url(from_date=ISSUE_DATE))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2CLast%2BChanged&chfieldfrom=2003-06-27+22%3A10%3A08&order=Last%2BChanged&ctype=csv',
+                         generator.get_issues_summary_url(from_date=ISSUE_TIMESTAMP))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2CLast%2BChanged&product=fake-product&order=Last%2BChanged&ctype=csv',
+                         generator.get_issues_summary_url(product='fake-product'))
+        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?columnlist=bug_id%2CLast%2BChanged&product=fake-product&chfieldfrom=2003-06-27+22%3A10%3A08&order=Last%2BChanged&ctype=csv',
+                         generator.get_issues_summary_url(product='fake-product', from_date=ISSUE_TIMESTAMP))
 
     def test_issues_description_url(self):
         generator = BugzillaURLGenerator(BUGZILLA_URL)
@@ -84,17 +95,6 @@ class TestBugzillaURLGenerator(unittest.TestCase):
                          generator.get_issues_description_url(['33', '47', '78']))
         self.assertEqual('http://bugzilla.example.com/issues/show_bug.cgi?excludefield=attachmentdata&ctype=xml&id=1',
                          generator.get_issues_description_url('1'))
-
-    def test_old_style_issues_list_url(self):
-        generator = BugzillaURLGenerator(BUGZILLA_URL, version='3.2.3')
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?chfieldfrom=2001-01-01&order=Last%2BChanged&ctype=csv',
-                         generator.get_issues_list_url(from_date=ISSUE_DATE))
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?chfieldfrom=2003-06-27+22%3A10%3A08&order=Last%2BChanged&ctype=csv',
-                         generator.get_issues_list_url(from_date=ISSUE_TIMESTAMP))
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?product=fake-product&order=Last%2BChanged&ctype=csv',
-                         generator.get_issues_list_url(product='fake-product'))
-        self.assertEqual('http://bugzilla.example.com/issues/buglist.cgi?product=fake-product&chfieldfrom=2003-06-27+22%3A10%3A08&order=Last%2BChanged&ctype=csv',
-                         generator.get_issues_list_url(product='fake-product', from_date=ISSUE_TIMESTAMP))
 
     def test_issues_description_url_invalid_list(self):
         generator = BugzillaURLGenerator(BUGZILLA_URL)
