@@ -53,6 +53,29 @@ class BugzillaMetadata(object):
         self.exporter = exporter
 
 
+class BugzillaIssueSummary(object):
+    """Summary of an issue
+
+    :param issue_id: identifier of the issue
+    :type issue_id: str
+    :param changed_on: last update of the issue
+    :type change_on: datetime.datetime
+
+    :raises: TypeError: when the type of any parameter is not valid.
+    """
+    def __init__(self, issue_id, changed_on):
+        if not isinstance(changed_on, datetime.datetime):
+            raise TypeError('Parameter "changed_on" should be a %s instance. %s given.' %
+                            ('datetime', changed_on.__class__.__name__))
+
+        self.issue_id = issue_id
+        self._changed_on = changed_on
+
+    @property
+    def changed_on(self):
+        return self._changed_on
+
+
 class BugzillaIssue(Issue):
     """Bugzilla issue
 

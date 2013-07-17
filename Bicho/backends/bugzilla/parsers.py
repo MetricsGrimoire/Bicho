@@ -28,9 +28,9 @@ Parsers for Bugzilla tracker.
 
 import dateutil.parser
 
-from Bicho.backends.parsers import UnmarshallingError, HTMLParser, XMLParser
+from Bicho.backends.parsers import UnmarshallingError, CSVParser, HTMLParser, XMLParser
 from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
-    BugzillaMetadata, BugzillaIssue, BugzillaAttachment
+    BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue, BugzillaAttachment
 from Bicho.common import Identity, Comment, Change, IssueRelationship
 
 
@@ -39,8 +39,10 @@ ALIAS_TOKEN = 'alias'
 ATTACHMENT_TOKEN = 'attachment'
 BLOCKED_TOKEN = 'blocked'
 BUG_TOKEN = 'bug'
+BUG_ID_TOKEN = 'bug_id'
 BUG_FILE_LOC_TOKEN = 'bug_file_loc'
 CC_TOKEN = 'cc'
+CHANGEDDATE_TOKEN = 'changeddate'
 DEADLINE_TOKEN = 'deadline'
 DELTA_TS_TOKEN = 'delta_ts'
 DEPENDS_ON_TOKEN = 'dependson'
@@ -81,8 +83,43 @@ class BugzillaMetadataParser(XMLParser):
                                 self._data.get(EXPORTER_TOKEN))
 
 
+class BugzillaIssuesSummaryParser(CSVParser):
+    """CSV parser for parsing Bugzilla summary of issues"""
+
+    def __init__(self, csv):
+        CSVParser.__init__(self, csv)
+
+    @property
+    def summary(self):
+        return self._unmarshal()
+
+    def _unmarshal(self):
+        return [self._unmarshal_summary(bg_summary)
+                for bg_summary in self._data]
+
+    def _unmarshal_summary(self, bg_summary):
+        try:
+            issue_id = self._unmarshal_str(bg_summary[BUG_ID_TOKEN])
+            changed_on = self._unmarshal_timestamp(bg_summary[CHANGEDDATE_TOKEN])
+            return BugzillaIssueSummary(issue_id, changed_on)
+        except KeyError, e:
+            raise UnmarshallingError('BugzillaIssueSummary', e)
+
+    def _unmarshal_timestamp(self, bg_ts):
+        try:
+            str_ts = self._unmarshal_str(bg_ts)
+            return dateutil.parser.parse(str_ts).replace(tzinfo=None)
+        except Exception, e:
+            raise UnmarshallingError('datetime', e)
+
+    def _unmarshal_str(self, s):
+        if s is None or s == u'':
+            raise UnmarshallingError('str', cause='string cannot be None or empty')
+        return unicode(s)
+
+
 class BugzillaIssuesParser(XMLParser):
-    """XML handler for parsing Bugzilla issues
+    """XML parser for parsing Bugzilla issues
 
     ..TODO: timezones, URL attachment, issue type
     """
@@ -306,7 +343,7 @@ class BugzillaIssuesParser(XMLParser):
 
 
 class BugzillaChangesParser(HTMLParser):
-    """HTML handler for parsing changes on Bugzilla issues"""
+    """HTML parser for parsing changes on Bugzilla issues"""
 
     # Tags to remove from the fields
     HTML_TAGS_TO_REMOVE = ['a', 'i', 'span']
@@ -333,7 +370,7 @@ class BugzillaChangesParser(HTMLParser):
             changed_on = self._unmarshal_timestamp(bg_changes.pop(0))
 
             # The attribute 'rowspan' of 'who' field tells how many
-            # changes were made in the same date.
+            # changes were made on the same date.
             n = int(who.get(ROWSPAN_TOKEN))
 
             # Next fields are split into chunks of three elements that are:
