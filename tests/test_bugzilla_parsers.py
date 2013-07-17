@@ -30,9 +30,9 @@ if not '..' in sys.path:
 
 from Bicho.backends.parsers import UnmarshallingError
 from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
-    BugzillaMetadata, BugzillaIssue
-from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesParser,\
-    BugzillaChangesParser
+    BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue
+from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesSummaryParser,\
+    BugzillaIssuesParser, BugzillaChangesParser
 
 
 # Name of directory where the test input files are stored
@@ -41,6 +41,15 @@ TEST_FILES_DIRNAME = 'bugzilla_data'
 # Test files
 METADATA_FILE = 'metadata.xml'
 METADATA_EMPTY_FILE = 'metadata_empty.xml'
+SUMMARY_FILE = 'summary.csv'
+SUMMARY_NO_BUG_ID_HEADER = 'summary_no_bug_id_header.csv'
+SUMMARY_NO_CHANGED_ON_HEADER = 'summary_no_changed_on_header.csv'
+SUMMARY_NO_BUG_ID_VALUE = 'summary_no_bug_id_value.csv'
+SUMMARY_NO_CHANGED_ON_VALUE = 'summary_no_bug_id_value.csv'
+SUMMARY_INVALID_CHANGED_ON = 'summary_invalid_changed_on.csv'
+SUMMARY_SET1 = 'summary_solid_1394.csv'
+SUMMARY_SET2 = 'summary_evince_7556.csv'
+SUMMARY_SET3 = 'summary_firefox_10000.csv'
 ISSUE_AUTH_FILE = 'issue_auth.xml'
 ISSUE_NO_AUTH_FILE = 'issue_no_auth.xml'
 ISSUE_EMPTY_FILE = 'issue_empty.xml'
@@ -63,6 +72,10 @@ CHANGES_EMPTY_FILE = 'changes_empty.html'
 
 # RegExps for testing TypeError exceptions
 UNMARSHALLING_ERROR_REGEXP = 'error unmarshalling object to %s.+%s'
+BUG_ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaIssueSummary', 'bug_id')
+CHANGED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaIssueSummary', 'changeddate')
+CHANGED_ON_INVALID_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'unknown string format')
+STR_EMPTY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('str', 'string cannot be None or empty')
 DATETIME_MONTH_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'month must be in 1..12')
 COMMENT_WHO_ERROR = UNMARSHALLING_ERROR_REGEXP % ('Comment', 'no such child: who.')
 ATTACHMENT_FILENAME_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaAttachment', 'no such child: filename.')
@@ -113,6 +126,102 @@ class TestBugzillaMetadataParser(unittest.TestCase):
         self.assertEqual(None, metadata.urlbase)
         self.assertEqual(None, metadata.maintainer)
         self.assertEqual(None, metadata.exporter)
+
+
+class TestBugzillaIssuesSummaryParser(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = None
+
+    def test_summary_set(self):
+        # Test if there is no fail parsing a summary set
+        summaries = self._parse(SUMMARY_FILE)
+        self.assertEqual(5, len(summaries))
+
+        summary = summaries[0]
+        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertEqual('3', summary.issue_id)
+        self.assertEqual(u'2009-07-01 12:16:03', unicode(summary.changed_on))
+
+        summary = summaries[1]
+        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertEqual('9', summary.issue_id)
+        self.assertEqual(u'2009-07-01 13:45:31', unicode(summary.changed_on))
+
+        summary = summaries[2]
+        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertEqual('13', summary.issue_id)
+        self.assertEqual(u'2009-07-02 13:40:35', unicode(summary.changed_on))
+
+        summary = summaries[3]
+        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertEqual('15', summary.issue_id)
+        self.assertEqual(u'2009-07-22 15:27:25', unicode(summary.changed_on))
+
+        summary = summaries[4]
+        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertEqual('18', summary.issue_id)
+        self.assertEqual(u'2009-07-28 20:09:20', unicode(summary.changed_on))
+
+    def test_no_value_headers(self):
+        # Test if the parser fails when the required headers
+        # are not present in the CSV stream
+        self.assertRaisesRegexp(UnmarshallingError,
+                                BUG_ID_KEY_ERROR,
+                                self._parse,
+                                filename=SUMMARY_NO_BUG_ID_HEADER)
+        self.assertRaisesRegexp(UnmarshallingError,
+                                CHANGED_ON_KEY_ERROR,
+                                self._parse,
+                                filename=SUMMARY_NO_CHANGED_ON_HEADER)
+
+    def test_no_values(self):
+        # Test if the parser fails when the required
+        # values are not present
+        self.assertRaisesRegexp(UnmarshallingError,
+                                STR_EMPTY_ERROR,
+                                self._parse,
+                                filename=SUMMARY_NO_BUG_ID_VALUE)
+        self.assertRaisesRegexp(UnmarshallingError,
+                                STR_EMPTY_ERROR,
+                                self._parse,
+                                filename=SUMMARY_NO_CHANGED_ON_VALUE)
+
+    def test_invalid_changed_on(self):
+        # Test if the parser fails when an invalid date
+        # is parsed from the CSV stream
+        self.assertRaisesRegexp(UnmarshallingError,
+                                CHANGED_ON_INVALID_ERROR,
+                                self._parse,
+                                filename=SUMMARY_INVALID_CHANGED_ON)
+
+    def test_big_summary_sets(self):
+        # Test the parser using several streams with large
+        # amount of rows
+        summaries = self._parse(SUMMARY_SET1)
+        self.assertEqual(1394, len(summaries))
+
+        # This test case only contains two columns: bug_id, changeddate
+        summaries = self._parse(SUMMARY_SET2)
+        self.assertEqual(7556, len(summaries))
+
+        summaries = self._parse(SUMMARY_SET3)
+        self.assertEqual(10000, len(summaries))
+
+    def _parse(self, filename):
+        """Generic method to parse changes on Bugzilla issues
+        summary from a CSV stream
+
+        :param filename: path of the file to parse
+        :type filename: str
+        :return: a set of issue summaries parsed from Bugzilla
+        :rtype: list of BugzillaIssueSummary
+        """
+        filepath = os.path.join(TEST_FILES_DIRNAME, filename)
+        csv = read_file(filepath)
+        self.parser = BugzillaIssuesSummaryParser(csv)
+        self.parser.parse()
+        return self.parser.summary
 
 
 class TestBugzillaIssuesParser(unittest.TestCase):

@@ -28,7 +28,8 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.bugzilla.model import BugzillaMetadata, BugzillaIssue, BugzillaAttachment
+from Bicho.backends.bugzilla.model import BugzillaMetadata, BugzillaIssueSummary,\
+    BugzillaIssue, BugzillaAttachment
 from Bicho.common import Identity, Attachment
 
 
@@ -44,6 +45,8 @@ MOCK_DATETIME_STR = '2001-01-01T00:00:01'
 
 # RegExps for testing TypeError exceptions
 TYPE_ERROR_REGEXP = '.+%s.+ should be a %s instance\. %s given'
+CHANGED_ON_NONE_ERROR = TYPE_ERROR_REGEXP % ('changed_on', 'datetime', 'NoneType')
+CHANGED_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('changed_on', 'datetime', 'str')
 DELTA_TS_STR_ERROR = TYPE_ERROR_REGEXP % ('delta_ts', 'datetime', 'str')
 IS_PATCH_STR_ERROR = TYPE_ERROR_REGEXP % ('is_patch', 'bool', 'str')
 IS_OBSOLETE_STR_ERROR = TYPE_ERROR_REGEXP % ('is_obsolete', 'bool', 'str')
@@ -58,6 +61,28 @@ class TestBugzillaMetadata(unittest.TestCase):
         self.assertEqual('http://example.com/bugzilla', metadata.urlbase)
         self.assertEqual('maintainer@example.com', metadata.maintainer)
         self.assertEqual('test', metadata.exporter)
+
+
+class TestBugzillaIssueSummary(unittest.TestCase):
+
+    def setUp(self):
+        self.summary = BugzillaIssueSummary('1', MOCK_DATETIME)
+
+    def test_summary(self):
+        self.assertEqual('1', self.summary.issue_id)
+        self.assertEqual(MOCK_DATETIME, self.summary.changed_on)
+
+    def test_readonly_properties(self):
+        self.assertRaises(AttributeError, setattr, self.summary, 'changed_on', datetime.datetime.utcnow())
+        self.assertEqual(MOCK_DATETIME, self.summary.changed_on)
+
+    def test_invalid_init(self):
+        self.assertRaisesRegexp(TypeError, CHANGED_ON_NONE_ERROR,
+                                BugzillaIssueSummary,
+                                issue_id='1', changed_on=None)
+        self.assertRaisesRegexp(TypeError, CHANGED_ON_STR_ERROR,
+                                BugzillaIssueSummary,
+                                issue_id='1', changed_on=MOCK_DATETIME_STR)
 
 
 class TestBugzillaIssue(unittest.TestCase):
