@@ -66,6 +66,7 @@ class DBIssuesLog(object):
     date = DateTime()
     assigned_to = Int()
     tracker_id = Int()
+    change_id = Int()
 
     tracker = Reference(tracker_id, DBTracker.id)
     submitted = Reference(submitted_by, DBPeople.id)
@@ -159,6 +160,7 @@ class IssuesLog():
         """
         aux = self._get_dbissues_object(db_ilog.issue, db_ilog.tracker_id)
         aux.issue_id = db_ilog.issue_id
+        aux.change_id = db_ilog.change_id
         aux.type = db_ilog.type
         aux.summary = db_ilog.summary
         aux.description = db_ilog.description
@@ -223,7 +225,7 @@ class IssuesLog():
         raise NotImplementedError
 
     def _get_changes(self, issue_id):
-        aux = self.store.execute("SELECT field, new_value, changed_by, \
+        aux = self.store.execute("SELECT id, field, new_value, changed_by, \
         changed_on FROM changes where issue_id=%s" % (issue_id))
         return aux  
 
@@ -242,13 +244,15 @@ class IssuesLog():
             changes = self._get_changes(db_ilog.issue_id)
             
             for ch in changes:
-                field = ch[0]
-                new_value = ch[1]
-                changed_by = ch[2]
-                date = ch[3]
+                change_id = ch[0]
+                field = ch[1]
+                new_value = ch[2]
+                changed_by = ch[3]
+                date = ch[4]
                 # we need a new object to be inserted in the database
                 db_ilog = self._copy_issue(db_ilog)
                 db_ilog.date = date
+                db_ilog.change_id = change_id
                 db_ilog = self._assign_values(db_ilog, field, new_value)
 
                 try:

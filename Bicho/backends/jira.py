@@ -201,7 +201,7 @@ class DBJiraBackend(DBBackend):
             return None
         else:
             db_issue_ext = result.order_by(Desc(DBJiraIssueExt.updated))[0]
-            return db_issue_ext.updated.strftime('%Y-%m-%d')
+            return db_issue_ext.updated.strftime('%Y-%m-%d %H:%M')
 
 ####################################
 
@@ -340,12 +340,15 @@ class SoupHtmlParser():
         # Example: <td width="40%" class="activity-old-val"> SE Support <span class="hist-value">[ <a href="mailto:support-lep@liferay.com">support-lep@liferay.com</a> ]</span></td>
         # Example: <td width="40%" class="activity-new-val"> Ryan Park <span class="hist-value">[    ryan.park ]</span> </td>
         myaux = td_html.find('span')
-        if myaux.find('a'):
-            identifier = myaux.find('a').contents[0]
+        if myaux:
+            if myaux.find('a'):
+                identifier = myaux.find('a').contents[0]
+            else:
+                aux = myaux.text
+                identifier = aux.replace('[','').replace(']','').strip()
+            return identifier
         else:
-            aux = myaux.text
-            identifier = aux.replace('[','').replace(']','').strip()
-        return identifier
+            return ''
 
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
@@ -389,7 +392,6 @@ class SoupHtmlParser():
                 cols = list(row.findAll('td'))
                 if len(cols) == 3:
                     field = unicode(cols[0].contents[0].strip())
-
                     if field == "Assignee":
                         old = unicode(self._get_identifier(cols[1]))
                         new = unicode(self._get_identifier(cols[2]))
@@ -878,7 +880,7 @@ class JiraBackend(Backend):
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        issues_per_xml_query = 10
+        issues_per_xml_query = 500
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira","4.1.2")
@@ -911,15 +913,15 @@ class JiraBackend(Backend):
             self.last_mod_date = bugsdb.get_last_modification_date(dbtrk.id)
             if self.last_mod_date:
                 # self.url = self.url + "&updated:after=" + last_mod_date
-                printdbg("Last bugs cached were modified on: %s" % self.last_mod_date)
+                printdbg("Last bugs cached were modified at: %s" % self.last_mod_date)
 
             bugs_number = self.bugsNumber(self.url)
-            print "Total bugs", str(bugs_number)
+            print "Tickets to be retrieved:", str(bugs_number)
             remaining = bugs_number
             while (remaining>0):
                 self.analyze_bug_list(issues_per_xml_query, bugs_number-remaining, bugsdb, dbtrk.id)
                 remaining -= issues_per_xml_query
-                print "Remaining time: ", (remaining/issues_per_xml_query)*Config.delay/60, "m", "(",remaining,")"
+                #print "Remaining time: ", (remaining/issues_per_xml_query)*Config.delay/60, "m", "(",remaining,")"
                 time.sleep(self.delay)
 
             printout("Done. %s bugs analyzed" % (bugs_number))
