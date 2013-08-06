@@ -441,7 +441,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.assignee_username = None
         self.reporter = None
         self.reporter_username = None
-        self.comment = ""
+        self.comment = unicode("")
         self.comment_id = None
         self.comment_author = None
         self.comment_created = None
