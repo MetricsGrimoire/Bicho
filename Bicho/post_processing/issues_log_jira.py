@@ -26,6 +26,7 @@ __sql_drop__ = 'DROP TABLE IF EXISTS issues_log_jira;'
 
 __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_jira ( \
                      id INTEGER NOT NULL AUTO_INCREMENT, \
+                     change_id INTEGER NOT NULL, \
                      tracker_id INTEGER NOT NULL, \
                      issue_id INTEGER NOT NULL, \
                      issue VARCHAR(255) NOT NULL, \
@@ -68,6 +69,10 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_jira ( \
                          ON UPDATE CASCADE, \
                      FOREIGN KEY(tracker_id) \
                        REFERENCES trackers(id) \
+                         ON DELETE CASCADE \
+                         ON UPDATE CASCADE, \
+                     FOREIGN KEY(change_id) \
+                       REFERENCES changes(id) \
                          ON DELETE CASCADE \
                          ON UPDATE CASCADE \
                      ) ENGINE=MYISAM;'
