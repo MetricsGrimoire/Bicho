@@ -304,8 +304,6 @@ class Gerrit():
         else:
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh "+ "-p 29418 "+ Config.url+" "+ args_gerrit)
-        import pprint
-        pprint.pprint(cmd)
         tickets_raw = subprocess.check_output(cmd)
         tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
         tickets_raw = tickets_raw.replace(",]","]")
