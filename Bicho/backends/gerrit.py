@@ -34,6 +34,7 @@ import json
 import os
 import pprint
 import random
+import subprocess 
 import sys
 import time
 import traceback
@@ -295,12 +296,16 @@ class Gerrit():
         args_gerrit += " limit:" + str(limit) 
         if (start != ""): 
             args_gerrit += " resume_sortkey:"+start
-                        
         args_gerrit += " --all-approvals --format=JSON"
         
-        cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
-        printdbg("Gerrit cmd: " + "ssh "+ "-p 29418 "+ Config.url+" "+ args_gerrit)
-        import subprocess 
+        if vars(Config).has_key('backend_user'):
+            cmd = ["ssh", "-p 29418", Config.backend_user+"@"+Config.url, args_gerrit]
+            printdbg("Gerrit cmd: " + "ssh -p 29418 "+ Config.backend_user+"@"+Config.url+" "+ args_gerrit)
+        else:
+            cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
+            printdbg("Gerrit cmd: " + "ssh "+ "-p 29418 "+ Config.url+" "+ args_gerrit)
+        import pprint
+        pprint.pprint(cmd)
         tickets_raw = subprocess.check_output(cmd)
         tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
         tickets_raw = tickets_raw.replace(",]","]")
