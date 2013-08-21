@@ -253,14 +253,8 @@ class Gerrit():
         patchSets = review['patchSets']
         
         for activity in patchSets: 
-        
-            # activity = patchSets[len(patchSets)-1]
-        
-#            if len(patchSets)>1:
-#                printdbg(str(len(patchSets)) + " patchSets: "+review['url'])
-    
             if "approvals" not in activity.keys():
-                return changesList
+                continue
             
             patchSetNumber = activity['number']
                 
