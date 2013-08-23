@@ -12,7 +12,7 @@ Currently it supports:
 - Launchpad
 - Allura (unstable)
 - Github (unstable)
-- Google Code (unstable)
+- Google Code (abandoned)
 - Redmine (unstable, no changes)
 
 
@@ -89,10 +89,7 @@ E6. Getting information from a project using Github
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
 
-E7. Getting information from a project using Google Code
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b googlecode -u https://code.google.com/feeds/issues/p/apv
-
-E8. Getting information from a project using Redmine
+E7. Getting information from a project using Redmine
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u https://www.bitergia.net/issues.json
 
 
