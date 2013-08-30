@@ -1211,7 +1211,7 @@ class BGBackend(Backend):
         if base_url.find("show_bug.cgi") > 0:
             url = base_url + "&ctype=xml"
         else:
-            url = self._get_domain(base_url) + "show_bug.cgi?id=0&ctype=xml"
+            url = self._get_domain(base_url) + "show_bug.cgi?id=&ctype=xml"
         return url
 
     def _get_issues_list_url(self, base_url, version, from_date=None):
