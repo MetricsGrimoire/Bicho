@@ -856,7 +856,7 @@ class JiraBackend(Backend):
                 parser2.feed(cleaned_contents)
                 parser2.close()
             except Exception:
-                printerr("Error parsing URL: %s" % (bugs_url))
+                printerr("Error parsing URL: %s" % (url_issues))
                 raise
         f.close()
 
