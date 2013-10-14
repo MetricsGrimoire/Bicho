@@ -363,7 +363,6 @@ class SoupHtmlParser():
         changes = []
         #FIXME The id of the changes are not stored
         tables = soup.findAll("div", {"class": "actionContainer"})
-        table = None
 
         for table in tables:
             author_date_text = table.find("div", {"class": "action-details"})
