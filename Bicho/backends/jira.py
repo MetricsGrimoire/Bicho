@@ -314,7 +314,7 @@ class Bug():
         self.issue_key = None
         self.key_id = None
         self.assignee = None
-        self.assignee_usarname = None
+        self.assignee_username = None
         self.reporter = None
         self.reporter_username = None
         
