@@ -332,6 +332,7 @@ class SoupHtmlParser():
 
     def remove_comments(self, soup):
         cmts = soup.findAll(text=lambda text: isinstance(text, BFComment))
+        # Rip <!--HTML comments--> out of the tree so they don't take up memory
         [comment.extract() for comment in cmts]
 
     def _get_identifier(self, td_html):
