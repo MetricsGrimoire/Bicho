@@ -139,7 +139,7 @@ very low traffic list (< 1 msg a day):
 
 Bicho has been originally developed by the GSyC/LibreSoft group at the
 Universidad Rey Juan Carlos in Mostoles, near Madrid (Spain). It is
-part of a wider research on libre software engineering, aimed to gain
+part of a wider research on libre software engineering, aiming to gain
 knowledge on how libre software is developed and maintained.
 
 
@@ -156,7 +156,7 @@ CREATE DATABASE [DB NAME] CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 F2. What is the database schema?
 
-There is a nice PNG schema in the directory /doc/database
+There is a nice PNG schema in the directory /doc/database .
 
 F3. How can I create a new backend?
 
@@ -165,4 +165,4 @@ backend. We'll try to give you as much information as possible.
 
 F4. How can I submit a bug?
 
-Use the GitHub issue tracker: https://github.com/MetricsGrimoire/Bicho/issues
+Use the GitHub issue tracker: https://github.com/MetricsGrimoire/Bicho/issues .
