@@ -163,6 +163,8 @@ F3. How can I create a new backend?
 Tell us through the contact information above that you want to create a new
 backend. We'll try to give you as much information as possible.
 
+Whenever possible, we want to use available APIs. However, some old bugtrackers used to not have APIs, and even today, some APIs don't give us all of the information that we want. So a new backend needs to be able to fall back to HTML scraping and parsing via Beautiful Soup in cases where the bug tracker's API doesn't exist (maybe an old version of Bugzilla/JIRA/etc.) or doesn't provide stuff we want.
+
 F4. How can I submit a bug?
 
 Use the GitHub issue tracker: https://github.com/MetricsGrimoire/Bicho/issues .
