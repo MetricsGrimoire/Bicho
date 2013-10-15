@@ -37,8 +37,6 @@ from dateutil.parser import parse  # used to convert str time to datetime
 
 from tempfile import mkdtemp
 
-from lazr.restfulclient.errors import HTTPError
-
 
 class DBLaunchpadIssueExt(object):
     """
