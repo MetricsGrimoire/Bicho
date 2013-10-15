@@ -134,7 +134,7 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
 
 class DBLaunchpadBackend(DBBackend):
     """
-    Adapter for Bugzilla backend.
+    Adapter for Launchpad backend.
     """
     def __init__(self):
         self.MYSQL_EXT = [DBLaunchpadIssueExtMySQL]
