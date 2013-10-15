@@ -897,7 +897,7 @@ class LPBackend(Backend):
         return self.__drop_timezone(parse(str))
 
     def __drop_timezone(self, dt):
-        # drop the timezone from the datetime objetct
+        # drop the timezone from the datetime object
         # MySQL doesn't support timezone, we remove it
 
         if dt.isoformat().rfind('+') > 0:
