@@ -154,8 +154,8 @@ knowledge on how libre software is developed and maintained.
 F1. Bicho crashed with 'UnicodeEncodeError' exception
 
 UnicodeEncodeError appears when it is not possible to write the data in the
-database with the encoding used by this one, to avoid that set your database to
-use UTF-8. For instance:
+database with the encoding used by this one. To avoid that, set your database
+to use UTF-8. For instance:
 
 CREATE DATABASE [DB NAME] CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
