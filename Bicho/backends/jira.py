@@ -314,7 +314,7 @@ class Bug():
         self.issue_key = None
         self.key_id = None
         self.assignee = None
-        self.assignee_usarname = None
+        self.assignee_username = None
         self.reporter = None
         self.reporter_username = None
         
@@ -332,6 +332,7 @@ class SoupHtmlParser():
 
     def remove_comments(self, soup):
         cmts = soup.findAll(text=lambda text: isinstance(text, BFComment))
+        # Rip <!--HTML comments--> out of the tree so they don't take up memory
         [comment.extract() for comment in cmts]
 
     def _get_identifier(self, td_html):
@@ -362,7 +363,6 @@ class SoupHtmlParser():
         changes = []
         #FIXME The id of the changes are not stored
         tables = soup.findAll("div", {"class": "actionContainer"})
-        table = None
 
         for table in tables:
             author_date_text = table.find("div", {"class": "action-details"})
