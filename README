@@ -71,7 +71,7 @@ without a delay between bug queries, your IP address could be banned!
 
 E1. Getting information from a project that uses Bugzilla, like Bicho ;)
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b bg -u https://bugzilla.libresoft.es/buglist.cgi?product=bicho
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b bg -u "https://bugzilla.libresoft.es/buglist.cgi?product=bicho"
 
 E2. Getting information from a project hosted on sourceforge.net
 
@@ -79,23 +79,23 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 
 E3. Getting information from a project using JIRA
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b jira -u http://support.petalslink.com/browse/PETALSMASTER
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b jira -u "http://support.petalslink.com/browse/PETALSMASTER"
 
 E4. Getting information from a project using Launchpad
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b lp -u https://bugs.launchpad.net/openstack
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b lp -u "https://bugs.launchpad.net/openstack"
 
 E5. Getting information from a project using Allura
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b allura -u http://sourceforge.net/rest/p/allura/tickets
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -d 15 -b allura -u "http://sourceforge.net/rest/p/allura/tickets"
 
 E6. Getting information from a project using GitHub
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u https://api.github.com/repos/composer/composer/issues --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u "https://api.github.com/repos/composer/composer/issues" --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
 
 E7. Getting information from a project using Redmine
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u https://www.bitergia.net/issues.json
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u "https://www.bitergia.net/issues.json"
 
 
  Roadmap

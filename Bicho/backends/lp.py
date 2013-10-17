@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2012 GSyC/LibreSoft, Universidad Rey Juan Carlos
+# Copyright (C) 2012-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,8 +36,6 @@ from datetime import datetime
 from dateutil.parser import parse  # used to convert str time to datetime
 
 from tempfile import mkdtemp
-
-from lazr.restfulclient.errors import HTTPError
 
 
 class DBLaunchpadIssueExt(object):
@@ -136,7 +134,7 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
 
 class DBLaunchpadBackend(DBBackend):
     """
-    Adapter for Bugzilla backend.
+    Adapter for Launchpad backend.
     """
     def __init__(self):
         self.MYSQL_EXT = [DBLaunchpadIssueExtMySQL]
@@ -899,7 +897,7 @@ class LPBackend(Backend):
         return self.__drop_timezone(parse(str))
 
     def __drop_timezone(self, dt):
-        # drop the timezone from the datetime objetct
+        # drop the timezone from the datetime object
         # MySQL doesn't support timezone, we remove it
 
         if dt.isoformat().rfind('+') > 0:
