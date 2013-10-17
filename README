@@ -8,7 +8,7 @@ them in a relational database.
 Currently it supports:
 - Bugzilla
 - Sourceforge.net (abandoned)
-- Jira
+- JIRA
 - Launchpad
 - Allura (unstable)
 - GitHub (unstable)
