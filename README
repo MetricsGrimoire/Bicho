@@ -175,6 +175,6 @@ fall back to HTML scraping and parsing via Beautiful Soup in cases where the
 bug tracker's API doesn't exist (maybe an old version of Bugzilla/JIRA/etc.)
 or doesn't provide stuff we want.
 
-F4. How can I submit a bug?
+F4. How can I submit a bug report?
 
 Use the GitHub issue tracker: https://github.com/MetricsGrimoire/Bicho/issues .
