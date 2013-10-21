@@ -218,7 +218,7 @@ Bicho is going to use before executing the application.
 $ mysqladmin -uuser -ppassword create database_name
 
 $ bicho -t bg --db-user_out="user" --db-password_out="password"
---db-database_out="database_name" URL_project_BTS
+--db-database_out="database_name" "URL_project_BTS"
 
 Analyzing a SourceForge BTS:
 
@@ -228,7 +228,7 @@ Bicho is going to use before executing the application.
 $ mysqladmin -uuser -ppassword create database_name
 
 $ bicho -t sf --db-user_out="user" --db-password_out="password"
---db-database_out="database_name" URL_project_BTS 
+--db-database_out="database_name" "URL_project_BTS"
 
 
 
