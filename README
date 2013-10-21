@@ -8,7 +8,7 @@ them in a relational database.
 Currently it supports:
 - Bugzilla
 - Sourceforge.net (abandoned)
-- Jira
+- JIRA
 - Launchpad
 - Allura (unstable)
 - GitHub (unstable)
@@ -62,7 +62,12 @@ Latest version:
  Running Bicho
 --------------
 
-It is very important to use a delay. If you run Bicho against big sites without a delay between bug queries, your IP address could be banned!
+This is a quick list of example commands to get bug data from various
+kinds of bug trackers and capture it in a database on your local machine.
+For more guidance, please see doc/UserManual.txt .
+
+It is very important to use a delay. If you run Bicho against big sites
+without a delay between bug queries, your IP address could be banned!
 
 E1. Getting information from a project that uses Bugzilla, like Bicho ;)
 
@@ -149,8 +154,8 @@ knowledge on how libre software is developed and maintained.
 F1. Bicho crashed with 'UnicodeEncodeError' exception
 
 UnicodeEncodeError appears when it is not possible to write the data in the
-database with the encoding used by this one, to avoid that set your database to
-use UTF-8. For instance:
+database with the encoding used by this one. To avoid that, set your database
+to use UTF-8. For instance:
 
 CREATE DATABASE [DB NAME] CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
@@ -163,8 +168,13 @@ F3. How can I create a new backend?
 Tell us through the contact information above that you want to create a new
 backend. We'll try to give you as much information as possible.
 
-Whenever possible, we want to use available APIs. However, some old bugtrackers used to not have APIs, and even today, some APIs don't give us all of the information that we want. So a new backend needs to be able to fall back to HTML scraping and parsing via Beautiful Soup in cases where the bug tracker's API doesn't exist (maybe an old version of Bugzilla/JIRA/etc.) or doesn't provide stuff we want.
+Whenever possible, we want to use available APIs. However, some old
+bugtrackers used to not have APIs, and even today, some APIs don't give us
+all of the information that we want. So a new backend needs to be able to
+fall back to HTML scraping and parsing via Beautiful Soup in cases where the
+bug tracker's API doesn't exist (maybe an old version of Bugzilla/JIRA/etc.)
+or doesn't provide stuff we want.
 
-F4. How can I submit a bug?
+F4. How can I submit a bug report?
 
 Use the GitHub issue tracker: https://github.com/MetricsGrimoire/Bicho/issues .
