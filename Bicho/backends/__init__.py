@@ -23,7 +23,7 @@ import glob
 __all__ = ['Backend']
 
 class BackendUnknownError (Exception):
-    '''Unkown engine type'''
+    '''Unknown engine type'''
 
 
 class Backend:
