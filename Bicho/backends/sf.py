@@ -20,7 +20,6 @@
 #           Ronaldo Maia <romaia@async.com.br>
 #           Daniel Izquierdo Cortazar <dizquierdo@libresoft.es>
 #           Luis Cañas Díaz <lcanas@libresoft.es>
-#
 
 import re
 import urlparse
