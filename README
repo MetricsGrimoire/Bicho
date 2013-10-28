@@ -3,9 +3,10 @@
 
 Bicho is a command line-based tool used to parse bug/issue tracking 
 systems. It gets all the information associated with issues and stores 
-them in a relational database.
+them in a relational database. (It is part of the MetricsGrimoire suite,
+which produces data for vizGrimoire to analyze and visualize.)
 
-Currently it supports:
+Currently Bicho supports:
 - Bugzilla
 - Sourceforge.net (abandoned)
 - JIRA
@@ -62,8 +63,12 @@ Latest version:
  Running Bicho
 --------------
 
-This is a quick list of example commands to get bug data from various
-kinds of bug trackers and capture it in a database on your local machine.
+This is a quick list of example commands you would run in your terminal to
+get bug data from various kinds of bug trackers and capture it in a
+database on your local machine. The general format is:
+
+$ bicho --db-user-out=[YOUR DATABASE USERNAME] --db-password-out=[YOUR DATABASE PASSWORD] --db-database-out=[NAME OF DATABASE] -d [DELAY BETWEEN REQUESTS IN NUMBER OF SECONDS] -b [ABBREVIATION FOR BACKEND] -u [BUGTRACKER URL IN QUOTES]
+
 For more guidance, please see doc/UserManual.txt .
 
 It is very important to use a delay. If you run Bicho against big sites
@@ -126,7 +131,7 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
  Improving Bicho
 ----------------
 
-Source code, wiki and ITS available on Github:
+Source code, wiki and ITS available on GitHub:
 * https://github.com/MetricsGrimoire/Bicho
 
 Please write to the developers mailing at
