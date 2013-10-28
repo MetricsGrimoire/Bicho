@@ -1148,7 +1148,12 @@ class BGBackend(Backend):
 
     def _healthy_url(self, url):
         tokens = url.split('product=')
-        url = tokens[0]+'product='+urllib.quote(tokens[1])
+        component = tokens[1].split('&component=')
+        if len(component)>1:
+            url  = tokens[0]+'product='+urllib.quote(component[0])
+            url += "&component="+urllib.quote(component[1])
+        else:
+            url = tokens[0]+'product='+urllib.quote(tokens[1])
         return url
 
     def _urlopen_auth(self, url):
