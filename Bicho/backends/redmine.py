@@ -398,7 +398,10 @@ class Redmine():
             #request.add_header("Authorization", "Basic %s" % base64string)   
             f = urllib2.urlopen(request)         
             tickets = json.loads(f.read())
-            
+
+            if len(tickets['issues']) == 0:
+                break
+
             pprint.pprint("Tickets read: " + str(tickets["issues"][0]['id']) + " " + str(tickets["issues"][-1]['id']))
             
             if tickets["issues"][0]['id'] == last_ticket:
