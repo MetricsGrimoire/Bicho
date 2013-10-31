@@ -230,7 +230,7 @@ class DBDatabase:
             self.store.rollback()
             raise
 
-    def get_last_modification_date(self, state = None):
+    def get_last_modification_date(self, state=None):
         """
         Return last modification date stored in database
         """
@@ -440,7 +440,7 @@ class DBDatabase:
             print e
             
         if not db_people:
-            raise NotFoundError('Idenitity %s not found in tracker %s' % 
+            raise NotFoundError('Idenitity %s not found in tracker %s' %
                                 (user_id, tracker_id))
         return db_people
 

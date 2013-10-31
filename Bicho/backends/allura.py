@@ -246,7 +246,7 @@ class Allura():
             # print json_ticket
             try:                
                 issue_allura = json.loads(json_ticket)["ticket"]
-                issue =  self.parse_bug(issue_allura)
+                issue = self.parse_bug(issue_allura)
                 changes = self.analyze_bug_changes(bug_url)
                 for c in changes:
                     issue.add_change(c)                 
@@ -272,7 +272,7 @@ class Allura():
                             issue_allura["description"],
                             people,
                             self._convert_to_datetime(issue_allura["created_date"]))        
-        people =  People(issue_allura["assigned_to_id"])
+        people = People(issue_allura["assigned_to_id"])
         people.set_name(issue_allura["assigned_to"])
         issue.assigned_to = people
         issue.status = issue_allura["status"]
@@ -294,7 +294,7 @@ class Allura():
         
     def analyze_bug_changes (self, bug_url):
         bug_number = bug_url.split('/')[-1]
-        changes_url = bug_url.replace("rest/","")+"/feed.atom"
+        changes_url = bug_url.replace("rest/","") + "/feed.atom"
 
         printdbg("Analyzing issue changes" + changes_url)
 
@@ -322,13 +322,13 @@ class Allura():
                     # u'in-progress' => u'closed'
                     values = changes[0].split('=>')
                     old_value = self.remove_unicode(values[0].strip())
-                    if old_value == "''": old_value =""
+                    if old_value == "''": old_value = ""
                     new_value = self.remove_unicode(values[1].strip())
-                    if new_value == "''": new_value =""
+                    if new_value == "''": new_value = ""
                 update = parse(entry['updated'])
                 change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
                 changesList.append(change)
-                if (len(changes)>1):
+                if (len(changes) > 1):
                     field = changes[1].strip()
         return changesList
 
@@ -337,7 +337,7 @@ class Allura():
         Cleanup u'' chars indicating a unicode string
         """
         if (str.startswith('u\'') and str.endswith('\'')):
-            str = str[2:len(str)-1]
+            str = str[2:len(str) - 1]
         return str
 
 
@@ -348,7 +348,7 @@ class Allura():
         
         # limit=-1 is NOT recognized as 'all'.  500 is a reasonable limit. - allura code
         issues_per_query = 500
-        start_page=0
+        start_page = 0
 
 
         bugs = [];
@@ -363,7 +363,7 @@ class Allura():
 
         # Date before the first ticket
         time_window_start = "1900-01-01T00:00:00Z" 
-        time_window_end = datetime.now().isoformat()+"Z"
+        time_window_end = datetime.now().isoformat() + "Z"
 
         if last_mod_date:
             time_window_start = last_mod_date
@@ -374,14 +374,14 @@ class Allura():
         self.url_issues = Config.url + "/search/?limit=1"
         self.url_issues += "&q="
         # A time range with all the tickets
-        self.url_issues +=  urllib.quote("mod_date_dt:["+time_window+"]")
+        self.url_issues += urllib.quote("mod_date_dt:[" + time_window + "]")
         printdbg("URL for getting metadata " + self.url_issues)
 
         f = urllib.urlopen(self.url_issues)
         ticketTotal = json.loads(f.read())
         
         total_issues = int(ticketTotal['count'])
-        total_pages = total_issues/issues_per_query
+        total_pages = total_issues / issues_per_query
         print("Number of tickets: " + str(total_issues))
 
         if  total_issues == 0:
@@ -389,15 +389,15 @@ class Allura():
             sys.exit(0)
         remaining = total_issues
 
-        print "ETA ", (total_issues*Config.delay)/(60), "m (", (total_issues*Config.delay)/(60*60), "h)"
+        print "ETA ", (total_issues * Config.delay) / (60), "m (", (total_issues * Config.delay) / (60 * 60), "h)"
         
         while start_page <= total_pages:
-            self.url_issues = Config.url + "/search/?limit="+str(issues_per_query)
+            self.url_issues = Config.url + "/search/?limit=" + str(issues_per_query)
             self.url_issues += "&page=" + str(start_page) + "&q="
             # A time range with all the tickets
-            self.url_issues +=  urllib.quote("mod_date_dt:["+time_window+"]")
+            self.url_issues += urllib.quote("mod_date_dt:[" + time_window + "]")
             # Order by mod_date_dt desc
-            self.url_issues +=  "&sort=mod_date_dt+asc"
+            self.url_issues += "&sort=mod_date_dt+asc"
 
             printdbg("URL for next issues " + self.url_issues) 
 
@@ -405,19 +405,19 @@ class Allura():
 
             ticketList = json.loads(f.read())
 
-            bugs=[]
+            bugs = []
             for ticket in ticketList["tickets"]:
                 bugs.append(ticket["ticket_num"])
 
             for bug in bugs:
                 try:
-                    issue_url = Config.url+"/"+str(bug)
+                    issue_url = Config.url + "/" + str(bug)
                     issue_data = self.analyze_bug(issue_url)
                     if issue_data is None:
                         continue
                     bugsdb.insert_issue(issue_data, dbtrk.id)
                     remaining -= 1
-                    print "Remaining time: ", (remaining)*Config.delay/60, "m"
+                    print "Remaining time: ", (remaining) * Config.delay / 60, "m"
                     time.sleep(self.delay)
                 except Exception, e:
                     printerr("Error in function analyze_bug " + issue_url)
@@ -427,6 +427,6 @@ class Allura():
                           % (issue_data.issue))
             start_page += 1
             
-        printout("Done. Bugs analyzed:" + str(total_issues-remaining))
+        printout("Done. Bugs analyzed:" + str(total_issues - remaining))
         
 Backend.register_backend('allura', Allura)

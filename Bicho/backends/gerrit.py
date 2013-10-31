@@ -183,7 +183,7 @@ class Gerrit():
 
     def analyze_review(self, review):
         try:
-            issue =  self.parse_review(review)
+            issue = self.parse_review(review)
             changes = self.analyze_review_changes(review)
             for c in changes:
                 issue.add_change(c)
@@ -285,21 +285,21 @@ class Gerrit():
     
     def getReviews (self, limit, start):
                 
-        args_gerrit ="gerrit query "
+        args_gerrit = "gerrit query "
         args_gerrit += "project:" + Config.gerrit_project
         args_gerrit += " limit:" + str(limit) 
         if (start != ""): 
-            args_gerrit += " resume_sortkey:"+start
+            args_gerrit += " resume_sortkey:" + start
         args_gerrit += " --all-approvals --format=JSON"
         
         if vars(Config).has_key('backend_user'):
-            cmd = ["ssh", "-p 29418", Config.backend_user+"@"+Config.url, args_gerrit]
-            printdbg("Gerrit cmd: " + "ssh -p 29418 "+ Config.backend_user+"@"+Config.url+" "+ args_gerrit)
+            cmd = ["ssh", "-p 29418", Config.backend_user + "@" + Config.url, args_gerrit]
+            printdbg("Gerrit cmd: " + "ssh -p 29418 " + Config.backend_user + "@" + Config.url + " " + args_gerrit)
         else:
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
-            printdbg("Gerrit cmd: " + "ssh "+ "-p 29418 "+ Config.url+" "+ args_gerrit)
+            printdbg("Gerrit cmd: " + "ssh " + "-p 29418 " + Config.url + " " + args_gerrit)
         tickets_raw = subprocess.check_output(cmd)
-        tickets_raw = "["+tickets_raw.replace("\n",",")+"]"
+        tickets_raw = "[" + tickets_raw.replace("\n",",") + "]"
         tickets_raw = tickets_raw.replace(",]","]")
         tickets = json.loads(tickets_raw)
         
@@ -323,7 +323,7 @@ class Gerrit():
                 
         # still useless in gerrit
         bugsdb.insert_supported_traker("gerrit", "beta")
-        trk = Tracker (Config.url+"_"+Config.gerrit_project, "gerrit", "beta")
+        trk = Tracker (Config.url + "_" + Config.gerrit_project, "gerrit", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_time = 0        
@@ -341,7 +341,7 @@ class Gerrit():
         total_reviews = 0
         
         while (number_results == limit or
-               number_results == limit+1): # wikimedia gerrit returns limit+1
+               number_results == limit + 1): # wikimedia gerrit returns limit+1
             # ordered by lastUpdated        
             tickets = self.getReviews(limit, last_item)
             number_results = 0
@@ -349,13 +349,13 @@ class Gerrit():
             reviews = []
             for entry in tickets:
                 if 'project' in entry.keys():
-                    if (entry['lastUpdated']<last_mod_time):
+                    if (entry['lastUpdated'] < last_mod_time):
                         break
                     reviews.append(entry["number"])
                     review_data = self.analyze_review(entry)
                     last_item = entry['sortKey']
                     bugsdb.insert_issue(review_data, dbtrk.id)
-                    number_results = number_results+1
+                    number_results = number_results + 1
                 elif 'rowCount' in entry.keys():
                     pprint.pprint(entry)
                     printdbg("CONTINUE FROM: " + last_item)

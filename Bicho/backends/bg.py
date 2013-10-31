@@ -558,7 +558,7 @@ class BugzillaIssue(Issue):
         @param remaining_time: remaining_time of the issue
         @type remaining_time: C{str}
         """
-        self.remaining_time =  remaining_time
+        self.remaining_time = remaining_time
 
     def set_actual_time(self, actual_time):
         """
@@ -567,7 +567,7 @@ class BugzillaIssue(Issue):
         @param actual_time: actual_time of the issue
         @type actual_time: C{str}
         """
-        self.actual_time =  actual_time
+        self.actual_time = actual_time
 
     def set_deadline(self, deadline):
         """
@@ -796,7 +796,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     def print_debug_data(self):
         printdbg("")
-        printdbg("ID: " +  self.bug_id)
+        printdbg("ID: " + self.bug_id)
         printdbg("Creation date: " + self.creation_ts)
         printdbg("Short description: " + self.short_desc)
         printdbg("Status: " + self.bug_status)
@@ -831,7 +831,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     def get_issue(self):
         issue_id = self.atags["bug_id"]
-        type  = self.atags["bug_severity"]
+        type = self.atags["bug_severity"]
         summary = self.atags["short_desc"]
 
         if len(self.ctags["long_desc"]) > 0:
@@ -935,7 +935,7 @@ class BGBackend(Backend):
             self.backend_password = Config.backend_password
             self.backend_user = Config.backend_user
         except AttributeError:
-            printout("No bugzilla account provided, mail addresses won't " +\
+            printout("No bugzilla account provided, mail addresses won't " + \
                      "be retrieved")
             self.backend_password = None
             self.backend_user = None
@@ -1042,7 +1042,7 @@ class BGBackend(Backend):
             ids = self._retrieve_issues_ids(self.url, self.version, next_date)
 
             while(ids):
-                if (i>=max_rounds): break
+                if (i >= max_rounds): break
                 printout("Round #%d - Total issues to retrieve: %d" % (i, len(ids)))
                 self._retrieve_issues(ids, url, self.tracker.id)
                 i += 1
@@ -1149,11 +1149,11 @@ class BGBackend(Backend):
     def _healthy_url(self, url):
         tokens = url.split('product=')
         component = tokens[1].split('&component=')
-        if len(component)>1:
-            url  = tokens[0]+'product='+urllib.quote(component[0])
-            url += "&component="+urllib.quote(component[1])
+        if len(component) > 1:
+            url = tokens[0] + 'product=' + urllib.quote(component[0])
+            url += "&component=" + urllib.quote(component[1])
         else:
-            url = tokens[0]+'product='+urllib.quote(tokens[1])
+            url = tokens[0] + 'product=' + urllib.quote(tokens[1])
         return url
 
     def _urlopen_auth(self, url):

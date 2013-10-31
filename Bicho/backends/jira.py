@@ -707,7 +707,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         Cleanup u'' chars indicating a unicode string
         """
         if (str.startswith('u\'') and str.endswith('\'')):
-            str = str[2:len(str)-1]
+            str = str[2:len(str) - 1]
         return str
 
     @staticmethod
@@ -720,11 +720,11 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             email = BugsHandler._emails[username]
         else:
             serverUrl = Config.url.split("/browse/")[0]
-            user_url = serverUrl + "/activity?maxResults=1&streams=user+IS+"+username
+            user_url = serverUrl + "/activity?maxResults=1&streams=user+IS+" + username
             email = ""
             d = feedparser.parse(user_url)
             if d.has_key('entries'):
-                if len(d['entries'])>0:
+                if len(d['entries']) > 0:
                     email = d['entries'][0]['author_detail']['email']
                     email = BugsHandler.remove_unicode(email)
                     printdbg(username + " " + email)
@@ -812,10 +812,10 @@ class JiraBackend(Backend):
         serverUrl = self.url.split("/browse/")[0]
         product = self.url.split("/browse/")[1]
         query = "/sr/jira.issueviews:searchrequest-xml/temp/SearchRequest.xml"
-        url_issues  = serverUrl + query + "?pid="+product
+        url_issues = serverUrl + query + "?pid=" + product
         url_issues += "&sorter/field=updated&sorter/order=INC"
         if self.last_mod_date:
-             url_issues += "&updated:after="+self.last_mod_date
+             url_issues += "&updated:after=" + self.last_mod_date
         return url_issues
 
     def bugsNumber(self,url):
@@ -888,7 +888,7 @@ class JiraBackend(Backend):
         dbtrk = bugsdb.insert_tracker(trk)
 
         serverUrl = self.url.split("/browse/")[0]
-        query =  "/si/jira.issueviews:issue-xml/"
+        query = "/si/jira.issueviews:issue-xml/"
         project = self.url.split("/browse/")[1]
 
         if (project.split("-").__len__() > 1):
@@ -918,8 +918,8 @@ class JiraBackend(Backend):
             bugs_number = self.bugsNumber(self.url)
             print "Tickets to be retrieved:", str(bugs_number)
             remaining = bugs_number
-            while (remaining>0):
-                self.analyze_bug_list(issues_per_xml_query, bugs_number-remaining, bugsdb, dbtrk.id)
+            while (remaining > 0):
+                self.analyze_bug_list(issues_per_xml_query, bugs_number - remaining, bugsdb, dbtrk.id)
                 remaining -= issues_per_xml_query
                 #print "Remaining time: ", (remaining/issues_per_xml_query)*Config.delay/60, "m", "(",remaining,")"
                 time.sleep(self.delay)
