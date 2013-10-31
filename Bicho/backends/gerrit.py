@@ -319,11 +319,11 @@ class Gerrit():
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
         bugs = [];
-        bugsdb = get_database (DBGerritBackend())
+        bugsdb = get_database(DBGerritBackend())
                 
         # still useless in gerrit
         bugsdb.insert_supported_traker("gerrit", "beta")
-        trk = Tracker (Config.url + "_" + Config.gerrit_project, "gerrit", "beta")
+        trk = Tracker(Config.url + "_" + Config.gerrit_project, "gerrit", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_time = 0        
@@ -331,8 +331,7 @@ class Gerrit():
         if last_mod_date:
             printdbg("Last reviews analyzed were modified on date: %s" 
                      % last_mod_date)
-            last_mod_time = time.mktime(time.strptime
-                                        (last_mod_date, '%Y-%m-%d %H:%M:%S'))
+            last_mod_time = time.mktime(time.strptime(last_mod_date, '%Y-%m-%d %H:%M:%S'))
             
         limit = 500 # gerrit default 500
         last_item = "";

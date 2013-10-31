@@ -208,11 +208,11 @@ class GoogleCode():
         start_issue = 1
 
         bugs = [];
-        bugsdb = get_database (DBGoogleCodeBackend())
+        bugsdb = get_database(DBGoogleCodeBackend())
                 
         # still useless
         bugsdb.insert_supported_traker("googlecode", "beta")
-        trk = Tracker (Config.url, "googlecode", "beta")
+        trk = Tracker(Config.url, "googlecode", "beta")
 
         dbtrk = bugsdb.insert_tracker(trk)
         

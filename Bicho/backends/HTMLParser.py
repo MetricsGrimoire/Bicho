@@ -292,7 +292,7 @@ class HTMLParser(markupbase.ParserBase):
                 # else bogus input
                 self.updatepos(i, j + 1)
                 self.error("malformed empty start tag")
-                return rawdata.find (">", i)
+                return rawdata.find(">", i)
             if next == "":
                 # end of input
                 return -1
@@ -303,7 +303,7 @@ class HTMLParser(markupbase.ParserBase):
                 return -1
             self.updatepos(i, j)
             self.error("malformed start tag")
-            return rawdata.find (">", i)
+            return rawdata.find(">", i)
         raise AssertionError("we should not get here!")
 
     # Internal -- parse endtag, return end or -1 if incomplete

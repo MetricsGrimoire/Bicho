@@ -50,12 +50,12 @@ class Config:
     @staticmethod
     def load_from_file (config_file):
         try:
-            f = open (config_file, 'r')
+            f = open(config_file, 'r')
             exec f in Config.__dict__
-            f.close ()
+            f.close()
         except Exception, e:
-            raise ErrorLoadingConfig ("Error reading config file %s (%s)" % (\
-                    config_file, str (e)))
+            raise ErrorLoadingConfig("Error reading config file %s (%s)" % (\
+                    config_file, str(e)))
 
     @staticmethod        
     def load ():
@@ -64,22 +64,22 @@ class Config:
 
         # First look in /etc
         # FIXME /etc is not portable
-        config_file = os.path.join ('/etc', 'bicho')
-        if os.path.isfile (config_file):
-            Config.load_from_file (config_file)
+        config_file = os.path.join('/etc', 'bicho')
+        if os.path.isfile(config_file):
+            Config.load_from_file(config_file)
 
         # Then look at $HOME
-        config_file = os.path.join (bicho_dot_dir (), 'config')
-        if os.path.isfile (config_file):
-            Config.load_from_file (config_file) 
+        config_file = os.path.join(bicho_dot_dir(), 'config')
+        if os.path.isfile(config_file):
+            Config.load_from_file(config_file) 
         else:
             # If there's an old file, migrate it
-            old_config = os.path.join (os.environ.get ('HOME'), '.bicho')
-            if os.path.isfile (old_config):
-                printout ("Old config file found in %s, moving to %s", \
+            old_config = os.path.join(os.environ.get('HOME'), '.bicho')
+            if os.path.isfile(old_config):
+                printout("Old config file found in %s, moving to %s", \
                               (old_config, config_file))
-                os.rename (old_config, config_file)
-                Config.load_from_file (config_file)
+                os.rename(old_config, config_file)
+                Config.load_from_file(config_file)
 
     @staticmethod
     def check_params(check_params):            
@@ -224,4 +224,4 @@ class Config:
 
         # Not remove config file options with empty default values
         Config.__dict__.update(Config.clean_empty_options(options))
-        Config.check_config ()
+        Config.check_config()

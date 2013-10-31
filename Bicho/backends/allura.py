@@ -352,11 +352,11 @@ class Allura():
 
 
         bugs = [];
-        bugsdb = get_database (DBAlluraBackend())
+        bugsdb = get_database(DBAlluraBackend())
                 
         # still useless in allura
         bugsdb.insert_supported_traker("allura", "beta")
-        trk = Tracker (Config.url, "allura", "beta")
+        trk = Tracker(Config.url, "allura", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
         
         last_mod_date = bugsdb.get_last_modification_date()

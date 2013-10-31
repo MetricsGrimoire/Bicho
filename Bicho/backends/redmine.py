@@ -364,11 +364,11 @@ class Redmine():
 
 
         bugs = [];
-        bugsdb = get_database (DBRedmineBackend())
+        bugsdb = get_database(DBRedmineBackend())
                 
         # still useless in redmine
         bugsdb.insert_supported_traker("redmine", "beta")
-        trk = Tracker (Config.url, "redmine", "beta")
+        trk = Tracker(Config.url, "redmine", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
 
         if Config.url.find('?') > 0:

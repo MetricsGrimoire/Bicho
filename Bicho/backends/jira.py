@@ -926,4 +926,4 @@ class JiraBackend(Backend):
 
             printout("Done. %s bugs analyzed" % (bugs_number))
 
-Backend.register_backend ("jira", JiraBackend)
+Backend.register_backend("jira", JiraBackend)
