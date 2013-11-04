@@ -878,7 +878,7 @@ class LPBackend(Backend):
 
             # author and date are stored in the comment object
             aux = a['message_link']
-            comment_id = int(aux[aux.rfind('/')+1:])
+            comment_id = int(aux[aux.rfind('/') + 1:])
             comment = bug.bug.messages[comment_id]
             a_by = self._get_person(comment.owner)
             a_on = self.__drop_timezone(comment.date_created)
@@ -961,7 +961,7 @@ class LPBackend(Backend):
             os.makedirs(cachedir)
         cre_file = os.path.join(cachedir + 'launchpad-credential')
         self.lp = Launchpad.login_with('Bicho','production',
-                                       credentials_file = cre_file)
+                                       credentials_file=cre_file)
 
         aux_status = ["New", "Incomplete", "Opinion", "Invalid", "Won't Fix",
                       "Expired", "Confirmed", "Triaged", "In Progress",

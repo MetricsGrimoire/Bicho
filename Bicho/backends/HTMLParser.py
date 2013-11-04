@@ -173,7 +173,7 @@ class HTMLParser(markupbase.ParserBase):
                     name = match.group()[2:-1]
                     self.handle_charref(name)
                     k = match.end()
-                    if not startswith(';', k-1):
+                    if not startswith(';', k - 1):
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
@@ -185,7 +185,7 @@ class HTMLParser(markupbase.ParserBase):
                     name = match.group(1)
                     self.handle_entityref(name)
                     k = match.end()
-                    if not startswith(';', k-1):
+                    if not startswith(';', k - 1):
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
@@ -214,12 +214,12 @@ class HTMLParser(markupbase.ParserBase):
     # Internal -- parse processing instr, return end or -1 if not terminated
     def parse_pi(self, i):
         rawdata = self.rawdata
-        assert rawdata[i:i+2] == '<?', 'unexpected call to parse_pi()'
-        match = piclose.search(rawdata, i+2) # >
+        assert rawdata[i:i + 2] == '<?', 'unexpected call to parse_pi()'
+        match = piclose.search(rawdata, i + 2) # >
         if not match:
             return -1
         j = match.start()
-        self.handle_pi(rawdata[i+2: j])
+        self.handle_pi(rawdata[i + 2: j])
         j = match.end()
         return j
 
@@ -234,10 +234,10 @@ class HTMLParser(markupbase.ParserBase):
 
         # Now parse the data between i+1 and j into a tag and attrs
         attrs = []
-        match = tagfind.match(rawdata, i+1)
+        match = tagfind.match(rawdata, i + 1)
         assert match, 'unexpected call to parse_starttag()'
         k = match.end()
-        self.lasttag = tag = rawdata[i+1:k].lower()
+        self.lasttag = tag = rawdata[i + 1:k].lower()
 
         while k < endpos:
             m = attrfind.match(rawdata, k)
@@ -280,7 +280,7 @@ class HTMLParser(markupbase.ParserBase):
         m = locatestarttagend.match(rawdata, i)
         if m:
             j = m.end()
-            next = rawdata[j:j+1]
+            next = rawdata[j:j + 1]
             if next == ">":
                 return j + 1
             if next == "/":
@@ -292,7 +292,7 @@ class HTMLParser(markupbase.ParserBase):
                 # else bogus input
                 self.updatepos(i, j + 1)
                 self.error("malformed empty start tag")
-                return rawdata.find (">", i)
+                return rawdata.find(">", i)
             if next == "":
                 # end of input
                 return -1
@@ -303,14 +303,14 @@ class HTMLParser(markupbase.ParserBase):
                 return -1
             self.updatepos(i, j)
             self.error("malformed start tag")
-            return rawdata.find (">", i)
+            return rawdata.find(">", i)
         raise AssertionError("we should not get here!")
 
     # Internal -- parse endtag, return end or -1 if incomplete
     def parse_endtag(self, i):
         rawdata = self.rawdata
-        assert rawdata[i:i+2] == "</", "unexpected call to parse_endtag"
-        match = endendtag.search(rawdata, i+1) # >
+        assert rawdata[i:i + 2] == "</", "unexpected call to parse_endtag"
+        match = endendtag.search(rawdata, i + 1) # >
         if not match:
             return -1
         j = match.end()

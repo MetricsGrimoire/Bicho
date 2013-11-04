@@ -609,7 +609,7 @@ class SourceForge():
         self.parser = SourceForgeParser()
 
         #first we take the bugs ids
-        if url.find("aid=")>0:
+        if url.find("aid=") > 0:
             aux = url.split("aid=")[1].split("&")[0]
             ids.append(aux)
         else:
@@ -705,9 +705,9 @@ class SourceForge():
         query.sort()
         parameter = ""
         for q in query:
-            if q.find("atid")>-1:
+            if q.find("atid") > -1:
                 parameter = parameter + "&" + q
-            if q.find("group_id")>-1:    
+            if q.find("group_id") > -1:    
                 parameter = parameter + "&" + q
         
         aux_url = (url.split("/?")[0] + "/?" + parameter).replace("?&","?")

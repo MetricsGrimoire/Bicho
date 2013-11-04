@@ -23,13 +23,13 @@
 #
 from distutils.core import setup
 
-setup(name = "Bicho",
-      version = "0.9",
-      author =  "GSyC/LibreSoft, Universidad Rey Juan Carlos",
-      author_email = "metrics-grimoire@lists.libresoft.es",
-      description = "Analysis tool for Issue/Bug Tracking Systems",
-      url = "http://metricsgrimoire.github.com/Bicho/",
-      packages = ['Bicho', 'Bicho.backends', 'Bicho.db',
+setup(name="Bicho",
+      version="0.9",
+      author="GSyC/LibreSoft, Universidad Rey Juan Carlos",
+      author_email="metrics-grimoire@lists.libresoft.es",
+      description="Analysis tool for Issue/Bug Tracking Systems",
+      url="http://metricsgrimoire.github.com/Bicho/",
+      packages=['Bicho', 'Bicho.backends', 'Bicho.db',
                   'Bicho.post_processing'],
-      data_files = [('share/man/man1/',['doc/bicho.1'])],
-      scripts = ["bin/bicho"])
+      data_files=[('share/man/man1/', ['doc/bicho.1'])],
+      scripts=["bin/bicho"])

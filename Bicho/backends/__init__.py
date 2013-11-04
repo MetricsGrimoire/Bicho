@@ -38,19 +38,19 @@ class Backend:
     def _get_backend (backend_name):
         if backend_name not in Backend._backends:
             try:
-                __import__ ('Bicho.backends.%s' % backend_name)
+                __import__('Bicho.backends.%s' % backend_name)
             except ImportError:
                 raise
 
         if backend_name not in Backend._backends:
-            raise BackendUnknownError ('Backend type %s not registered' % backend_name)
+            raise BackendUnknownError('Backend type %s not registered' % backend_name)
     
         return Backend._backends[backend_name]
     
     @staticmethod
     def create_backend (backend_name):
-        backend_class = Backend._get_backend (backend_name)
-        return backend_class ()
+        backend_class = Backend._get_backend(backend_name)
+        return backend_class()
     
     @staticmethod
     def get_all_backends ():

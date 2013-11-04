@@ -150,7 +150,7 @@ class GoogleCode():
 
         # Strange how the parser rename this fields
         if 'issues_uri' in entry.keys():
-            people =  People(entry['issues_uri'])
+            people = People(entry['issues_uri'])
             people.set_name(entry['issues_username'])
             issue.assigned_to = people
         issue.status = entry['issues_status']
@@ -184,7 +184,7 @@ class GoogleCode():
                 continue
             by = People(entry['author_detail']['href'])                        
             update = parse(entry['updated'])
-            field =  'Status'
+            field = 'Status'
             old_value = ''
             new_value = entry['issues_status']
             change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
@@ -196,7 +196,7 @@ class GoogleCode():
         Cleanup u'' chars indicating a unicode string
         """
         if (str.startswith('u\'') and str.endswith('\'')):
-            str = str[2:len(str)-1]
+            str = str[2:len(str) - 1]
         return str
     
     def run(self):
@@ -205,14 +205,14 @@ class GoogleCode():
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
         issues_per_query = 250
-        start_issue=1
+        start_issue = 1
 
         bugs = [];
-        bugsdb = get_database (DBGoogleCodeBackend())
+        bugsdb = get_database(DBGoogleCodeBackend())
                 
         # still useless
         bugsdb.insert_supported_traker("googlecode", "beta")
-        trk = Tracker (Config.url, "googlecode", "beta")
+        trk = Tracker(Config.url, "googlecode", "beta")
 
         dbtrk = bugsdb.insert_tracker(trk)
         
@@ -232,7 +232,7 @@ class GoogleCode():
             sys.exit(0)
         remaining = total_issues                
 
-        print "ETA ", (total_issues*Config.delay)/(60), "m (", (total_issues*Config.delay)/(60*60), "h)"
+        print "ETA ", (total_issues * Config.delay) / (60), "m (", (total_issues * Config.delay) / (60 * 60), "h)"
 
         while start_issue < total_issues:            
             self.url_issues = Config.url + "/issues/full?max-results=" + str(issues_per_query) 
@@ -249,7 +249,7 @@ class GoogleCode():
                         continue
                     bugsdb.insert_issue(issue, dbtrk.id)
                     remaining -= 1
-                    print "Remaining time: ", (remaining)*Config.delay/60, "m", " issues ", str(remaining) 
+                    print "Remaining time: ", (remaining) * Config.delay / 60, "m", " issues ", str(remaining) 
                     time.sleep(Config.delay)
                 except Exception, e:
                     printerr("Error in function analyze_bug ")
@@ -262,6 +262,6 @@ class GoogleCode():
             start_issue += issues_per_query
 
                                             
-        printout("Done. %s bugs analyzed" % (total_issues-remaining))
+        printout("Done. %s bugs analyzed" % (total_issues - remaining))
         
 Backend.register_backend('googlecode', GoogleCode)

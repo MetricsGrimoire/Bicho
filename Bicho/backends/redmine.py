@@ -45,7 +45,7 @@ class DBRedmineIssueExt(object):
     id = Int(primary=True)
     category_id = Int()
     done_ratio = Int()
-    due_date  = DateTime()
+    due_date = DateTime()
     estimated_hours = Int()        
     fixed_version_id = Int()
     lft = Int()
@@ -233,7 +233,7 @@ class Redmine():
                             self._convert_to_datetime(issue_redmine["created_on"]))        
         try:
                 #print("<<< %s " % issue_redmine["assigned_to"]["id"])
-                people =  People(self._get_author_email(issue_redmine["assigned_to"]["id"]))
+                people = People(self._get_author_email(issue_redmine["assigned_to"]["id"]))
                 people.set_name(issue_redmine["assigned_to"]["name"])
                 issue.assigned_to = people
         except KeyError:
@@ -349,7 +349,7 @@ class Redmine():
         Cleanup u'' chars indicating a unicode string
         """
         if (str.startswith('u\'') and str.endswith('\'')):
-            str = str[2:len(str)-1]
+            str = str[2:len(str) - 1]
         return str
 
 
@@ -359,22 +359,22 @@ class Redmine():
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
         # redmine 1.0 support
-        last_page=1
+        last_page = 1
         tickets_page = 25 # fixed redmine
 
 
         bugs = [];
-        bugsdb = get_database (DBRedmineBackend())
+        bugsdb = get_database(DBRedmineBackend())
                 
         # still useless in redmine
         bugsdb.insert_supported_traker("redmine", "beta")
-        trk = Tracker (Config.url, "redmine", "beta")
+        trk = Tracker(Config.url, "redmine", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
 
         if Config.url.find('?') > 0:
-            self.url_issues = Config.url+"&status_id=*&sort=updated_on&page=" + str(last_page)
+            self.url_issues = Config.url + "&status_id=*&sort=updated_on&page=" + str(last_page)
         else:
-            self.url_issues = Config.url+"?status_id=*&sort=updated_on&page=" + str(last_page)
+            self.url_issues = Config.url + "?status_id=*&sort=updated_on&page=" + str(last_page)
         request = urllib2.Request(self.url_issues)
         if self.backend_user:
             base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
@@ -385,14 +385,14 @@ class Redmine():
             issue = self.analyze_bug(ticket)
             bugsdb.insert_issue(issue, dbtrk.id)
         
-        last_ticket=tickets["issues"][0]['id']
+        last_ticket = tickets["issues"][0]['id']
         
         while True:  
             last_page += 1
             if Config.url.find('?') > 0:
-                self.url_issues = Config.url+"&status_id=*&sort=updated_on&page="+str(last_page) 
+                self.url_issues = Config.url + "&status_id=*&sort=updated_on&page=" + str(last_page) 
             else:
-                self.url_issues = Config.url+"?status_id=*&sort=updated_on&page="+str(last_page) 
+                self.url_issues = Config.url + "?status_id=*&sort=updated_on&page=" + str(last_page) 
             request = urllib2.Request(self.url_issues)
             #base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
             #request.add_header("Authorization", "Basic %s" % base64string)   

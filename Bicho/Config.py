@@ -50,12 +50,12 @@ class Config:
     @staticmethod
     def load_from_file (config_file):
         try:
-            f = open (config_file, 'r')
+            f = open(config_file, 'r')
             exec f in Config.__dict__
-            f.close ()
+            f.close()
         except Exception, e:
-            raise ErrorLoadingConfig ("Error reading config file %s (%s)" % (\
-                    config_file, str (e)))
+            raise ErrorLoadingConfig("Error reading config file %s (%s)" % (\
+                    config_file, str(e)))
 
     @staticmethod        
     def load ():
@@ -64,22 +64,22 @@ class Config:
 
         # First look in /etc
         # FIXME /etc is not portable
-        config_file = os.path.join ('/etc', 'bicho')
-        if os.path.isfile (config_file):
-            Config.load_from_file (config_file)
+        config_file = os.path.join('/etc', 'bicho')
+        if os.path.isfile(config_file):
+            Config.load_from_file(config_file)
 
         # Then look at $HOME
-        config_file = os.path.join (bicho_dot_dir (), 'config')
-        if os.path.isfile (config_file):
-            Config.load_from_file (config_file) 
+        config_file = os.path.join(bicho_dot_dir(), 'config')
+        if os.path.isfile(config_file):
+            Config.load_from_file(config_file) 
         else:
             # If there's an old file, migrate it
-            old_config = os.path.join (os.environ.get ('HOME'), '.bicho')
-            if os.path.isfile (old_config):
-                printout ("Old config file found in %s, moving to %s", \
+            old_config = os.path.join(os.environ.get('HOME'), '.bicho')
+            if os.path.isfile(old_config):
+                printout("Old config file found in %s, moving to %s", \
                               (old_config, config_file))
-                os.rename (old_config, config_file)
-                Config.load_from_file (config_file)
+                os.rename(old_config, config_file)
+                Config.load_from_file(config_file)
 
     @staticmethod
     def check_params(check_params):            
@@ -93,8 +93,8 @@ class Config:
         """
         Config.check_params(['url','backend'])
         
-        if Config.backend+".py" not in Backend.get_all_backends():
-            raise InvalidConfig('Backend "'+ Config.backend + '" does not exist')
+        if Config.backend + ".py" not in Backend.get_all_backends():
+            raise InvalidConfig('Backend "' + Config.backend + '" does not exist')
 
 
         url = urlparse.urlparse(Config.url)
@@ -105,12 +105,12 @@ class Config:
             response = urlopen(req)
         except HTTPError, e:
             raise InvalidConfig('The server could not fulfill the request '
-                               + str(e.msg) + '('+ str(e.code)+')')
+                               + str(e.msg) + '(' + str(e.code) + ')')
         except URLError, e:
             raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
         
         except ValueError, e:
-            print ("Not an URL: "  + Config.url)
+            print ("Not an URL: " + Config.url)
             
                 
         if vars(Config).has_key('input') and Config.input == 'db':
@@ -126,7 +126,7 @@ class Config:
         for option in vars(options):
             if (vars(options)[option] is not None) and \
               ( not Config.__dict__.has_key(option)) :
-                clean_opt[option]=vars(options)[option]                    
+                clean_opt[option] = vars(options)[option]                    
         return clean_opt
         
     @staticmethod
@@ -218,10 +218,10 @@ class Config:
         # Command line options have preference
         # Backwards compatibility
         if (len(args) > 0):
-            Config.backend=args[0]
+            Config.backend = args[0]
         if (len(args) == 2):
-            Config.url=args[1]
+            Config.url = args[1]
 
         # Not remove config file options with empty default values
         Config.__dict__.update(Config.clean_empty_options(options))
-        Config.check_config ()
+        Config.check_config()
