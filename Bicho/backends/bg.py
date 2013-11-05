@@ -916,7 +916,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
 # 500 is the max recommend by bugmaster@gnome.org.
 # Use 1 for legacy working.
-MAX_ISSUES_PER_XML_QUERY = 500
+# 250 for working with bugzilla in redhat
+MAX_ISSUES_PER_XML_QUERY = 250
 
 # length of hibernation in seconds
 HIBERNATION_LENGTH = 100
