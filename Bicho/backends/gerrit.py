@@ -243,12 +243,12 @@ class Gerrit():
         return issue
                     
         
-    def analyze_review_changes (self, review):        
+    def analyze_review_changes(self, review):        
         changes = self.parse_changes(review)        
         return changes
 
     # We support now just one patchSets
-    def parse_changes (self, review):
+    def parse_changes(self, review):
         changesList = []
         patchSets = review['patchSets']
         
@@ -283,7 +283,7 @@ class Gerrit():
                 
         return changesList
     
-    def getReviews (self, limit, start):
+    def getReviews(self, limit, start):
                 
         args_gerrit = "gerrit query "
         args_gerrit += "project:" + Config.gerrit_project

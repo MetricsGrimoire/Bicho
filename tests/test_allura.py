@@ -151,17 +151,17 @@ class AlluraTest(unittest.TestCase):
         Config.debug = True
         Config.url = "http://sourceforge.net/rest/p/allura/tickets"
         AlluraTest.setUpDB()
-        AlluraTest.issuesDB = get_database (DBAlluraBackend())                    
+        AlluraTest.issuesDB = get_database(DBAlluraBackend())                    
                 
         AlluraTest.issuesDB.insert_supported_traker(backend_name, "beta")
-        AlluraTest.tracker = Tracker (Config.url, backend_name, "beta")
+        AlluraTest.tracker = Tracker(Config.url, backend_name, "beta")
         AlluraTest.dbtracker = AlluraTest.issuesDB.insert_tracker(AlluraTest.tracker)
         
-        AlluraTest.tests_data_dir = os.path.join('./data/', AlluraTest.tracker.name)        
+        AlluraTest.tests_data_dir = os.path.join('./data/', AlluraTest.tracker.name)
         AlluraTest.backend = Backend.create_backend(backend_name)
         
-        if not os.path.isdir (AlluraTest.tests_data_dir):
-            os.makedirs (AlluraTest.tests_data_dir)
+        if not os.path.isdir(AlluraTest.tests_data_dir):
+            os.makedirs(AlluraTest.tests_data_dir)
 
     @staticmethod
     def closeBackend():

@@ -48,7 +48,7 @@ class InvalidConfig(Exception):
 class Config:
 
     @staticmethod
-    def load_from_file (config_file):
+    def load_from_file(config_file):
         try:
             f = open(config_file, 'r')
             exec f in Config.__dict__
@@ -58,7 +58,7 @@ class Config:
                     config_file, str(e)))
 
     @staticmethod        
-    def load ():
+    def load():
         # FIXME: a hack to avoid circular dependencies. 
         from utils import bicho_dot_dir, printout
 

@@ -31,11 +31,11 @@ class Backend:
     _backends = {}
 
     @staticmethod
-    def register_backend (backend_name, backend_class):
+    def register_backend(backend_name, backend_class):
         Backend._backends[backend_name] = backend_class
 
     @staticmethod
-    def _get_backend (backend_name):
+    def _get_backend(backend_name):
         if backend_name not in Backend._backends:
             try:
                 __import__('Bicho.backends.%s' % backend_name)
@@ -48,12 +48,12 @@ class Backend:
         return Backend._backends[backend_name]
     
     @staticmethod
-    def create_backend (backend_name):
+    def create_backend(backend_name):
         backend_class = Backend._get_backend(backend_name)
         return backend_class()
     
     @staticmethod
-    def get_all_backends ():
+    def get_all_backends():
         # we should clean this directory
         backends = []
         not_backends = ('HTMLParser.py', 'HTMLUtils.py', '__init__.py')

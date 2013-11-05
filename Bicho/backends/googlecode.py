@@ -177,7 +177,7 @@ class GoogleCode():
                                                     
         return issue
 
-    def parse_changes (self, activity, bug_id):
+    def parse_changes(self, activity, bug_id):
         changesList = []
         for entry in activity['entries']:
             if not 'issues_status' in entry.keys():
