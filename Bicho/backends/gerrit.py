@@ -166,6 +166,9 @@ class GerritIssue(Issue):
         
     
 class Gerrit():
+    """
+    Gerrit backend
+    """
     
     project_test_file = None
     safe_delay = 5

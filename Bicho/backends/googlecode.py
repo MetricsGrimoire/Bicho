@@ -17,7 +17,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Authors:  Alvaro del Castillo <acs@bitergia.com>
-#
+
+"""
+The Google Code backend is abandoned and nonfunctional as of November 2013.
+"""
+
 
 
 from Bicho.Config import Config
@@ -129,7 +133,10 @@ class GoogleCodeIssue(Issue):
 
     
 class GoogleCode():
-            
+    """
+    Google Code backend
+    """
+
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url

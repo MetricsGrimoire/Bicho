@@ -165,6 +165,9 @@ class RedmineIssue(Issue):
                        submitted_on)
     
 class Redmine():
+    """
+    Redmine backend
+    """
     
     project_test_file = None
     safe_delay = 5

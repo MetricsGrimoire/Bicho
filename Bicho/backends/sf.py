@@ -21,6 +21,10 @@
 #           Daniel Izquierdo Cortazar <dizquierdo@libresoft.es>
 #           Luis Cañas Díaz <lcanas@libresoft.es>
 
+"""
+The SourceForge backend is abandoned and nonfunctional as of November 2013.
+"""
+
 import re
 import urlparse
 import urllib2

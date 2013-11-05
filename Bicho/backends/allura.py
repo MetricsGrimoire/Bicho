@@ -220,6 +220,9 @@ class AlluraIssue(Issue):
 
     
 class Allura():
+    """
+    Allura backend
+    """
     
     project_test_file = None
     safe_delay = 5

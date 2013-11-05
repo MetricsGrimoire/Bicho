@@ -96,7 +96,7 @@ class DBGithubIssueExtMySQL(DBGithubIssueExt):
 
 class DBGithubBackend(DBBackend):
     """
-    Adapter for Bugzilla backend.
+    Adapter for GitHub backend.
     """
     def __init__(self):
         self.MYSQL_EXT = [DBGithubIssueExtMySQL]
@@ -221,7 +221,7 @@ class DBGithubBackend(DBBackend):
 
 class GithubIssue(Issue):
     """
-    Ad-hoc Issue extension for launchpad's issue
+    Ad-hoc Issue extension for GitHub's issue
     """
     def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
