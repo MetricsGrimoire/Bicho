@@ -330,7 +330,7 @@ class Redmine():
                 fields.append(dirchange)
         return fields
         
-    def parse_changes (self, activity):
+    def parse_changes(self, activity):
         changesList = []
         for entry in activity['entries']:
             try:
