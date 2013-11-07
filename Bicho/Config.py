@@ -145,7 +145,7 @@ class Config(object):
                             help='Backend password', default=None)
         parser.add_argument('-c', '--cfg', dest='cfgfile',
                             help='Use a custom configuration file', default=None)
-        parser.add_argument('-d', '--delay', type='int', dest='delay',
+        parser.add_argument('-d', '--delay', type=int, dest='delay',
                             help='Delay in seconds betweeen petitions to avoid been banned',
                             default='5')
         parser.add_argument('-g', '--debug', action='store_true', dest='debug',
