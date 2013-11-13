@@ -24,7 +24,7 @@ from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.utils import create_dir, printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
-from Bicho.common import Tracker, Issue, People, Change
+from Bicho.common import Tracker, Issue, People, Change, Comment
 
 from BeautifulSoup import BeautifulSoup, Comment as BFComment
 
@@ -139,6 +139,12 @@ class DBRedmineBackend(DBBackend):
             raise
 
     def insert_change_ext(self, store, change, change_id):
+        """
+        Does nothing
+        """
+        pass
+
+    def insert_comment_ext(self, store, comment, comment_id):
         """
         Does nothing
         """
@@ -285,28 +291,49 @@ class Redmine():
         except KeyError:
             issue.updated_on = None
 
-        # get changeset
-        changes = self._get_issue_changeset(issue_redmine["id"])
-        for c in changes:
-            issue.add_change(c)
+        # Parse journals (comments and changes)
+        self._parse_journals(issue, issue_redmine["id"])
 
         print("Issue #%s updated on %s" % (issue_redmine["id"], issue.updated_on))
 
         return issue
-                    
-        
-    # Not yet implemented: journals in Redmine 1.1
-    def _get_issue_changeset(self, bug_id):
-        aux = Config.url.rfind('/')
-        bug_url = Config.url[:aux + 1]
-        bug_url = bug_url + "issues/" + unicode(bug_id) + ".atom"
-        
-        # changes_url = bug_url.replace("rest/","")+"/feed.atom"
-        printdbg("Analyzing issue changes " + bug_url)
-        d = feedparser.parse(bug_url)
-        changes = self.parse_changes(d)
-        
-        return changes
+
+    def _get_issue_url(self, issue_id):
+        issue_url = self._get_redmine_root(Config.url)
+        issue_url = issue_url + "issues/" + unicode(issue_id) + ".json?include=journals"
+        return issue_url
+
+    def _parse_journals(self, issue, issue_id):
+        issue_url = self._get_issue_url(issue_id)
+
+        printdbg("Analyzing issue journals " + issue_url)
+        f = urllib2.urlopen(issue_url)
+        data = json.loads(f.read())
+        journals = data["issue"]["journals"]
+
+        for journal in journals:
+            try:
+                people = People(self._get_author_email(journal["user"]["id"]))
+                people.set_name(journal["user"]["name"])
+            except KeyError:
+                people = People("None")
+
+            dt = self._convert_to_datetime(journal["created_on"])
+
+            # Comment
+            notes = journal.get("notes", None)
+            if notes:
+                msg = journal["notes"]
+                comment = Comment(msg, people, dt)
+                issue.add_comment(comment)
+
+            # Changes
+            for detail in journal["details"]:
+                field = detail["name"]
+                old_value = detail.get("old_value", None)
+                new_value = detail.get("new_value", None)
+                change = Change(field, old_value, new_value, people, dt)
+                issue.add_change(change)
 
     def _parse_html_change(self, html):
 
@@ -329,20 +356,6 @@ class Redmine():
                 (dirchange["what"], dirchange["old_value"], dirchange["new_value"]) = mo.groups()
                 fields.append(dirchange)
         return fields
-        
-    def parse_changes(self, activity):
-        changesList = []
-        for entry in activity['entries']:
-            try:
-                by = People(entry['author_detail']['email'])
-            except KeyError:
-                by = People(entry['author_detail']['name'])
-            date = parse(entry['updated'])
-            fields = self._parse_html_change(entry['summary'])
-            for f in fields:
-                change = Change(f["what"], f["old_value"], f["new_value"], by, date)
-                changesList.append(change)            
-        return changesList
 
     def remove_unicode(self, str):
         """
