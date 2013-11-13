@@ -169,14 +169,16 @@ class RedmineIssue(Issue):
     def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
-    
+
 class Redmine():
-    
+
     project_test_file = None
     safe_delay = 5
-    
+
     def __init__(self):
         self.delay = Config.delay
+        self.identities = {}
+
         try:
             self.backend_password = Config.backend_password
             self.backend_user = Config.backend_user
@@ -184,44 +186,40 @@ class Redmine():
             printout("No account provided.")
             self.backend_password = None
             self.backend_user = None
-        
+
     def _convert_to_datetime(self,str_date):
         """
         Returns datetime object from string
         """
         return parse(str_date).replace(tzinfo=None)
 
-    # def analyze_bug(self, issue_redmine):
-    #     issue =  self.parse_bug(issue_redmine)
-    #     #        changes = self.analyze_bug_changes(bug_url)
-    #     #        for c in changes:
-    #     #            issue.add_change(c)                 
-    #     return issue
-
     def _get_redmine_root(self, url):
         return url[:url.find('projects/')]
-        
-    def _get_author_email(self, author_id):
+
+    def _get_author_identity(self, author_id):
+        if author_id in self.identities:
+            return self.identities[author_id]
+
         root = self._get_redmine_root(Config.url)
         author_url = root + "users/" + str(author_id) + ".json"
         #print author_url
-        res = None
+        identity = None
         try:
-            f = urllib2.urlopen(author_url)         
+            f = urllib2.urlopen(author_url)
             person = json.loads(f.read())
-            res = person['user']['mail']
+            identity = person['user']['mail']
         except (urllib2.HTTPError, KeyError):
             printdbg("User with id %s has no account information" % author_id)
-            res = author_id
-        return res
-            
-        #return author_id
-        
+            identity = author_id
+
+        self.identities[author_id] = identity
+        return identity
+
     def analyze_bug(self, issue_redmine):
         #print(issue_redmine)
         #print("*** %s " % issue_redmine["author"]["id"])
         try:
-            people = People(self._get_author_email(issue_redmine["author"]["id"]))
+            people = People(self._get_author_identity(issue_redmine["author"]["id"]))
             people.set_name(issue_redmine["author"]["name"])
         except KeyError:
             people = People("None")
@@ -239,7 +237,7 @@ class Redmine():
                             self._convert_to_datetime(issue_redmine["created_on"]))        
         try:
                 #print("<<< %s " % issue_redmine["assigned_to"]["id"])
-                people = People(self._get_author_email(issue_redmine["assigned_to"]["id"]))
+                people = People(self._get_author_identity(issue_redmine["assigned_to"]["id"]))
                 people.set_name(issue_redmine["assigned_to"]["name"])
                 issue.assigned_to = people
         except KeyError:
@@ -313,7 +311,7 @@ class Redmine():
 
         for journal in journals:
             try:
-                people = People(self._get_author_email(journal["user"]["id"]))
+                people = People(self._get_author_identity(journal["user"]["id"]))
                 people.set_name(journal["user"]["name"])
             except KeyError:
                 people = People("None")
