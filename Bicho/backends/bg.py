@@ -256,7 +256,7 @@ class SoupHtmlParser():
     status_map = {}
     resolution_map = {}
 
-    def __init__ (self, html, idBug):
+    def __init__(self, html, idBug):
         self.html = html
         self.idBug = idBug
         self.field_map = {'Status': u'status', 'Resolution': u'resolution',}
@@ -611,7 +611,7 @@ class BugzillaHandler(xml.sax.handler.ContentHandler):
     https://bugzilla.libresoft.es/bugzilla.dtd
     """
 
-    def __init__ (self):
+    def __init__(self):
         self.init_bugzilla()
 
     def init_bugzilla(self):
@@ -642,7 +642,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
     https://bugzilla.libresoft.es/bugzilla.dtd
     """
 
-    def __init__ (self):
+    def __init__(self):
         """
         """
         # TBD attachments and flag, see bugzilla.dtd        
@@ -653,7 +653,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
     def get_issues(self):
         return self.issues_data
 
-    def init_bug (self):
+    def init_bug(self):
         """
         Clean all the values to start parsing a new bug
         """
@@ -747,7 +747,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             elif self.tag_name == "who":
                 self.long_desc_tags["who_name"] = unicode(attrs.get(attrName))
 
-    def characters (self, chrs):
+    def characters(self, chrs):
         if self.tag_name:
             self.interestData.append(chrs)
 
@@ -924,7 +924,7 @@ HIBERNATION_LENGTH = 100
 
 class BGBackend(Backend):
 
-    def __init__ (self):
+    def __init__(self):
         self.url = self._healthy_url(Config.url)
         self.delay = Config.delay
         self.cookies = {}

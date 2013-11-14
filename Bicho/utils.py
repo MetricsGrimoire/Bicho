@@ -31,25 +31,25 @@ import urllib
 
 from Config import Config
 
-def printout (str='\n'):
+def printout(str='\n'):
     if str != '\n':
         str += '\n'
     sys.stdout.write(str)
     sys.stdout.flush()
 
-def printerr (str='\n'):
+def printerr(str='\n'):
     if str != '\n':
         str += '\n'
     sys.stderr.write(str)
     sys.stderr.flush()
 
-def printwrn (str='\n'):
+def printwrn(str='\n'):
     if Config.quiet:
         return
 
     printerr("WRN: " + str)
 
-def printdbg (str='\n'):
+def printdbg(str='\n'):
     if not Config.debug:
         return
     t = time.strftime("%d/%b/%Y-%X")
@@ -113,7 +113,7 @@ def create_dir(dir):
             raise
 
 
-def bicho_dot_dir ():
+def bicho_dot_dir():
     try:
         return _dirs['dot']
     except KeyError:

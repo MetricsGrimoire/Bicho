@@ -295,7 +295,7 @@ class Allura():
         return issue
                     
         
-    def analyze_bug_changes (self, bug_url):
+    def analyze_bug_changes(self, bug_url):
         bug_number = bug_url.split('/')[-1]
         changes_url = bug_url.replace("rest/","") + "/feed.atom"
 
@@ -306,7 +306,7 @@ class Allura():
         
         return changes
 
-    def parse_changes (self, activity):
+    def parse_changes(self, activity):
         changesList = []
         for entry in activity['entries']:
             # print "changed_by:" + entry['author']

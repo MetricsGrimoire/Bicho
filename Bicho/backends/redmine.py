@@ -24,7 +24,7 @@ from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.utils import create_dir, printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, get_database
-from Bicho.common import Tracker, Issue, People, Change
+from Bicho.common import Tracker, Issue, People, Change, Comment
 
 from BeautifulSoup import BeautifulSoup, Comment as BFComment
 
@@ -144,6 +144,12 @@ class DBRedmineBackend(DBBackend):
         """
         pass
 
+    def insert_comment_ext(self, store, comment, comment_id):
+        """
+        Does nothing
+        """
+        pass
+
     def get_last_modification_date(self, store):
         # get last modification date (day) stored in the database
         # select date_last_updated as date from issues_ext_redmine order by date
@@ -163,17 +169,19 @@ class RedmineIssue(Issue):
     def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
-    
+
 class Redmine():
     """
     Redmine backend
     """
-    
+
     project_test_file = None
     safe_delay = 5
-    
+
     def __init__(self):
         self.delay = Config.delay
+        self.identities = {}
+
         try:
             self.backend_password = Config.backend_password
             self.backend_user = Config.backend_user
@@ -181,44 +189,40 @@ class Redmine():
             printout("No account provided.")
             self.backend_password = None
             self.backend_user = None
-        
+
     def _convert_to_datetime(self,str_date):
         """
         Returns datetime object from string
         """
         return parse(str_date).replace(tzinfo=None)
 
-    # def analyze_bug(self, issue_redmine):
-    #     issue =  self.parse_bug(issue_redmine)
-    #     #        changes = self.analyze_bug_changes(bug_url)
-    #     #        for c in changes:
-    #     #            issue.add_change(c)                 
-    #     return issue
-
     def _get_redmine_root(self, url):
         return url[:url.find('projects/')]
-        
-    def _get_author_email(self, author_id):
+
+    def _get_author_identity(self, author_id):
+        if author_id in self.identities:
+            return self.identities[author_id]
+
         root = self._get_redmine_root(Config.url)
         author_url = root + "users/" + str(author_id) + ".json"
         #print author_url
-        res = None
+        identity = None
         try:
-            f = urllib2.urlopen(author_url)         
+            f = urllib2.urlopen(author_url)
             person = json.loads(f.read())
-            res = person['user']['mail']
+            identity = person['user']['mail']
         except (urllib2.HTTPError, KeyError):
             printdbg("User with id %s has no account information" % author_id)
-            res = author_id
-        return res
-            
-        #return author_id
-        
+            identity = author_id
+
+        self.identities[author_id] = identity
+        return identity
+
     def analyze_bug(self, issue_redmine):
         #print(issue_redmine)
         #print("*** %s " % issue_redmine["author"]["id"])
         try:
-            people = People(self._get_author_email(issue_redmine["author"]["id"]))
+            people = People(self._get_author_identity(issue_redmine["author"]["id"]))
             people.set_name(issue_redmine["author"]["name"])
         except KeyError:
             people = People("None")
@@ -236,7 +240,7 @@ class Redmine():
                             self._convert_to_datetime(issue_redmine["created_on"]))        
         try:
                 #print("<<< %s " % issue_redmine["assigned_to"]["id"])
-                people = People(self._get_author_email(issue_redmine["assigned_to"]["id"]))
+                people = People(self._get_author_identity(issue_redmine["assigned_to"]["id"]))
                 people.set_name(issue_redmine["assigned_to"]["name"])
                 issue.assigned_to = people
         except KeyError:
@@ -288,28 +292,49 @@ class Redmine():
         except KeyError:
             issue.updated_on = None
 
-        # get changeset
-        changes = self._get_issue_changeset(issue_redmine["id"])
-        for c in changes:
-            issue.add_change(c)
+        # Parse journals (comments and changes)
+        self._parse_journals(issue, issue_redmine["id"])
 
         print("Issue #%s updated on %s" % (issue_redmine["id"], issue.updated_on))
 
         return issue
-                    
-        
-    # Not yet implemented: journals in Redmine 1.1
-    def _get_issue_changeset(self, bug_id):
-        aux = Config.url.rfind('/')
-        bug_url = Config.url[:aux + 1]
-        bug_url = bug_url + "issues/" + unicode(bug_id) + ".atom"
-        
-        # changes_url = bug_url.replace("rest/","")+"/feed.atom"
-        printdbg("Analyzing issue changes " + bug_url)
-        d = feedparser.parse(bug_url)
-        changes = self.parse_changes(d)
-        
-        return changes
+
+    def _get_issue_url(self, issue_id):
+        issue_url = self._get_redmine_root(Config.url)
+        issue_url = issue_url + "issues/" + unicode(issue_id) + ".json?include=journals"
+        return issue_url
+
+    def _parse_journals(self, issue, issue_id):
+        issue_url = self._get_issue_url(issue_id)
+
+        printdbg("Analyzing issue journals " + issue_url)
+        f = urllib2.urlopen(issue_url)
+        data = json.loads(f.read())
+        journals = data["issue"]["journals"]
+
+        for journal in journals:
+            try:
+                people = People(self._get_author_identity(journal["user"]["id"]))
+                people.set_name(journal["user"]["name"])
+            except KeyError:
+                people = People("None")
+
+            dt = self._convert_to_datetime(journal["created_on"])
+
+            # Comment
+            notes = journal.get("notes", None)
+            if notes:
+                msg = journal["notes"]
+                comment = Comment(msg, people, dt)
+                issue.add_comment(comment)
+
+            # Changes
+            for detail in journal["details"]:
+                field = detail["name"]
+                old_value = detail.get("old_value", None)
+                new_value = detail.get("new_value", None)
+                change = Change(field, old_value, new_value, people, dt)
+                issue.add_change(change)
 
     def _parse_html_change(self, html):
 
@@ -332,20 +357,6 @@ class Redmine():
                 (dirchange["what"], dirchange["old_value"], dirchange["new_value"]) = mo.groups()
                 fields.append(dirchange)
         return fields
-        
-    def parse_changes (self, activity):
-        changesList = []
-        for entry in activity['entries']:
-            try:
-                by = People(entry['author_detail']['email'])
-            except KeyError:
-                by = People(entry['author_detail']['name'])
-            date = parse(entry['updated'])
-            fields = self._parse_html_change(entry['summary'])
-            for f in fields:
-                change = Change(f["what"], f["old_value"], f["new_value"], by, date)
-                changesList.append(change)            
-        return changesList
 
     def remove_unicode(self, str):
         """

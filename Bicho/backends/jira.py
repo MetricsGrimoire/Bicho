@@ -293,7 +293,7 @@ class Customfield():
 
 class Bug():
     
-    def __init__ (self):
+    def __init__(self):
         self.title = None
         self.link = None
         self.description = ""
@@ -406,11 +406,11 @@ class SoupHtmlParser():
 
 class BugsHandler(xml.sax.handler.ContentHandler):
 
-    def __init__ (self):
+    def __init__(self):
         self.issues_data = []
         self.init_bug()
 
-    def init_bug (self):
+    def init_bug(self):
 
         self.mapping = []
         self.comments = []
