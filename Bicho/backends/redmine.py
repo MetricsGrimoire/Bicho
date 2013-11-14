@@ -17,7 +17,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Authors:  Alvaro del Castillo <acs@bitergia.com>
-#
 
 from Bicho.Config import Config
 
@@ -32,21 +31,21 @@ from dateutil.parser import parse
 from datetime import datetime
 
 import errno, json, os, random, time, traceback, urllib, urllib2, feedparser, base64, sys
-import pprint 
+import pprint
 import re
 
 from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
 
 
 class DBRedmineIssueExt(object):
-        
+
     __storm_table__ = 'issues_ext_redmine'
 
     id = Int(primary=True)
     category_id = Int()
     done_ratio = Int()
     due_date = DateTime()
-    estimated_hours = Int()        
+    estimated_hours = Int()
     fixed_version_id = Int()
     lft = Int()
     rgt = Int()
@@ -55,12 +54,12 @@ class DBRedmineIssueExt(object):
     project_id = Int()
     root_id = Int()
     start_date = DateTime()
-    tracker_id = Int()        
+    tracker_id = Int()
     updated_on = DateTime()
     issue_id = Int()
-                    
+
     issue = Reference(issue_id, DBIssue.id)
-    
+
     def __init__(self, issue_id):
         self.issue_id = issue_id
 
@@ -95,17 +94,18 @@ class DBRedmineIssueExtMySQL(DBRedmineIssueExt):
                     ON UPDATE CASCADE \
                      ) ENGINE=MYISAM;'
 
+
 class DBRedmineBackend(DBBackend):
     """
     Adapter for Redmine backend.
     """
     def __init__(self):
         self.MYSQL_EXT = [DBRedmineIssueExtMySQL]
-        
+
     def insert_issue_ext(self, store, issue, issue_id):
-        
-        newIssue = False;
-        
+
+        newIssue = False
+
         try:
             db_issue_ext = store.find(DBRedmineIssueExt,
                                       DBRedmineIssueExt.issue_id == issue_id).one()
@@ -126,12 +126,12 @@ class DBRedmineBackend(DBBackend):
             db_issue_ext.project_id = issue.project_id
             #db_issue_ext.root_id = issue.root_id
             db_issue_ext.start_date = issue.start_date
-            db_issue_ext.tracker_id = issue.tracker_id        
+            db_issue_ext.tracker_id = issue.tracker_id
             db_issue_ext.updated_on = issue.updated_on
-        
-            if newIssue == True:
+
+            if newIssue is True:
                 store.add(db_issue_ext)
-            
+
             store.flush()
             return db_issue_ext
         except:
@@ -170,6 +170,7 @@ class RedmineIssue(Issue):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
 
+
 class Redmine():
     """
     Redmine backend
@@ -190,7 +191,7 @@ class Redmine():
             self.backend_password = None
             self.backend_user = None
 
-    def _convert_to_datetime(self,str_date):
+    def _convert_to_datetime(self, str_date):
         """
         Returns datetime object from string
         """
@@ -231,13 +232,13 @@ class Redmine():
             desc = issue_redmine["description"]
         except KeyError:
             desc = ""
-                
+
         issue = RedmineIssue(issue_redmine["id"],
-                            "ticket",
-                            issue_redmine["subject"],
-                            desc,
-                            people,
-                            self._convert_to_datetime(issue_redmine["created_on"]))        
+                             "ticket",
+                             issue_redmine["subject"],
+                             desc,
+                             people,
+                             self._convert_to_datetime(issue_redmine["created_on"]))
         try:
                 #print("<<< %s " % issue_redmine["assigned_to"]["id"])
                 people = People(self._get_author_identity(issue_redmine["assigned_to"]["id"]))
@@ -250,19 +251,19 @@ class Redmine():
         issue.priority = issue_redmine["priority"]["id"]
         # No information from Redmine for this field. Included in Status
         issue.resolution = None
-                
+
         # Extended attributes
         try:
             issue.category_id = issue_redmine["category"]["id"]
         except KeyError:
             issue.category_id = None
         issue.done_ratio = issue_redmine["done_ratio"]
-                
+
         # if issue_redmine["due_date"] is None:
         #     issue.due_date = None
         # else:
         #     issue.due_date = self._convert_to_datetime(issue_redmine["due_date"])
-        
+
         #issue.estimated_hours = issue_redmine["estimated_hours"]
         try:
             issue.fixed_version_id = issue_redmine["fixed_version"]["id"]
@@ -341,15 +342,15 @@ class Redmine():
         # several changes can be done at the same time
         html_changes = html.split('<li>')
         fields = []
-        for hc in html_changes:        
+        for hc in html_changes:
             dirchange = {}
             dirchange["what"] = None
             dirchange["old_value"] = None
             dirchange["new_value"] = None
             soup = BeautifulSoup(hc)
             txt = soup.text
-            if txt.find('set to') > 0:            
-                mo = re.match(r'(.*)set to(.*)',txt)
+            if txt.find('set to') > 0:
+                mo = re.match(r'(.*)set to(.*)', txt)
                 (dirchange["what"], dirchange["new_value"]) = mo.groups()
                 fields.append(dirchange)
             elif txt.find('changed from') > 0:
@@ -366,20 +367,18 @@ class Redmine():
             str = str[2:len(str) - 1]
         return str
 
-
     def run(self):
         """
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
-        
+
         # redmine 1.0 support
         last_page = 1
-        tickets_page = 25 # fixed redmine
+        tickets_page = 25  # fixed redmine
 
-
-        bugs = [];
+        bugs = []
         bugsdb = get_database(DBRedmineBackend())
-                
+
         # still useless in redmine
         bugsdb.insert_supported_traker("redmine", "beta")
         trk = Tracker(Config.url, "redmine", "beta")
@@ -392,41 +391,41 @@ class Redmine():
         request = urllib2.Request(self.url_issues)
         if self.backend_user:
             base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
-            request.add_header("Authorization", "Basic %s" % base64string)   
-        f = urllib2.urlopen(request)         
+            request.add_header("Authorization", "Basic %s" % base64string)
+        f = urllib2.urlopen(request)
         tickets = json.loads(f.read())
         for ticket in tickets["issues"]:
             issue = self.analyze_bug(ticket)
             bugsdb.insert_issue(issue, dbtrk.id)
-        
+
         last_ticket = tickets["issues"][0]['id']
-        
-        while True:  
+
+        while True:
             last_page += 1
             if Config.url.find('?') > 0:
-                self.url_issues = Config.url + "&status_id=*&sort=updated_on&page=" + str(last_page) 
+                self.url_issues = Config.url + "&status_id=*&sort=updated_on&page=" + str(last_page)
             else:
-                self.url_issues = Config.url + "?status_id=*&sort=updated_on&page=" + str(last_page) 
+                self.url_issues = Config.url + "?status_id=*&sort=updated_on&page=" + str(last_page)
             request = urllib2.Request(self.url_issues)
             #base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
-            #request.add_header("Authorization", "Basic %s" % base64string)   
-            f = urllib2.urlopen(request)         
+            #request.add_header("Authorization", "Basic %s" % base64string)
+            f = urllib2.urlopen(request)
             tickets = json.loads(f.read())
 
             if len(tickets['issues']) == 0:
                 break
 
             pprint.pprint("Tickets read: " + str(tickets["issues"][0]['id']) + " " + str(tickets["issues"][-1]['id']))
-            
+
             if tickets["issues"][0]['id'] == last_ticket:
                 break
-            
+
             for ticket in tickets["issues"]:
                 issue = self.analyze_bug(ticket)
                 bugsdb.insert_issue(issue, dbtrk.id)
-                                
+
         pprint.pprint("Total pages: " + str(last_page))
-        
+
         printout("Done. Bugs analyzed:" + str(last_page * tickets_page))
-        
+
 Backend.register_backend('redmine', Redmine)
