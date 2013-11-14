@@ -1041,8 +1041,8 @@ class BGBackend(Backend):
             last_date, next_date = self._get_last_and_next_dates()
 
             # Some bugzillas limit the number of results that a query can return.
-            # Due to this, bicho will search for new issues/changes until find
-            # no one new.
+            # Due to this, bicho will search for new issues/changes until there
+            # are no more new ones.
             ids = self._retrieve_issues_ids(self.url, self.version, next_date)
 
             while(ids):
@@ -1145,7 +1145,7 @@ class BGBackend(Backend):
 
         last_ts_str = self._timestamp_to_str(last_ts)
 
-        # We add one second to the last date to avoid retrieve the same
+        # We add one second to the last date to avoid retrieving the same
         # changes modified at that date.
         next_ts = last_ts + timedelta(seconds=1)
         next_ts_str = self._timestamp_to_str(next_ts)
