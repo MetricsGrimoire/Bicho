@@ -130,7 +130,7 @@ class DBJiraBackend(DBBackend):
         @rtype: L{DBJiraIssueExt}
         """
         
-        newIssue = False;
+        newIssue = False
 
         try:
             db_issue_ext = store.find(DBJiraIssueExt,
@@ -246,7 +246,7 @@ class JiraIssue(Issue):
         self.environment = environment
 
     def setSecurity(self, security):
-        self.security = security;
+        self.security = security
 
     def setUpdated(self, updated):
         self.updated = updated

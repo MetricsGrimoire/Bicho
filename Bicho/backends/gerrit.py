@@ -109,7 +109,7 @@ class DBGerritBackend(DBBackend):
         @rtype: L{DBGerritIssueExt}
         """
         
-        newIssue = False;
+        newIssue = False
         
         try:
             db_issue_ext = store.find(DBGerritIssueExt,
@@ -321,7 +321,7 @@ class Gerrit():
         """
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
         
-        bugs = [];
+        bugs = []
         bugsdb = get_database(DBGerritBackend())
                 
         # still useless in gerrit
@@ -337,7 +337,7 @@ class Gerrit():
             last_mod_time = time.mktime(time.strptime(last_mod_date, '%Y-%m-%d %H:%M:%S'))
             
         limit = 500 # gerrit default 500
-        last_item = "";
+        last_item = ""
         # last_item = "001f672c00002f80";
         number_results = limit
         total_reviews = 0

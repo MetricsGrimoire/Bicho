@@ -41,7 +41,7 @@ def url_get_attr(url, attr=None):
     query = urllib.splitquery(url)
     try:
         if query[1] is None:
-            return None;
+            return None
     except IndexError:
         return None
 

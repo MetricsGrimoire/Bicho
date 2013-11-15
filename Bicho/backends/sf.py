@@ -184,7 +184,7 @@ class DBSourceForgeBackend(DBBackend):
         @rtype: L{DBSourceForgeIssueExt}
         """
 
-        newIssue = False;
+        newIssue = False
 
         try:
             db_issue_ext = store.find(DBSourceForgeIssueExt,

@@ -92,7 +92,7 @@ class DBGoogleCodeBackend(DBBackend):
         
     def insert_issue_ext(self, store, issue, issue_id):
         
-        newIssue = False;
+        newIssue = False
         
         try:
             db_issue_ext = store.find(DBGoogleCodeIssueExt,
@@ -214,7 +214,7 @@ class GoogleCode():
         issues_per_query = 250
         start_issue = 1
 
-        bugs = [];
+        bugs = []
         bugsdb = get_database(DBGoogleCodeBackend())
                 
         # still useless
