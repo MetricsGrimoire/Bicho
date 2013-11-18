@@ -269,8 +269,8 @@ class DBChangeMySQL(DBChange):
                      id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, \
                      issue_id INTEGER UNSIGNED NOT NULL, \
                      field VARCHAR(64) NOT NULL, \
-                     old_value VARCHAR(255) NOT NULL, \
-                     new_value VARCHAR(255) NOT NULL, \
+                     old_value TEXT NOT NULL, \
+                     new_value TEXT NOT NULL, \
                      changed_by INTEGER UNSIGNED NOT NULL, \
                      changed_on DATETIME NOT NULL, \
                      PRIMARY KEY(id), \
