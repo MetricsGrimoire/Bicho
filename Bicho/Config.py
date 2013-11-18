@@ -52,12 +52,12 @@ class Config(object):
             exec f in Config.__dict__
             f.close()
         except Exception, e:
-            raise ErrorLoadingConfig("Error reading config file %s (%s)" % (\
-                    config_file, str(e)))
+            raise ErrorLoadingConfig("Error reading config file %s (%s)" %
+                                     (config_file, str(e)))
 
     @staticmethod
     def load():
-        # FIXME: a hack to avoid circular dependencies. 
+        # FIXME: a hack to avoid circular dependencies.
         from utils import bicho_dot_dir, printout
 
         # First look in /etc
@@ -69,61 +69,60 @@ class Config(object):
         # Then look at $HOME
         config_file = os.path.join(bicho_dot_dir(), 'config')
         if os.path.isfile(config_file):
-            Config.load_from_file(config_file) 
+            Config.load_from_file(config_file)
         else:
             # If there's an old file, migrate it
             old_config = os.path.join(os.environ.get('HOME'), '.bicho')
             if os.path.isfile(old_config):
-                printout("Old config file found in %s, moving to %s", \
-                              (old_config, config_file))
+                printout("Old config file found in %s, moving to %s",
+                         (old_config, config_file))
                 os.rename(old_config, config_file)
                 Config.load_from_file(config_file)
 
     @staticmethod
-    def check_params(check_params):            
+    def check_params(check_params):
         for param in check_params:
-            if not vars(Config).has_key(param) or vars(Config)[param] is None:
+            if not param in vars(Config) or vars(Config)[param] is None:
                 raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
 
     @staticmethod
     def check_config():
         """
         """
-        Config.check_params(['url','backend'])
+        Config.check_params(['url', 'backend'])
 
         if Config.backend + ".py" not in Backend.get_all_backends():
             raise InvalidConfig('Backend "' + Config.backend + '" does not exist')
 
         url = urlparse.urlparse(Config.url)
-        check_url = urlparse.urljoin(url.scheme + '://' + url.netloc,'')
+        check_url = urlparse.urljoin(url.scheme + '://' + url.netloc, '')
         print("Checking URL: " + check_url)
         req = Request(check_url)
         try:
             response = urlopen(req)
         except HTTPError, e:
             raise InvalidConfig('The server could not fulfill the request '
-                               + str(e.msg) + '(' + str(e.code) + ')')
+                                + str(e.msg) + '(' + str(e.code) + ')')
         except URLError, e:
             raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
 
         except ValueError, e:
             print ("Not an URL: " + Config.url)
 
-
-        if vars(Config).has_key('input') and Config.input == 'db':
+        if 'input' in vars(Config) and Config.input == 'db':
             Config.check_params(['db_driver_in', 'db_user_in', 'db_password_in',
                                  'db_hostname_in', 'db_port_in', 'db_database_in'])
-        if vars(Config).has_key('output') and Config.output == 'db':
-            Config.check_params(['db_driver_out','db_user_out','db_password_out',
-                                 'db_hostname_out','db_port_out','db_database_out'])
+        if 'output' in vars(Config) and Config.output == 'db':
+            Config.check_params(['db_driver_out', 'db_user_out', 'db_password_out',
+                                 'db_hostname_out', 'db_port_out', 'db_database_out'])
 
     @staticmethod
     def clean_empty_options(options):
-        clean_opt = {};
+        clean_opt = {}
         for option in vars(options):
             if (vars(options)[option] is not None) and \
-              ( not Config.__dict__.has_key(option)) :
-                clean_opt[option] = vars(options)[option]                    
+                    (not option in Config.__dict__):
+                clean_opt[option] = vars(options)[option]
         return clean_opt
 
     @staticmethod
@@ -170,13 +169,13 @@ class Config(object):
         # Positional arguments should override keyword arguments.
         # This is for backwards compatibility; using positional arguments
         # is NOT recommended. Use keyword arguments instead.
-        parser.add_argument('backend', default=None) # first positional argument
-        parser.add_argument('url', default=None) # second positional argument
+        parser.add_argument('backend', default=None)  # first positional argument
+        parser.add_argument('url', default=None)  # second positional argument
 
         # Options for output database
         group = parser.add_argument_group('Output database specific options')
         group.add_argument('--db-driver-out',
-                           choices=['sqlite','mysql','postgresql'],
+                           choices=['sqlite', 'mysql', 'postgresql'],
                            dest='db_driver_out', help='Output database driver',
                            default='mysql')
         group.add_argument('--db-user-out', dest='db_user_out',
