@@ -178,6 +178,7 @@ class Redmine():
     def __init__(self):
         self.delay = Config.delay
         self.identities = {}
+        self.statuses = {}
 
         try:
             self.backend_password = Config.backend_password
@@ -195,6 +196,16 @@ class Redmine():
 
     def _get_redmine_root(self, url):
         return url[:url.find('projects/')]
+
+    def _get_statuses(self):
+        root = self._get_redmine_root(Config.url)
+        statuses_url = root + "issue_statuses.json"
+        f = urllib2.urlopen(statuses_url)
+        statuses = json.loads(f.read())
+
+        for status in statuses["issue_statuses"]:
+            status_id = unicode(status["id"])
+            self.statuses[status_id] = status["name"]
 
     def _get_author_identity(self, author_id):
         if author_id in self.identities:
@@ -328,8 +339,15 @@ class Redmine():
             # Changes
             for detail in journal["details"]:
                 field = detail["name"]
-                old_value = detail.get("old_value", None)
-                new_value = detail.get("new_value", None)
+                old_value = unicode(detail.get("old_value", unicode(None)))
+                new_value = unicode(detail.get("new_value", unicode(None)))
+
+                # Change status value
+                if field == u"status_id":
+                    field = unicode("status")
+                    old_value = self.statuses.get(old_value, unicode(None))
+                    new_value = self.statuses.get(new_value, unicode(None))
+
                 change = Change(field, old_value, new_value, people, dt)
                 issue.add_change(change)
 
@@ -390,6 +408,10 @@ class Redmine():
         if self.backend_user:
             base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
             request.add_header("Authorization", "Basic %s" % base64string)   
+
+        # Get statuses
+        self._get_statuses()
+
         f = urllib2.urlopen(request)         
         tickets = json.loads(f.read())
         for ticket in tickets["issues"]:
