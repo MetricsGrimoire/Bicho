@@ -21,6 +21,7 @@
 import urllib
 import cgi
 
+
 def url_join(base, *p):
     retval = [base.strip('/')]
 
@@ -29,6 +30,7 @@ def url_join(base, *p):
 
     return "/".join(retval)
 
+
 def url_strip_protocol(url):
     p = url.find("://")
     if p == -1:
@@ -36,6 +38,7 @@ def url_strip_protocol(url):
 
     p += 3
     return url[p:]
+
 
 def url_get_attr(url, attr=None):
     query = urllib.splitquery(url)
@@ -54,13 +57,3 @@ def url_get_attr(url, attr=None):
             return a[1]
 
     return None
-
-
-
-
-
-
-
-
-
-

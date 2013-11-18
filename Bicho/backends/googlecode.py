@@ -22,8 +22,6 @@
 The Google Code backend is abandoned and nonfunctional as of November 2013.
 """
 
-
-
 from Bicho.Config import Config
 
 from Bicho.backends import Backend
@@ -83,6 +81,7 @@ class DBGoogleCodeIssueExtMySQL(DBGoogleCodeIssueExt):
                     ON UPDATE CASCADE \
                      ) ENGINE=MYISAM;'
 
+
 class DBGoogleCodeBackend(DBBackend):
     """
     Adapter for GoogleCode backend.
@@ -106,7 +105,7 @@ class DBGoogleCodeBackend(DBBackend):
             db_issue_ext.mod_date = issue.mod_date
             db_issue_ext.closed_date = issue.closed_date
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -117,6 +116,7 @@ class DBGoogleCodeBackend(DBBackend):
 
     def insert_change_ext(self, store, change, change_id):
         pass
+
 
 class GoogleCodeIssue(Issue):
     """
@@ -141,7 +141,7 @@ class GoogleCode():
         self.delay = Config.delay
         self.url = Config.url
 
-    def _convert_to_datetime(self,str_date):
+    def _convert_to_datetime(self, str_date):
         return parse(str_date).replace(tzinfo=None)
 
     def analyze_bug(self, entry):
@@ -149,11 +149,11 @@ class GoogleCode():
         people.set_name(entry['author_detail']['name'])
 
         issue = GoogleCodeIssue(entry['id'],
-                        'issue',
-                        entry['title'],
-                        entry['content'],
-                        people,
-                        self._convert_to_datetime(entry['published']))
+                                'issue',
+                                entry['title'],
+                                entry['content'],
+                                people,
+                                self._convert_to_datetime(entry['published']))
 
         # Strange how the parser rename this fields
         if 'issues_uri' in entry.keys():
@@ -225,7 +225,6 @@ class GoogleCode():
 
         self.url = Config.url
 
-
        #  https://code.google.com/feeds/issues/p/mobile-time-care
         self.url_issues = Config.url + "/issues/full?max-results=1"
         printdbg("URL for getting metadata " + self.url_issues)
@@ -234,7 +233,7 @@ class GoogleCode():
 
         total_issues = int(d['feed']['opensearch_totalresults'])
         print "Total bugs: ", total_issues
-        if  total_issues == 0:
+        if total_issues == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
         remaining = total_issues
@@ -264,10 +263,9 @@ class GoogleCode():
                     traceback.print_exc(file=sys.stdout)
                 except UnicodeEncodeError:
                     printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                          % (issue.issue))
+                             % (issue.issue))
 
             start_issue += issues_per_query
-
 
         printout("Done. %s bugs analyzed" % (total_issues - remaining))
 

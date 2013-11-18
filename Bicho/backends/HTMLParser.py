@@ -137,17 +137,19 @@ class HTMLParser(markupbase.ParserBase):
         i = 0
         n = len(rawdata)
         while i < n:
-            match = self.interesting.search(rawdata, i) # < or &
+            match = self.interesting.search(rawdata, i)  # < or &
             if match:
                 j = match.start()
             else:
                 j = n
-            if i < j: self.handle_data(rawdata[i:j])
+            if i < j:
+                self.handle_data(rawdata[i:j])
             i = self.updatepos(i, j)
-            if i == n: break
+            if i == n:
+                break
             startswith = rawdata.startswith
             if startswith('<', i):
-                if starttagopen.match(rawdata, i): # < + letter
+                if starttagopen.match(rawdata, i):  # < + letter
                     k = self.parse_starttag(i)
                 elif startswith("</", i):
                     k = self.parse_endtag(i)
@@ -215,7 +217,7 @@ class HTMLParser(markupbase.ParserBase):
     def parse_pi(self, i):
         rawdata = self.rawdata
         assert rawdata[i:i + 2] == '<?', 'unexpected call to parse_pi()'
-        match = piclose.search(rawdata, i + 2) # >
+        match = piclose.search(rawdata, i + 2)  # >
         if not match:
             return -1
         j = match.start()
@@ -247,7 +249,7 @@ class HTMLParser(markupbase.ParserBase):
             if not rest:
                 attrvalue = None
             elif attrvalue[:1] == '\'' == attrvalue[-1:] or \
-                 attrvalue[:1] == '"' == attrvalue[-1:]:
+                    attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
                 attrvalue = self.unescape(attrvalue)
             attrs.append((attrname.lower(), attrvalue))
@@ -259,7 +261,7 @@ class HTMLParser(markupbase.ParserBase):
             if "\n" in self.__starttag_text:
                 lineno = lineno + self.__starttag_text.count("\n")
                 offset = len(self.__starttag_text) \
-                         - self.__starttag_text.rfind("\n")
+                    - self.__starttag_text.rfind("\n")
             else:
                 offset = offset + len(self.__starttag_text)
             self.error("junk characters in start tag: %r"
@@ -310,11 +312,11 @@ class HTMLParser(markupbase.ParserBase):
     def parse_endtag(self, i):
         rawdata = self.rawdata
         assert rawdata[i:i + 2] == "</", "unexpected call to parse_endtag"
-        match = endendtag.search(rawdata, i + 1) # >
+        match = endendtag.search(rawdata, i + 1)  # >
         if not match:
             return -1
         j = match.end()
-        match = endtagfind.match(rawdata, i) # </ + tag + >
+        match = endtagfind.match(rawdata, i)  # </ + tag + >
         if not match:
             self.error("bad end tag: %r" % (rawdata[i:j],))
             return j
@@ -371,5 +373,5 @@ class HTMLParser(markupbase.ParserBase):
         s = s.replace("&gt;", ">")
         s = s.replace("&apos;", "'")
         s = s.replace("&quot;", '"')
-        s = s.replace("&amp;", "&") # Must be last
+        s = s.replace("&amp;", "&")  # Must be last
         return s

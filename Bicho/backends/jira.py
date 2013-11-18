@@ -134,7 +134,7 @@ class DBJiraBackend(DBBackend):
 
         try:
             db_issue_ext = store.find(DBJiraIssueExt,
-                                    DBJiraIssueExt.issue_id == issue_id).one()
+                                      DBJiraIssueExt.issue_id == issue_id).one()
             if not db_issue_ext:
                 newIssue = True
                 db_issue_ext = DBJiraIssueExt(issue_id)
@@ -154,7 +154,7 @@ class DBJiraBackend(DBBackend):
             db_issue_ext.status = self.__return_unicode(issue.status)
             db_issue_ext.resolution = self.__return_unicode(issue.resolution)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -171,6 +171,7 @@ class DBJiraBackend(DBBackend):
             return unicode(str)
         else:
             return unicode('')
+
     def insert_comment_ext(self, store, comment, comment_id):
         """
         Does nothing
@@ -205,12 +206,13 @@ class DBJiraBackend(DBBackend):
 
 ####################################
 
+
 class JiraIssue(Issue):
     """
     Ad-hoc Issue extensions for jira's issue
     """
-    def __init__(self,issue, type, summary, description, submitted_by, submitted_on):
-        Issue.__init__(self,issue, type, summary, description, submitted_by, submitted_on)
+    def __init__(self, issue, type, summary, description, submitted_by, submitted_on):
+        Issue.__init__(self, issue, type, summary, description, submitted_by, submitted_on)
 
         self.title = None
         self.issue_key = None
@@ -269,12 +271,14 @@ class JiraIssue(Issue):
     def setProject_key(self, project_key):
         self.project_key = project_key
 
+
 class JiraComment():
     def __init__(self):
         self.comment = None
         self.comment_id = None
         self.comment_author = None
         self.comment_created = None
+
 
 class JiraAttachment():
     def __init__(self):
@@ -284,12 +288,14 @@ class JiraAttachment():
         self.attachment_author = None
         self.attachment_created = None
 
+
 class Customfield():
     def __init__(self):
         self.customfield_id = None
         self.customfield_key = None
         self.customfieldname = None
         self.customfieldvalue = None
+
 
 class Bug():
 
@@ -346,7 +352,7 @@ class SoupHtmlParser():
                 identifier = myaux.find('a').contents[0]
             else:
                 aux = myaux.text
-                identifier = aux.replace('[','').replace(']','').strip()
+                identifier = aux.replace('[', '').replace(']', '').strip()
             return identifier
         else:
             return ''
@@ -555,7 +561,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.link += ch
         elif self.is_description:
             #FIXME problems with ascii, not support str() function
-            if (self.first_desc == True):
+            if (self.first_desc is True):
                 self.first_desc = False
             else:
                 self.description = self.description + ch.strip()
@@ -714,16 +720,16 @@ class BugsHandler(xml.sax.handler.ContentHandler):
     def getUserEmail(username):
         return ""
         # http://issues.liferay.com/activity?maxResults=1&streams=user+IS+kalman.vincze
-        if not vars(BugsHandler).has_key("_emails"):
+        if not "_emails" in vars(BugsHandler):
             BugsHandler._emails = {}
-        if BugsHandler._emails.has_key(username):
+        if username in BugsHandler._emails:
             email = BugsHandler._emails[username]
         else:
             serverUrl = Config.url.split("/browse/")[0]
             user_url = serverUrl + "/activity?maxResults=1&streams=user+IS+" + username
             email = ""
             d = feedparser.parse(user_url)
-            if d.has_key('entries'):
+            if 'entries' in d:
                 if len(d['entries']) > 0:
                     email = d['entries'][0]['author_detail']['email']
                     email = BugsHandler.remove_unicode(email)
@@ -799,6 +805,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         return issue
 
+
 class JiraBackend(Backend):
     """
     Jira Backend
@@ -815,10 +822,10 @@ class JiraBackend(Backend):
         url_issues = serverUrl + query + "?pid=" + product
         url_issues += "&sorter/field=updated&sorter/order=INC"
         if self.last_mod_date:
-             url_issues += "&updated:after=" + self.last_mod_date
+            url_issues += "&updated:after=" + self.last_mod_date
         return url_issues
 
-    def bugsNumber(self,url):
+    def bugsNumber(self, url):
         oneBug = self.basic_jira_url()
         oneBug += "&tempMax=1"
         printdbg("Getting number of issues: " + oneBug)
@@ -828,12 +835,11 @@ class JiraBackend(Backend):
 
     # http://stackoverflow.com/questions/8733233/filtering-out-certain-bytes-in-python
     def valid_XML_char_ordinal(self, i):
-        return ( # conditions ordered by presumed frequency
+        return (  # conditions ordered by presumed frequency
             0x20 <= i <= 0xD7FF
             or i in (0x9, 0xA, 0xD)
             or 0xE000 <= i <= 0xFFFD
-            or 0x10000 <= i <= 0x10FFFF
-            )
+            or 0x10000 <= i <= 0x10FFFF)
 
     def safe_xml_parse(self, url_issues, handler):
         f = urllib.urlopen(url_issues)
@@ -883,7 +889,7 @@ class JiraBackend(Backend):
         issues_per_xml_query = 500
         bugsdb = get_database(DBJiraBackend())
 
-        bugsdb.insert_supported_traker("jira","4.1.2")
+        bugsdb.insert_supported_traker("jira", "4.1.2")
         trk = Tracker(self.url.split("-")[0], "jira", "4.1.2")
         dbtrk = bugsdb.insert_tracker(trk)
 
@@ -898,8 +904,8 @@ class JiraBackend(Backend):
 
             printdbg(serverUrl + query + bug_key + "/" + bug_key + ".xml")
 
-            parser = xml.sax.make_parser(  )
-            handler = BugsHandler(  )
+            parser = xml.sax.make_parser()
+            handler = BugsHandler()
             parser.setContentHandler(handler)
             try:
                 parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")

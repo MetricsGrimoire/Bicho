@@ -87,6 +87,7 @@ class DBGerritIssueExtMySQL(DBGerritIssueExt):
                     ON UPDATE CASCADE \
                      ) ENGINE=MYISAM;'
 
+
 class DBGerritBackend(DBBackend):
     """
     Adapter for Gerrit backend.
@@ -127,7 +128,7 @@ class DBGerritBackend(DBBackend):
             db_issue_ext.mod_date = issue.mod_date
             db_issue_ext.open = unicode(issue.open)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -155,6 +156,7 @@ class DBGerritBackend(DBBackend):
             return entry.mod_date.strftime('%Y-%m-%d %H:%M:%S')
 
         return None
+
 
 class GerritIssue(Issue):
     """
@@ -198,7 +200,6 @@ class Gerrit():
             print e
             return None
 
-
     def parse_review(self, review):
         if "username" in review["owner"].keys():
             people = People(review['owner']['username'])
@@ -231,7 +232,6 @@ class Gerrit():
         issue.resolution = None
         issue.priority = None
 
-
         issue.branch = review["branch"]
         issue.url = review["url"]
         issue.change_id = review["id"]
@@ -244,7 +244,6 @@ class Gerrit():
         issue.open = review["open"]
 
         return issue
-
 
     def analyze_review_changes(self, review):
         changes = self.parse_changes(review)
@@ -295,15 +294,15 @@ class Gerrit():
             args_gerrit += " resume_sortkey:" + start
         args_gerrit += " --all-approvals --format=JSON"
 
-        if vars(Config).has_key('backend_user'):
+        if 'backend_user' in vars(Config):
             cmd = ["ssh", "-p 29418", Config.backend_user + "@" + Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh -p 29418 " + Config.backend_user + "@" + Config.url + " " + args_gerrit)
         else:
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh " + "-p 29418 " + Config.url + " " + args_gerrit)
         tickets_raw = subprocess.check_output(cmd)
-        tickets_raw = "[" + tickets_raw.replace("\n",",") + "]"
-        tickets_raw = tickets_raw.replace(",]","]")
+        tickets_raw = "[" + tickets_raw.replace("\n", ",") + "]"
+        tickets_raw = tickets_raw.replace(",]", "]")
         tickets = json.loads(tickets_raw)
 
 #        tickets_test = '[{"project":"openstack/nova","branch":"master","topic":"bug/857209","id":"I660532ee5758c7595138d4dcf5a2825ddf898c65","number":"637","subject":"contrib/nova.sh: Updated to latest \\u0027upstream\\u0027 commit:6a8433a resolves bug 857209","owner":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"url":"https://review.openstack.org/637","createdOn":1316815511,"lastUpdated":1316815646,"sortKey":"0017e78f0000027d","open":false,"status":"ABANDONED","patchSets":[{"number":"1","revision":"95d8d0f75c188f7eabf00ecf6bd5b397852e67b9","ref":"refs/changes/37/637/1","uploader":{"name":"Dave Walker","email":"Dave.Walker@canonical.com","username":"davewalker"},"createdOn":1316815511}]},'
@@ -312,9 +311,7 @@ class Gerrit():
 #        tickets_test += '{"type":"stats","rowCount":67,"runTimeMilliseconds":365}]'
 #        tickets = json.loads(tickets_test)
 
-
         return tickets
-
 
     def run(self):
         """
@@ -336,14 +333,14 @@ class Gerrit():
                      % last_mod_date)
             last_mod_time = time.mktime(time.strptime(last_mod_date, '%Y-%m-%d %H:%M:%S'))
 
-        limit = 500 # gerrit default 500
+        limit = 500  # gerrit default 500
         last_item = ""
         # last_item = "001f672c00002f80";
         number_results = limit
         total_reviews = 0
 
         while (number_results == limit or
-               number_results == limit + 1): # wikimedia gerrit returns limit+1
+               number_results == limit + 1):  # wikimedia gerrit returns limit+1
             # ordered by lastUpdated
             tickets = self.getReviews(limit, last_item)
             number_results = 0
