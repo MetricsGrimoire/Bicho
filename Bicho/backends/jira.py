@@ -34,7 +34,7 @@ from Bicho.backends import Backend
 from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
 from Bicho.Config import Config
 from Bicho.utils import printout, printerr, printdbg
-from BeautifulSoup import BeautifulSoup, Tag, NavigableString 
+from BeautifulSoup import BeautifulSoup, Tag, NavigableString
 #from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
 #from Bicho.Config import Config
@@ -56,7 +56,7 @@ class DBJiraIssueExt(object):
     issue_key = Unicode()
     link = Unicode()
     title = Unicode()
-    environment = Unicode()    
+    environment = Unicode()
     security = Unicode()
     updated = DateTime()
     version = Unicode()
@@ -129,7 +129,7 @@ class DBJiraBackend(DBBackend):
         @return: the inserted extra parameters issue
         @rtype: L{DBJiraIssueExt}
         """
-        
+
         newIssue = False
 
         try:
@@ -138,7 +138,7 @@ class DBJiraBackend(DBBackend):
             if not db_issue_ext:
                 newIssue = True
                 db_issue_ext = DBJiraIssueExt(issue_id)
-            
+
             db_issue_ext.title = self.__return_unicode(issue.title)
             db_issue_ext.issue_key = self.__return_unicode(issue.issue_key)
             db_issue_ext.link = self.__return_unicode(issue.link)
@@ -211,7 +211,7 @@ class JiraIssue(Issue):
     """
     def __init__(self,issue, type, summary, description, submitted_by, submitted_on):
         Issue.__init__(self,issue, type, summary, description, submitted_by, submitted_on)
-        
+
         self.title = None
         self.issue_key = None
         self.link = None
@@ -233,7 +233,7 @@ class JiraIssue(Issue):
     def setResolution(self, resolution):
         self.resolution = resolution
 
-    def setTitle(self, title): 
+    def setTitle(self, title):
         self.title = title
 
     def setIssue_key(self, issue_key):
@@ -250,7 +250,7 @@ class JiraIssue(Issue):
 
     def setUpdated(self, updated):
         self.updated = updated
-    
+
     def setVersion(self, version):
         self.version = version
 
@@ -262,13 +262,13 @@ class JiraIssue(Issue):
 
     def setProject(self, project):
         self.project = project
-    
+
     def setProject_id(self, project_id):
         self.project_id = project_id
-    
+
     def setProject_key(self, project_key):
         self.project_key = project_key
-    
+
 class JiraComment():
     def __init__(self):
         self.comment = None
@@ -292,7 +292,7 @@ class Customfield():
         self.customfieldvalue = None
 
 class Bug():
-    
+
     def __init__(self):
         self.title = None
         self.link = None
@@ -307,7 +307,7 @@ class Bug():
         self.updated = None
         self.version = None
         self.component = None
-        self.votes = None   
+        self.votes = None
         self.project = None
         self.project_id = None
         self.project_key = None
@@ -317,12 +317,12 @@ class Bug():
         self.assignee_username = None
         self.reporter = None
         self.reporter_username = None
-        
-        self.comments = [] 
+
+        self.comments = []
         self.attachments = []
         self.customfields = []
 
-        
+
 class SoupHtmlParser():
 
     def __init__(self, html, idBug):
@@ -545,7 +545,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif name == 'customfieldname':
             self.is_customfieldname = True
         elif name == 'customfieldvalues':
-            self.is_customfieldvalue = True    
+            self.is_customfieldvalue = True
 
 
     def characters(self, ch):
@@ -645,9 +645,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newComment.comment_id = self.comment_id
             newComment.comment_author = self.comment_author
             newComment.comment_created = self.comment_created
-            self.comments.append(newComment)  
+            self.comments.append(newComment)
             self.comment = ""
-        
+
         elif name == 'attachment':
             newAttachment = JiraAttachment()
             newAttachment.attachment_id = self.attachment_id
@@ -656,20 +656,20 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newAttachment.attachment_author = self.attachment_author
             newAttachment.attachment_created = self.attachment_created
             self.attachments.append(newAttachment)
-        
+
         elif name == 'customfieldname':
             self.is_customfieldname = False
         elif name == 'customfieldvalues':
             self.is_customfieldvalue = False
-        
+
         elif name == 'customfield':
             newCustomfield = Customfield()
             newCustomfield.customfield_id = self.customfield_id
             newCustomfield.customfield_Key = self.customfield_key
             newCustomfield.customfieldname = self.customfieldname
             newCustomfield.customfieldvalue = self.customfieldvalue
-            self.customfields.append(newCustomfield)           
- 
+            self.customfields.append(newCustomfield)
+
         elif name == 'item':
             newbug = Bug()
             newbug.title = self.title
@@ -730,13 +730,13 @@ class BugsHandler(xml.sax.handler.ContentHandler):
                     printdbg(username + " " + email)
             BugsHandler._emails[username] = email
         return email
-    
+
     def getIssues(self):
         bicho_bugs = []
         for bug in self.issues_data:
             bicho_bugs.append(self.getIssue(bug))
         return bicho_bugs
-        
+
     def getIssue(self, bug):
         #Return the parse data bug into issue object
         issue_id = bug.key_id
@@ -807,7 +807,7 @@ class JiraBackend(Backend):
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
-        
+
     def basic_jira_url(self):
         serverUrl = self.url.split("/browse/")[0]
         product = self.url.split("/browse/")[1]
@@ -834,7 +834,7 @@ class JiraBackend(Backend):
             or 0xE000 <= i <= 0xFFFD
             or 0x10000 <= i <= 0x10FFFF
             )
-        
+
     def safe_xml_parse(self, url_issues, handler):
         f = urllib.urlopen(url_issues)
         parser = xml.sax.make_parser()
@@ -864,19 +864,19 @@ class JiraBackend(Backend):
         url_issues = self.basic_jira_url()
         url_issues += "&tempMax=" + str(nissues) + "&pager/start=" + str(offset)
         printdbg(url_issues)
-        
+
         handler = BugsHandler()
         self.safe_xml_parse(url_issues, handler)
 
         try:
-            issues = handler.getIssues()            
+            issues = handler.getIssues()
             for issue in issues:
                 bugsdb.insert_issue(issue, dbtrk_id)
         except Exception, e:
             import traceback
             traceback.print_exc()
             sys.exit(0)
- 
+
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 

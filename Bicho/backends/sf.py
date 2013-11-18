@@ -194,12 +194,12 @@ class DBSourceForgeBackend(DBBackend):
                 db_issue_ext = DBSourceForgeIssueExt(issue_id)
                 #db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
 
-            db_issue_ext.category = unicode(issue.category) 
+            db_issue_ext.category = unicode(issue.category)
             db_issue_ext.group = unicode(issue.group)
 
             if newIssue == True:
                 store.add(db_issue_ext)
-            
+
             store.flush()
             return db_issue_ext
         except:
@@ -211,13 +211,13 @@ class DBSourceForgeBackend(DBBackend):
         Does nothing
         """
         pass
-    
+
     def insert_attachment_ext(self, store, attch, attch_id):
         """
         Does nothing
         """
         pass
-    
+
     def insert_change_ext(self, store, change, change_id):
         """
         Does nothing
@@ -597,7 +597,7 @@ class SourceForge():
     SourceForge backend
     """
     URL_REQUIRED_FIELDS = ['atid', 'group_id']
-    
+
     SUPPORTED_SF_TRACKERS = ('sourceforge', 'website')
 
     def __init__(self):
@@ -629,7 +629,7 @@ class SourceForge():
         self.db.insert_supported_traker(SUPPORTED_SF_TRACKERS[0],
                                         SUPPORTED_SF_TRACKERS[1])
         self.__insert_tracker(self.url)
-        
+
         nbugs = len(ids)
         if nbugs == 0:
             printout("No bugs found. Did you provide the correct url?")
@@ -705,15 +705,15 @@ class SourceForge():
         """
         """
         query = urlparse.urlsplit(url).query
-        query = query.split("&") 
+        query = query.split("&")
         query.sort()
         parameter = ""
         for q in query:
             if q.find("atid") > -1:
                 parameter = parameter + "&" + q
-            if q.find("group_id") > -1:    
+            if q.find("group_id") > -1:
                 parameter = parameter + "&" + q
-        
+
         aux_url = (url.split("/?")[0] + "/?" + parameter).replace("?&","?")
         self.url = aux_url
 

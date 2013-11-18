@@ -227,7 +227,7 @@ class IssuesLog():
     def _get_changes(self, issue_id):
         aux = self.store.execute("SELECT id, field, new_value, changed_by, \
         changed_on FROM changes where issue_id=%s" % (issue_id))
-        return aux  
+        return aux
 
     def run(self):
         issues = self.store.find(DBIssue)
@@ -242,7 +242,7 @@ class IssuesLog():
 
             # the code below gets all the changes and insert a row per change
             changes = self._get_changes(db_ilog.issue_id)
-            
+
             for ch in changes:
                 change_id = ch[0]
                 field = ch[1]
