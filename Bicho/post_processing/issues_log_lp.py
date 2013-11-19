@@ -78,7 +78,7 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_launchpad (\
 
 """
 The fields with the comment "# project" contain the name of the project
-and the semicolon before the tag. 
+and the semicolon before the tag.
 Example: "oslo: status"
 """
 __launchpad_issues_links__ = { # the ones seen in Maria

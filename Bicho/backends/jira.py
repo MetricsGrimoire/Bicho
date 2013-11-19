@@ -34,7 +34,7 @@ from Bicho.backends import Backend
 from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
 from Bicho.Config import Config
 from Bicho.utils import printout, printerr, printdbg
-from BeautifulSoup import BeautifulSoup, Tag, NavigableString 
+from BeautifulSoup import BeautifulSoup, Tag, NavigableString
 #from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
 #from Bicho.Config import Config
@@ -56,7 +56,7 @@ class DBJiraIssueExt(object):
     issue_key = Unicode()
     link = Unicode()
     title = Unicode()
-    environment = Unicode()    
+    environment = Unicode()
     security = Unicode()
     updated = DateTime()
     version = Unicode()
@@ -129,16 +129,16 @@ class DBJiraBackend(DBBackend):
         @return: the inserted extra parameters issue
         @rtype: L{DBJiraIssueExt}
         """
-        
-        newIssue = False;
+
+        newIssue = False
 
         try:
             db_issue_ext = store.find(DBJiraIssueExt,
-                                    DBJiraIssueExt.issue_id == issue_id).one()
+                                      DBJiraIssueExt.issue_id == issue_id).one()
             if not db_issue_ext:
                 newIssue = True
                 db_issue_ext = DBJiraIssueExt(issue_id)
-            
+
             db_issue_ext.title = self.__return_unicode(issue.title)
             db_issue_ext.issue_key = self.__return_unicode(issue.issue_key)
             db_issue_ext.link = self.__return_unicode(issue.link)
@@ -154,7 +154,7 @@ class DBJiraBackend(DBBackend):
             db_issue_ext.status = self.__return_unicode(issue.status)
             db_issue_ext.resolution = self.__return_unicode(issue.resolution)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -171,6 +171,7 @@ class DBJiraBackend(DBBackend):
             return unicode(str)
         else:
             return unicode('')
+
     def insert_comment_ext(self, store, comment, comment_id):
         """
         Does nothing
@@ -205,13 +206,14 @@ class DBJiraBackend(DBBackend):
 
 ####################################
 
+
 class JiraIssue(Issue):
     """
     Ad-hoc Issue extensions for jira's issue
     """
-    def __init__(self,issue, type, summary, description, submitted_by, submitted_on):
-        Issue.__init__(self,issue, type, summary, description, submitted_by, submitted_on)
-        
+    def __init__(self, issue, type, summary, description, submitted_by, submitted_on):
+        Issue.__init__(self, issue, type, summary, description, submitted_by, submitted_on)
+
         self.title = None
         self.issue_key = None
         self.link = None
@@ -233,7 +235,7 @@ class JiraIssue(Issue):
     def setResolution(self, resolution):
         self.resolution = resolution
 
-    def setTitle(self, title): 
+    def setTitle(self, title):
         self.title = title
 
     def setIssue_key(self, issue_key):
@@ -246,11 +248,11 @@ class JiraIssue(Issue):
         self.environment = environment
 
     def setSecurity(self, security):
-        self.security = security;
+        self.security = security
 
     def setUpdated(self, updated):
         self.updated = updated
-    
+
     def setVersion(self, version):
         self.version = version
 
@@ -262,19 +264,21 @@ class JiraIssue(Issue):
 
     def setProject(self, project):
         self.project = project
-    
+
     def setProject_id(self, project_id):
         self.project_id = project_id
-    
+
     def setProject_key(self, project_key):
         self.project_key = project_key
-    
+
+
 class JiraComment():
     def __init__(self):
         self.comment = None
         self.comment_id = None
         self.comment_author = None
         self.comment_created = None
+
 
 class JiraAttachment():
     def __init__(self):
@@ -284,6 +288,7 @@ class JiraAttachment():
         self.attachment_author = None
         self.attachment_created = None
 
+
 class Customfield():
     def __init__(self):
         self.customfield_id = None
@@ -291,8 +296,9 @@ class Customfield():
         self.customfieldname = None
         self.customfieldvalue = None
 
+
 class Bug():
-    
+
     def __init__(self):
         self.title = None
         self.link = None
@@ -307,7 +313,7 @@ class Bug():
         self.updated = None
         self.version = None
         self.component = None
-        self.votes = None   
+        self.votes = None
         self.project = None
         self.project_id = None
         self.project_key = None
@@ -317,12 +323,12 @@ class Bug():
         self.assignee_username = None
         self.reporter = None
         self.reporter_username = None
-        
-        self.comments = [] 
+
+        self.comments = []
         self.attachments = []
         self.customfields = []
 
-        
+
 class SoupHtmlParser():
 
     def __init__(self, html, idBug):
@@ -346,7 +352,7 @@ class SoupHtmlParser():
                 identifier = myaux.find('a').contents[0]
             else:
                 aux = myaux.text
-                identifier = aux.replace('[','').replace(']','').strip()
+                identifier = aux.replace('[', '').replace(']', '').strip()
             return identifier
         else:
             return ''
@@ -545,7 +551,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif name == 'customfieldname':
             self.is_customfieldname = True
         elif name == 'customfieldvalues':
-            self.is_customfieldvalue = True    
+            self.is_customfieldvalue = True
 
 
     def characters(self, ch):
@@ -555,7 +561,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.link += ch
         elif self.is_description:
             #FIXME problems with ascii, not support str() function
-            if (self.first_desc == True):
+            if (self.first_desc is True):
                 self.first_desc = False
             else:
                 self.description = self.description + ch.strip()
@@ -645,9 +651,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newComment.comment_id = self.comment_id
             newComment.comment_author = self.comment_author
             newComment.comment_created = self.comment_created
-            self.comments.append(newComment)  
+            self.comments.append(newComment)
             self.comment = ""
-        
+
         elif name == 'attachment':
             newAttachment = JiraAttachment()
             newAttachment.attachment_id = self.attachment_id
@@ -656,20 +662,20 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newAttachment.attachment_author = self.attachment_author
             newAttachment.attachment_created = self.attachment_created
             self.attachments.append(newAttachment)
-        
+
         elif name == 'customfieldname':
             self.is_customfieldname = False
         elif name == 'customfieldvalues':
             self.is_customfieldvalue = False
-        
+
         elif name == 'customfield':
             newCustomfield = Customfield()
             newCustomfield.customfield_id = self.customfield_id
             newCustomfield.customfield_Key = self.customfield_key
             newCustomfield.customfieldname = self.customfieldname
             newCustomfield.customfieldvalue = self.customfieldvalue
-            self.customfields.append(newCustomfield)           
- 
+            self.customfields.append(newCustomfield)
+
         elif name == 'item':
             newbug = Bug()
             newbug.title = self.title
@@ -714,29 +720,29 @@ class BugsHandler(xml.sax.handler.ContentHandler):
     def getUserEmail(username):
         return ""
         # http://issues.liferay.com/activity?maxResults=1&streams=user+IS+kalman.vincze
-        if not vars(BugsHandler).has_key("_emails"):
+        if not "_emails" in vars(BugsHandler):
             BugsHandler._emails = {}
-        if BugsHandler._emails.has_key(username):
+        if username in BugsHandler._emails:
             email = BugsHandler._emails[username]
         else:
             serverUrl = Config.url.split("/browse/")[0]
             user_url = serverUrl + "/activity?maxResults=1&streams=user+IS+" + username
             email = ""
             d = feedparser.parse(user_url)
-            if d.has_key('entries'):
+            if 'entries' in d:
                 if len(d['entries']) > 0:
                     email = d['entries'][0]['author_detail']['email']
                     email = BugsHandler.remove_unicode(email)
                     printdbg(username + " " + email)
             BugsHandler._emails[username] = email
         return email
-    
+
     def getIssues(self):
         bicho_bugs = []
         for bug in self.issues_data:
             bicho_bugs.append(self.getIssue(bug))
         return bicho_bugs
-        
+
     def getIssue(self, bug):
         #Return the parse data bug into issue object
         issue_id = bug.key_id
@@ -799,6 +805,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         return issue
 
+
 class JiraBackend(Backend):
     """
     Jira Backend
@@ -807,7 +814,7 @@ class JiraBackend(Backend):
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
-        
+
     def basic_jira_url(self):
         serverUrl = self.url.split("/browse/")[0]
         product = self.url.split("/browse/")[1]
@@ -815,10 +822,10 @@ class JiraBackend(Backend):
         url_issues = serverUrl + query + "?pid=" + product
         url_issues += "&sorter/field=updated&sorter/order=INC"
         if self.last_mod_date:
-             url_issues += "&updated:after=" + self.last_mod_date
+            url_issues += "&updated:after=" + self.last_mod_date
         return url_issues
 
-    def bugsNumber(self,url):
+    def bugsNumber(self, url):
         oneBug = self.basic_jira_url()
         oneBug += "&tempMax=1"
         printdbg("Getting number of issues: " + oneBug)
@@ -828,13 +835,12 @@ class JiraBackend(Backend):
 
     # http://stackoverflow.com/questions/8733233/filtering-out-certain-bytes-in-python
     def valid_XML_char_ordinal(self, i):
-        return ( # conditions ordered by presumed frequency
+        return (  # conditions ordered by presumed frequency
             0x20 <= i <= 0xD7FF
             or i in (0x9, 0xA, 0xD)
             or 0xE000 <= i <= 0xFFFD
-            or 0x10000 <= i <= 0x10FFFF
-            )
-        
+            or 0x10000 <= i <= 0x10FFFF)
+
     def safe_xml_parse(self, url_issues, handler):
         f = urllib.urlopen(url_issues)
         parser = xml.sax.make_parser()
@@ -864,26 +870,26 @@ class JiraBackend(Backend):
         url_issues = self.basic_jira_url()
         url_issues += "&tempMax=" + str(nissues) + "&pager/start=" + str(offset)
         printdbg(url_issues)
-        
+
         handler = BugsHandler()
         self.safe_xml_parse(url_issues, handler)
 
         try:
-            issues = handler.getIssues()            
+            issues = handler.getIssues()
             for issue in issues:
                 bugsdb.insert_issue(issue, dbtrk_id)
         except Exception, e:
             import traceback
             traceback.print_exc()
             sys.exit(0)
- 
+
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
         issues_per_xml_query = 500
         bugsdb = get_database(DBJiraBackend())
 
-        bugsdb.insert_supported_traker("jira","4.1.2")
+        bugsdb.insert_supported_traker("jira", "4.1.2")
         trk = Tracker(self.url.split("-")[0], "jira", "4.1.2")
         dbtrk = bugsdb.insert_tracker(trk)
 
@@ -898,8 +904,8 @@ class JiraBackend(Backend):
 
             printdbg(serverUrl + query + bug_key + "/" + bug_key + ".xml")
 
-            parser = xml.sax.make_parser(  )
-            handler = BugsHandler(  )
+            parser = xml.sax.make_parser()
+            handler = BugsHandler()
             parser.setContentHandler(handler)
             try:
                 parser.parse(serverUrl + query + bug_key + "/" + bug_key + ".xml")

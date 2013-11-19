@@ -53,7 +53,7 @@ class People:
         Set the email of the identity.
 
         @param email: email of the identity
-        @type email: C{str} 
+        @type email: C{str}
         """
         self.email = email
 
@@ -77,7 +77,7 @@ b
 
 class Issue:
     """
-    Generic object for managing issues. 
+    Generic object for managing issues.
 
     @param issue: identifier of the issue
     @type issue: C{str}
@@ -154,7 +154,7 @@ class Issue:
         @param type: L{People}
 
         @raise ValueError: raised if the type of X{assigned_to}}
-         is not valid. 
+         is not valid.
         """
         if not isinstance(assigned_to, People):
             raise ValueError('Parameter "assigned_to" should be a %s instance. %s given.' %
@@ -165,7 +165,7 @@ class Issue:
         """
         Add a comment to the issue.
 
-        @param comment: a comment of the issue 
+        @param comment: a comment of the issue
         @type comment: L{Comment}
 
         @raise ValueError: raised if the type of X{comment} is not valid.
@@ -179,7 +179,7 @@ class Issue:
         """
         Add an attachment to the issue.
 
-        @param attachment: an attachment of the issue 
+        @param attachment: an attachment of the issue
         @type attachment: L{Attachment}
 
         @raise ValueError: raised if the type of X{attachment} is not valid.
@@ -193,7 +193,7 @@ class Issue:
         """
         Add a change to the issue.
 
-        @param change: a change of the issue 
+        @param change: a change of the issue
         @type change: L{Change}
 
         @raise ValueError: raised if the type of X{change} is not valid.

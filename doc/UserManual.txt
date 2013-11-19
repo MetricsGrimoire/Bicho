@@ -56,6 +56,8 @@ Bicho needs some libraries, such as:
 3.- Installation:
 		---------------
 
+Bicho depends on several other packages, including Storm, Beautiful Soup, dateutil, and (if you are working with a Launchpad bugtracker) launchpadlib. Details for a few of those requirements are below.
+
 Installing Requirements: Storm
 
 Step 1: Download Storm
