@@ -43,15 +43,17 @@ class InvalidConfig(Exception):
     pass
 
 
-class Config(object):
+class Config():
     """
     Config objects load configuration from files and from command-line options.
+
+    Note: this is an old-style class and does not inherit from object.
     """
     @staticmethod
     def load_from_file(config_file):
         try:
             f = open(config_file, 'r')
-            exec f in Config.__dict__ # run variable assignments
+            exec f in Config.__dict__  # run variable assignments
             f.close()
         except Exception, e:
             raise ErrorLoadingConfig("Error reading config file %s (%s)" %
@@ -62,7 +64,8 @@ class Config(object):
         """
         Try to load a config file from known default locations.
 
-        For the format of the config file, see 'config.sample' in the toplevel directory.
+        For the format of the config file, see 'config.sample'
+        in the toplevel directory.
         """
         # FIXME: a hack to avoid circular dependencies.
         from utils import bicho_dot_dir, printout
@@ -89,7 +92,8 @@ class Config(object):
     @staticmethod
     def check_params(check_params):
         for param in check_params:
-            if getattr(Config, param, None) is None: # if it's None or nonexistent
+            # raise exception if the param is None or nonexistent
+            if getattr(Config, param, None) is None:
                 raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
 
     @staticmethod
@@ -97,9 +101,14 @@ class Config(object):
         """
         Check crucial configuration details for existence and workability.
 
-        Runs checks to see whether bugtracker's URL is reachable, whether backend is available at the right filename, and whether the script has the key arguments it needs to run: URL, backend, and database details.
+        Runs checks to see whether bugtracker's URL is reachable, whether
+        backend is available at the right filename, and whether the script has
+        the key arguments it needs to run: URL, backend, and database details.
 
-        The filename for the backend in the backends/ directory needs to be the same as the configuration argument specifying that backend. For instance, invoking the Launchpad backend uses 'lp', and so the filename is 'lp.py'.
+        The filename for the backend in the backends/ directory needs to be the
+        same as the configuration argument specifying that backend. For
+        instance, invoking the Launchpad backend uses 'lp', and so the filename
+        is 'lp.py'.
         """
         Config.check_params(['url', 'backend'])
 
@@ -119,21 +128,27 @@ class Config(object):
             raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
 
         except ValueError, e:
-            print ("Not an URL: " + Config.url)
+            print("Not an URL: " + Config.url)
 
         if getattr(Config, 'input', None) == 'db':
-            Config.check_params(['db_driver_in', 'db_user_in', 'db_password_in',
-                                 'db_hostname_in', 'db_port_in', 'db_database_in'])
+            Config.check_params(['db_driver_in', 'db_user_in',
+                                 'db_password_in', 'db_hostname_in',
+                                 'db_port_in', 'db_database_in'])
         if getattr(Config, 'output', None) == 'db':
-            Config.check_params(['db_driver_out','db_user_out','db_password_out',
-                                 'db_hostname_out','db_port_out','db_database_out'])
+            Config.check_params(['db_driver_out', 'db_user_out',
+                                 'db_password_out', 'db_hostname_out',
+                                 'db_port_out', 'db_database_out'])
 
     @staticmethod
     def clean_empty_options(options):
         """
-        Create a dict of options whose values are 'None' or nonexistent. Also, if there's a default value that came in from argparse, we don't want it ending up in the Config object.
+        Create a dict of options whose values are 'None' or nonexistent.
+        Also, if there's a default value that came in from argparse, we
+        don't want it ending up in the Config object.
+
+        FIXME: should use defaultdict module to provide default values.
         """
-        clean_opt = {};
+        clean_opt = {}
         d = vars(options)
         for option in d:
             if (d[option] is not None) and not hasattr(Config, option):
@@ -143,11 +158,16 @@ class Config(object):
     @staticmethod
     def set_config_options(usage):
         """
+        Take command-line arguments and options from the configuration file.
+
+        Command-line keyword arguments only, not positional -- breaking
+        change November 2013.
+
+        In case of conflict, command-line options are meant to override
+        options specified in config file.
         """
 
-        parser = ArgumentParser(description=info.DESCRIPTION, conflict_handler='resolve')
-        # Conflict handler is to ensure reconciliation between
-        # keyword arguments and positional arguments for backend & url
+        parser = ArgumentParser(description=info.DESCRIPTION)
         parser.add_argument('--version', action='version', version=info.VERSION)
 
         # General options
@@ -181,11 +201,6 @@ class Config(object):
                             dest='logtable',
                             help='Enable generation of issues log table',
                             default=False)
-        # Positional arguments should override keyword arguments.
-        # This is for backwards compatibility; using positional arguments
-        # is NOT recommended. Use keyword arguments instead.
-        parser.add_argument('backend', default=None)  # first positional argument
-        parser.add_argument('url', default=None)  # second positional argument
 
         # Options for output database
         group = parser.add_argument_group('Output database specific options')
