@@ -44,7 +44,9 @@ class InvalidConfig(Exception):
 
 
 class Config(object):
-
+    """
+    Config objects load configuration from files and from command-line options.
+    """
     @staticmethod
     def load_from_file(config_file):
         try:
@@ -88,6 +90,7 @@ class Config(object):
     @staticmethod
     def check_config():
         """
+        Raise error if backend isn't registered or URL or database can't be reached.
         """
         Config.check_params(['url', 'backend'])
 
