@@ -27,7 +27,7 @@ from Bicho.backends import Backend
 from Bicho.Config import Config
 from Bicho.utils import printerr, printdbg, printout
 from Bicho.common import Tracker, People, Issue, Comment, Change, \
-     TempRelationship, Attachment
+    TempRelationship, Attachment
 from Bicho.db.database import DBIssue, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode, Desc
@@ -96,7 +96,7 @@ class DBGithubIssueExtMySQL(DBGithubIssueExt):
 
 class DBGithubBackend(DBBackend):
     """
-    Adapter for Bugzilla backend.
+    Adapter for GitHub backend.
     """
     def __init__(self):
         self.MYSQL_EXT = [DBGithubIssueExtMySQL]
@@ -167,7 +167,7 @@ class DBGithubBackend(DBBackend):
             db_issue_ext.labels = self.__return_unicode(issue.labels)
             db_issue_ext.title = self.__return_unicode(issue.title)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -221,7 +221,7 @@ class DBGithubBackend(DBBackend):
 
 class GithubIssue(Issue):
     """
-    Ad-hoc Issue extension for launchpad's issue
+    Ad-hoc Issue extension for GitHub's issue
     """
     def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
@@ -282,7 +282,7 @@ class GithubIssue(Issue):
         @type closed_at: L{datetime.datetime}
         """
         if not isinstance(closed_at, datetime):
-            raise ValueError('Parameter "closed_at" should be a %s ' \
+            raise ValueError('Parameter "closed_at" should be a %s '
                              'instance. %s given.' %
                              ('datetime', input.__class__.__name__))
 
@@ -296,7 +296,7 @@ class GithubIssue(Issue):
         @type set_updated_at: L{datetime.datetime}
         """
         if not isinstance(updated_at, datetime):
-            raise ValueError('Parameter "updated_at" should be a %s ' \
+            raise ValueError('Parameter "updated_at" should be a %s '
                              'instance. %s given.' %
                              ('datetime', input.__class__.__name__))
 
@@ -402,7 +402,7 @@ class GithubBackend(Backend):
             assignee = People(unicode("nobody"))
 
         issue = GithubIssue(issue, bug_type, summary, desc, submitted_by,
-                               submitted_on)
+                            submitted_on)
         issue.set_assigned(assignee)
 
         issue.set_status(bug['state'])
@@ -508,10 +508,10 @@ class GithubBackend(Backend):
     def __get_batch_bugs_state(self, state=OPEN_STATE, since=None):
         if state == OPEN_STATE:
             url = self.url + "?state=open&page=" + str(self.pagecont) \
-                  + "&per_page=100&sort=updated&direction=asc"
+                + "&per_page=100&sort=updated&direction=asc"
         else:
             url = self.url + "?state=closed&page=" + str(self.pagecont) \
-                  + "&per_page=100&sort=updated&direction=asc"
+                + "&per_page=100&sort=updated&direction=asc"
             # we need to download both closed and open bugs,
             #by default state = open
 

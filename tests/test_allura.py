@@ -51,10 +51,10 @@ class AlluraTest(unittest.TestCase):
                 f.close()
                 f = open(self.project_issues_file)
         return f.read()
-    
+
     def read_issue(self, issue_id):
         issue_url = Config.url+"/"+str(issue_id)
-        project_name = Config.url.split("/")[-2]                 
+        project_name = Config.url.split("/")[-2]
         issue_file = os.path.join(AlluraTest.tests_data_dir, project_name+"." + str(issue_id))
         try:
             f = open(issue_file)
@@ -102,7 +102,7 @@ class AlluraTest(unittest.TestCase):
             changes_data = feedparser.parse(changes_file)
             changes_bicho = AlluraTest.backend.parse_changes(changes_data)
             for c in changes_bicho:
-                issue_bicho.add_change(c)                 
+                issue_bicho.add_change(c)
             AlluraTest.issuesDB.insert_issue(issue_bicho, AlluraTest.dbtracker.id)
 
         self.assertEqual(issuesList_expected, issuesList_received)
@@ -117,13 +117,13 @@ class AlluraTest(unittest.TestCase):
         self.assertEqual(issuesList_expected, issuesList_received)
 
     def testReadIssue(self):
-        issue_id_test = 1500 
+        issue_id_test = 1500
         self.read_issue(issue_id_test)
-        
+
     def testReadChange(self):
         issue_id_test = 1500
         self.read_issue_changes(issue_id_test)
-        
+
     def setUp(self):
         pass
 
@@ -136,7 +136,7 @@ class AlluraTest(unittest.TestCase):
         Config.db_port_out = ""
         random_str = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(5))
         Config.db_database_out = "bichoalluraTest"+random_str
-        
+
         AlluraTest.db = MySQLdb.connect(user=Config.db_user_out, passwd=Config.db_password_out)
         c = AlluraTest.db.cursor()
         sql = "CREATE DATABASE "+ Config.db_database_out +" CHARACTER SET utf8 COLLATE utf8_unicode_ci"
@@ -144,22 +144,22 @@ class AlluraTest(unittest.TestCase):
         AlluraTest.db.close()
         AlluraTest.db = MySQLdb.connect(user=Config.db_user_out, passwd=Config.db_password_out, db=Config.db_database_out)
 
-    @staticmethod                
+    @staticmethod
     def setUpBackend():
-        backend_name = 'allura' 
+        backend_name = 'allura'
         Config.delay = 1
         Config.debug = True
         Config.url = "http://sourceforge.net/rest/p/allura/tickets"
         AlluraTest.setUpDB()
-        AlluraTest.issuesDB = get_database(DBAlluraBackend())                    
-                
+        AlluraTest.issuesDB = get_database(DBAlluraBackend())
+
         AlluraTest.issuesDB.insert_supported_traker(backend_name, "beta")
         AlluraTest.tracker = Tracker(Config.url, backend_name, "beta")
         AlluraTest.dbtracker = AlluraTest.issuesDB.insert_tracker(AlluraTest.tracker)
-        
+
         AlluraTest.tests_data_dir = os.path.join('./data/', AlluraTest.tracker.name)
         AlluraTest.backend = Backend.create_backend(backend_name)
-        
+
         if not os.path.isdir(AlluraTest.tests_data_dir):
             os.makedirs(AlluraTest.tests_data_dir)
 
@@ -169,7 +169,7 @@ class AlluraTest(unittest.TestCase):
         sql = "DROP DATABASE " + Config.db_database_out
         c.execute(sql)
         AlluraTest.db.close()
-        
+
 if __name__ == '__main__':
     AlluraTest.setUpBackend()
     suite = unittest.TestLoader().loadTestsFromTestCase(AlluraTest)

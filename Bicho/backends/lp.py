@@ -210,7 +210,7 @@ class DBLaunchpadBackend(DBBackend):
             db_issue_ext.web_link_standalone = self.__return_unicode(
                 issue.web_link_standalone)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -839,7 +839,7 @@ class LPBackend(Backend):
                                         unicode('duplicate_of'),
                                         unicode(bug.bug.duplicate_of.id))
             issue.add_temp_relationship(temp_rel)
-            
+
         issue.set_heat(bug.bug.heat)
         issue.set_linked_branches(bug.bug.linked_branches)
 
@@ -930,7 +930,7 @@ class LPBackend(Backend):
             url = url[:-1]
 
         if (url.rfind('://bugs.launchpad.net') >= 0) or \
-               (url.rfind('://launchpad.net') >= 0):
+                (url.rfind('://launchpad.net') >= 0):
             project_name = url[url.rfind('/') + 1:]
 
         return project_name
@@ -960,7 +960,7 @@ class LPBackend(Backend):
         if not os.path.exists(cachedir):
             os.makedirs(cachedir)
         cre_file = os.path.join(cachedir + 'launchpad-credential')
-        self.lp = Launchpad.login_with('Bicho','production',
+        self.lp = Launchpad.login_with('Bicho', 'production',
                                        credentials_file=cre_file)
 
         aux_status = ["New", "Incomplete", "Opinion", "Invalid", "Won't Fix",
@@ -999,7 +999,7 @@ class LPBackend(Backend):
         for bug in bugs:
 
             if bug.web_link in analyzed:
-                continue   #for the bizarre error #338
+                continue  # for the bizarre error #338
 
             try:
                 issue_data = self.analyze_bug(bug)
@@ -1019,7 +1019,7 @@ class LPBackend(Backend):
                 bugsdb.insert_issue(issue_data, dbtrk.id)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                      % (issue_data.issue))
+                         % (issue_data.issue))
             except NotFoundError:
                 printerr("NotFoundError: the issue %s couldn't be stored"
                          % (issue_data.issue))

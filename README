@@ -46,6 +46,7 @@ Latest version:
    - python-launchpadlib (for Launchpad backend)
  * Beautiful Soup library: error-tolerant HTML parser for Python
  * python-feedparser
+ * dateutil
 
 
  Installation
