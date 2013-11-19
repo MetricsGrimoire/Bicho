@@ -51,7 +51,7 @@ class Config(object):
     def load_from_file(config_file):
         try:
             f = open(config_file, 'r')
-            exec f in Config.__dict__
+            exec f in Config.__dict__ # run variable assignments
             f.close()
         except Exception, e:
             raise ErrorLoadingConfig("Error reading config file %s (%s)" %
@@ -59,6 +59,11 @@ class Config(object):
 
     @staticmethod
     def load():
+        """
+        Try to load a config file from known default locations.
+
+        For the format of the config file, see 'config.sample' in the toplevel directory.
+        """
         # FIXME: a hack to avoid circular dependencies.
         from utils import bicho_dot_dir, printout
 
@@ -84,13 +89,17 @@ class Config(object):
     @staticmethod
     def check_params(check_params):
         for param in check_params:
-            if not param in vars(Config) or vars(Config)[param] is None:
+            if getattr(Config, param, None) is None: # if it's None or nonexistent
                 raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
 
     @staticmethod
     def check_config():
         """
-        Raise error if backend isn't registered or URL or database can't be reached.
+        Check crucial configuration details for existence and workability.
+
+        Runs checks to see whether bugtracker's URL is reachable, whether backend is available at the right filename, and whether the script has the key arguments it needs to run: URL, backend, and database details.
+
+        The filename for the backend in the backends/ directory needs to be the same as the configuration argument specifying that backend. For instance, invoking the Launchpad backend uses 'lp', and so the filename is 'lp.py'.
         """
         Config.check_params(['url', 'backend'])
 
@@ -112,20 +121,23 @@ class Config(object):
         except ValueError, e:
             print ("Not an URL: " + Config.url)
 
-        if 'input' in vars(Config) and Config.input == 'db':
+        if getattr(Config, 'input', None) == 'db':
             Config.check_params(['db_driver_in', 'db_user_in', 'db_password_in',
                                  'db_hostname_in', 'db_port_in', 'db_database_in'])
-        if 'output' in vars(Config) and Config.output == 'db':
-            Config.check_params(['db_driver_out', 'db_user_out', 'db_password_out',
-                                 'db_hostname_out', 'db_port_out', 'db_database_out'])
+        if getattr(Config, 'output', None) == 'db':
+            Config.check_params(['db_driver_out','db_user_out','db_password_out',
+                                 'db_hostname_out','db_port_out','db_database_out'])
 
     @staticmethod
     def clean_empty_options(options):
-        clean_opt = {}
-        for option in vars(options):
-            if (vars(options)[option] is not None) and \
-                    (not option in Config.__dict__):
-                clean_opt[option] = vars(options)[option]
+        """
+        Create a dict of options whose values are 'None' or nonexistent. Also, if there's a default value that came in from argparse, we don't want it ending up in the Config object.
+        """
+        clean_opt = {};
+        d = vars(options)
+        for option in d:
+            if (d[option] is not None) and not hasattr(Config, option):
+                clean_opt[option] = d[option]
         return clean_opt
 
     @staticmethod
@@ -215,11 +227,11 @@ class Config(object):
 
         args = parser.parse_args()
 
-        if args.cfgfile is not None:
-            Config.load_from_file(args.cfgfile)
+        if args.cfgfile is not None:  # if a config file was specified on the command line
+            Config.load_from_file(args.cfgfile)  # try to load from that file
         else:
-            Config.load()
+            Config.load()  # try to load a config file from default locations
 
-        # Not remove config file options with empty default values
+        # Reconciling config file options with command-line options
         Config.__dict__.update(Config.clean_empty_options(args))
         Config.check_config()
