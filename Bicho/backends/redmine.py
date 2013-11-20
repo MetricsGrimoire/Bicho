@@ -402,10 +402,7 @@ class Redmine():
         trk = Tracker(Config.url, "redmine", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
 
-        if Config.url.find('?') > 0:
-            self.url_issues = Config.url + "&status_id=*&sort=updated_on&page=" + str(last_page)
-        else:
-            self.url_issues = Config.url + "?status_id=*&sort=updated_on&page=" + str(last_page)
+        self.url_issues = Config.url + "issues.json?status_id=*&sort=updated_on&page=" + str(last_page)
         request = urllib2.Request(self.url_issues)
         if self.backend_user:
             base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
@@ -424,10 +421,7 @@ class Redmine():
 
         while True:
             last_page += 1
-            if Config.url.find('?') > 0:
-                self.url_issues = Config.url + "&status_id=*&sort=updated_on&page=" + str(last_page)
-            else:
-                self.url_issues = Config.url + "?status_id=*&sort=updated_on&page=" + str(last_page)
+            self.url_issues = Config.url + "issues.json?status_id=*&sort=updated_on&page=" + str(last_page)
             request = urllib2.Request(self.url_issues)
             #base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
             #request.add_header("Authorization", "Basic %s" % base64string)

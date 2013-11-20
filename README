@@ -101,7 +101,7 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 
 E7. Getting information from a project using Redmine
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u "https://www.bitergia.net/issues.json"
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u "https://www.bitergia.net/"
 
 
  Roadmap
