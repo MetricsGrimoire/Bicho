@@ -15,28 +15,31 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-# Authors: Luis Cañas Díaz <lcanas@bitergia.com>
+# Authors: Alvaro del Castillo <acs@bitergia.com>
 #
 #
 
+import pprint
 from Bicho.post_processing import IssueLogger
 from issues_log import *
 
 __sql_drop__ = 'DROP TABLE IF EXISTS issues_log_gerrit;'
 
 # Extended issue fields and field column values in changes table 
-__gerrit_fields__ = 'branch TEXT, \
-                     url TEXT,  \
-                     related_artifacts TEXT, \
-                     project TEXT, \
-                     mod_date DATETIME, \
-                     open TEXT, \
-                     verified VARCHAR(255), \
-                     submit VARCHAR(255), \
-                     review VARCHAR(255)'
+__gerrit_ext_fields__ = 'branch TEXT, \
+                         url TEXT,  \
+                         related_artifacts TEXT, \
+                         project TEXT, \
+                         mod_date DATETIME, \
+                         open TEXT'
+
+__gerrit_changes_fields__ = 'verified VARCHAR(255), \
+                             submit VARCHAR(255), \
+                             review VARCHAR(255)'
 
 __common_fields__ = 'id INTEGER NOT NULL AUTO_INCREMENT, \
                      change_id INTEGER NOT NULL, \
+                     changed_by INTEGER NOT NULL, \
                      tracker_id INTEGER NOT NULL, \
                      issue_id INTEGER NOT NULL, \
                      issue VARCHAR(255) NOT NULL, \
@@ -53,7 +56,8 @@ __common_fields__ = 'id INTEGER NOT NULL AUTO_INCREMENT, \
 
 __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_gerrit ( \
                      '+__common_fields__+', \
-                     '+__gerrit_fields__+', \
+                     '+__gerrit_ext_fields__+', \
+                     '+__gerrit_changes_fields__+', \
                      PRIMARY KEY(id), \
                      UNIQUE KEY(id), \
                      INDEX issues_submitted_idx(submitted_by), \
@@ -78,19 +82,13 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_gerrit ( \
                      ) ENGINE=MYISAM;'
 
 
-# mapping between each different "field" in changes table and field in issues_log table
+# mapping between each different status field in changes table
+# and the extended fields for gerrit  
+# with the field in issues_log table
 __gerrit_issues_links__ = {
     "Verified":"verified",
     "Code-Review":"review",
-    "SUBM":"submit",
-    "branch":"branch",
-    "url":"url",
-    "change_id":"change_id",
-    "related_artifacts":"related_artifacts",
-    "project":"project",
-    "mod_date":"mod_date",
-    "issue_id":"issue_id",
-    "open":"open"
+    "SUBM":"submit"
 }
 
 class DBGerritIssuesLog(DBIssuesLog):
@@ -98,14 +96,17 @@ class DBGerritIssuesLog(DBIssuesLog):
     """
     __storm_table__ = 'issues_log_gerrit'
 
+    # issues_ext_gerrit fields
     branch = Unicode()
     url = Unicode()
-    change_id = Unicode()
+    change_id = Int()
+    changed_by = Int()
     related_artifacts = Unicode()
     project = Unicode()
     mod_date = DateTime()
     issue_id = Int()
     open = Unicode()
+    # changes fields
     verified = Unicode()
     review = Unicode()
     submit = Unicode()
@@ -118,30 +119,17 @@ class GerritIssuesLog(IssuesLog):
         """
         if field in __gerrit_issues_links__:
             table_field = __gerrit_issues_links__[field]
-            if table_field == 'branch':
-                db_ilog.branch = value
-            elif table_field == 'url':
-                db_ilog.url = value
-            elif table_field == 'change_id':
-                db_ilog.change_id = value
-            elif table_field == 'related_artifacts':
-                db_ilog.related_artifacts = value
-            elif table_field == 'project':
-                db_ilog.project = value
-            elif table_field == 'mod_date':
-                db_ilog.mod_date = value
-            elif table_field == 'issue_id':
-                db_ilog.issue_id = value
-            elif table_field == 'component':
-                db_ilog.component = value
-            elif table_field == 'open':
-                db_ilog.open = value
-            elif table_field == 'verified':
+            if table_field == 'verified':
                 db_ilog.verified = value
             elif table_field == 'review':
                 db_ilog.review = value
             elif table_field == 'submit':
                 db_ilog.submit = value
+        return db_ilog
+
+    def _build_initial_state(self, db_ilog):
+        # Initial status in gerrit is NEW
+        db_ilog.status = unicode('NEW')
         return db_ilog
 
     def _copy_issue_ext(self, aux, db_ilog):
@@ -151,6 +139,7 @@ class GerritIssuesLog(IssuesLog):
         aux.branch = db_ilog.branch
         aux.url = db_ilog.url
         aux.change_id = db_ilog.change_id
+        aux.changed_by = db_ilog.changed_by
         aux.related_artifacts = db_ilog.related_artifacts
         aux.project = db_ilog.project
         aux.mod_date = db_ilog.mod_date

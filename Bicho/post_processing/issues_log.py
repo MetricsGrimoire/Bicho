@@ -154,6 +154,7 @@ class IssuesLog():
         """
         raise NotImplementedError
 
+    # TODO: reuse _copy_standard_values
     def _copy_issue(self, db_ilog):
         """
         This method returns a copy of the DB*Log object
@@ -161,6 +162,7 @@ class IssuesLog():
         aux = self._get_dbissues_object(db_ilog.issue, db_ilog.tracker_id)
         aux.issue_id = db_ilog.issue_id
         aux.change_id = db_ilog.change_id
+        aux.changed_by = db_ilog.changed_by
         aux.type = db_ilog.type
         aux.summary = db_ilog.summary
         aux.description = db_ilog.description
@@ -253,6 +255,7 @@ class IssuesLog():
                 db_ilog = self._copy_issue(db_ilog)
                 db_ilog.date = date
                 db_ilog.change_id = change_id
+                db_ilog.changed_by = changed_by
                 db_ilog = self._assign_values(db_ilog, field, new_value)
 
                 try:
