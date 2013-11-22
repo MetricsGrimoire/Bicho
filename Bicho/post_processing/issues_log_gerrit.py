@@ -162,6 +162,22 @@ class GerritIssuesLog(IssuesLog):
     def _post_history(self, db_ilog, final_status):
         if final_status == 'MERGED':
             printout("Creating MERGED entries for " + str(db_ilog.issue_id))
+            # Search for the last Code-Review +2 -> data for merged and reviewer
+            aux = self.store.execute ('SELECT changed_on, changed_by FROM changes \
+                                       WHERE issue_id=%s AND \
+                                             field="Code-Review" AND \
+                                             new_value="2" \
+                                             ORDER BY changed_on DESC LIMIT 1'
+                                      % (db_ilog.issue_id))
+            db_ilog = self._copy_issue(db_ilog)
+            db_ilog.status = unicode('MERGED')
+            aux = aux.get_one()
+            db_ilog.date = aux[0]
+            db_ilog.changed_by = aux[1]
+            # This entry is not related to a row in changes
+            db_ilog.change_id = 0
+            self.store.add(db_ilog)
+            self.store.flush()
         if final_status == 'ABANDONED':
             printout("Creating ABANDONED entries for " + str(db_ilog.issue_id))
 
