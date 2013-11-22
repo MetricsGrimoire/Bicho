@@ -159,4 +159,10 @@ class GerritIssuesLog(IssuesLog):
     def _print_final_msg(self):
         printout("Table issues_log_gerrit populated")
 
+    def _post_history(self, db_ilog, final_status):
+        if final_status == 'MERGED':
+            printout("Creating MERGED entries for " + str(db_ilog.issue_id))
+        if final_status == 'ABANDONED':
+            printout("Creating ABANDONED entries for " + str(db_ilog.issue_id))
+
 IssueLogger.register_logger("gerrit", GerritIssuesLog)

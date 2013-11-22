@@ -231,11 +231,18 @@ class IssuesLog():
         changed_on FROM changes where issue_id=%s" % (issue_id))
         return aux
 
+    def _post_history(self, issue_id):
+        """
+        Abstract method for inserting extra data usign full issue history
+        """
+        pass
+
     def run(self):
         issues = self.store.find(DBIssue)
         for i in issues:
             db_ilog = self._get_dbissues_object(i.issue, i.tracker_id)
             db_ilog = self._copy_standard_values(i, db_ilog)
+            final_status = db_ilog.status
 
             db_ilog = self._build_initial_state(db_ilog)
 
@@ -264,5 +271,6 @@ class IssuesLog():
                 except:
                     # self.store.rollback() # is this useful in this context?
                     traceback.print_exc()
+            self._post_history(db_ilog, final_status)
             self.store.commit()
         self._print_final_msg()
