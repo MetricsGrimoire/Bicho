@@ -301,6 +301,7 @@ class Gerrit():
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh " + "-p 29418 " + Config.url + " " + args_gerrit)
         tickets_raw = subprocess.check_output(cmd)
+        # tickets_raw = open('./tickets.json', 'r').read()
         tickets_raw = "[" + tickets_raw.replace("\n", ",") + "]"
         tickets_raw = tickets_raw.replace(",]", "]")
         tickets = json.loads(tickets_raw)
