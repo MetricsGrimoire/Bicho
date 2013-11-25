@@ -168,6 +168,10 @@ class GerritIssuesLog(IssuesLog):
                                              new_value="2" \
                                              ORDER BY changed_on DESC LIMIT 1'
                                       % (db_ilog.issue_id))
+            nres = aux.rowcount
+            if not (nres > 0):
+                printout("[WARN] Probs with merged issue: " + str(db_ilog.issue_id))
+                return
             db_ilog = self._copy_issue(db_ilog)
             db_ilog.status = unicode('MERGED')
             aux = aux.get_one()

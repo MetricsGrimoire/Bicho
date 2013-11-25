@@ -238,8 +238,13 @@ class IssuesLog():
         pass
 
     def run(self):
+        ndone = 0
         issues = self.store.find(DBIssue)
+        total = str(issues.count())
+        print ("[IssuesLog] Total issues to analyze: " + str(issues.count()))
         for i in issues:
+            if (ndone % 1000 == 0):
+                print ("[IssuesLog] Analyzed " + str(ndone) + "/" + str(total))
             db_ilog = self._get_dbissues_object(i.issue, i.tracker_id)
             db_ilog = self._copy_standard_values(i, db_ilog)
             final_status = db_ilog.status
@@ -273,4 +278,5 @@ class IssuesLog():
                     traceback.print_exc()
             self._post_history(db_ilog, final_status)
             self.store.commit()
+            ndone += 1
         self._print_final_msg()
