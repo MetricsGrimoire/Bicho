@@ -24,7 +24,7 @@ from Bicho.Config import Config
 from Bicho.backends import Backend
 from Bicho.utils import create_dir, printdbg, printout, printerr
 from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from Bicho.common import Tracker, Issue, People, Change
+from Bicho.common import Tracker, Issue, Comment, People, Change
 
 from dateutil.parser import parse
 from datetime import datetime
@@ -157,6 +157,11 @@ class DBGerritBackend(DBBackend):
 
         return None
 
+    def insert_comment_ext(self, store, comment, comment_id):
+        """
+        Does nothing
+        """
+        pass
 
 class GerritIssue(Issue):
     """
@@ -192,6 +197,9 @@ class Gerrit():
             changes = self.analyze_review_changes(review)
             for c in changes:
                 issue.add_change(c)
+            comments = self.analyze_review_comments(review)
+            for com in comments:
+                issue.add_comment(com)
             return issue
 
         except Exception, e:
@@ -245,11 +253,29 @@ class Gerrit():
 
         return issue
 
+    def analyze_review_comments(self, review):
+        comments = self.parse_comments(review)
+        return comments
+
+    def parse_comments(self, review):
+        commentsList = []
+        comments = review['comments']
+
+        for comment in comments:
+            by = People(comment['reviewer']["username"])
+            if ("name" in comment['reviewer'].keys()):
+                by.set_name(comment['reviewer']["name"])
+            if ("email" in comment['reviewer'].keys()):
+                by.set_email(comment['reviewer']["email"])
+            com = Comment(comment["message"], by, self._convert_to_datetime(comment["timestamp"]))
+            commentsList.append(com)
+
+        return commentsList
+
     def analyze_review_changes(self, review):
         changes = self.parse_changes(review)
         return changes
 
-    # We support now just one patchSets
     def parse_changes(self, review):
         changesList = []
         patchSets = review['patchSets']
@@ -292,7 +318,7 @@ class Gerrit():
         args_gerrit += " limit:" + str(limit)
         if (start != ""):
             args_gerrit += " resume_sortkey:" + start
-        args_gerrit += " --all-approvals --format=JSON"
+        args_gerrit += " --all-approvals --comments --format=JSON"
 
         if 'backend_user' in vars(Config):
             cmd = ["ssh", "-p 29418", Config.backend_user + "@" + Config.url, args_gerrit]
