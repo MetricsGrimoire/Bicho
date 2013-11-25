@@ -53,7 +53,7 @@ def main():
         printerr("Backend ''" + Config.backend + "'' doesn't exist. " + str(e))
         sys.exit(2)
     printdbg("Bicho object created, options and backend initialized")
-    # backend.run()
+    backend.run()
 
     if Config.logtable:
         try:
