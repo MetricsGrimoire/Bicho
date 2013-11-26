@@ -263,6 +263,8 @@ class Gerrit():
         comments = review['comments']
 
         for comment in comments:
+            if ("username" not in comment['reviewer'].keys()):
+                comment['reviewer']["username"] = comment['reviewer']["name"]
             by = People(comment['reviewer']["username"])
             if ("name" in comment['reviewer'].keys()):
                 by.set_name(comment['reviewer']["name"])
@@ -312,9 +314,9 @@ class Gerrit():
 
         return changesList
 
-    def check_merge_abandoned_changes(self, store):
+    def check_merged_abandoned_changes(self, store):
         # Get expected MERGED and ABANDONED issues from issues table
-        # Check with changes added from comments
+        # Check with changes added from MERGED and ABANDONED comments
         query_i = "SELECT COUNT(id) FROM  "
         query_c = "SELECT COUNT(DISTINCT(issue_id)) FROM  "
         query_i_m = query_i + 'issues WHERE status="MERGED"'
@@ -333,20 +335,37 @@ class Gerrit():
         if (issues_merged == changes_merged):
             print "MERGED comment processing OK: " + str(issues_merged)
         else:
-            print "[ERROR] MERGED comment processing KO"
+            print "[WARN] MERGED comment processing KO"
+            print "issues merged: " + str(issues_merged)
+            print "changes merged: " + str(changes_merged)
         if (issues_abandoned == changes_abandoned):
             print "ABANDONED comment processing OK: " + str(issues_abandoned)
         else:
-            print "[ERROR] ABANDONED comment processing KO"
+            print "[WARN] ABANDONED comment processing KO"
+            print "issues abandoned: " + str(issues_abandoned)
+            print "changes abandoned: " + str(changes_abandoned)
 
-    def add_merge_abandoned_changes(self, review, issue):
+    def add_new_change(self, issue):
+        # Add NEW change to show when issue was created
+        by = issue.submitted_by
+        date = issue.submitted_on
+        change = Change(unicode("status"), unicode(""),
+                                unicode("NEW"), by, date)
+        issue.add_change(change)
+
+    def add_merged_abandoned_changes(self, review, issue):
         # text like 'Patch Set %: Abandoned%' or text like 'Abandoned%'
         ABANDONED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Abandoned(.*)')
         ABANDONED_REGEXP_2 = re.compile(r'^Abandoned(.*)')
+        RESTORED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Restored(.*)')
+        RESTORED_REGEXP_2 = re.compile(r'^Restored(.*)')
+        abandoned = False
 
         # Review all comments and create MERGE and ABANDONED changes
         comments = review['comments']
+        ncomment = 0
         for comment in comments:
+            ncomment += 1
             by = People(comment['reviewer']["username"])
             if (comment["message"] == "Change has been successfully merged into the git repository."):
                 change = Change(unicode("status"), unicode(""),
@@ -354,11 +373,19 @@ class Gerrit():
                                 self._convert_to_datetime(comment["timestamp"]))
                 issue.add_change(change)
             elif (ABANDONED_REGEXP_1.match(comment["message"]) or
-                  ABANDONED_REGEXP_2.match(comment["message"])):
-                change = Change(unicode("status"), unicode(""),
-                                unicode("ABANDONED"), by,
-                                self._convert_to_datetime(comment["timestamp"]))
-                issue.add_change(change)
+                   ABANDONED_REGEXP_2.match(comment["message"])):
+                abandoned = True
+                by_abandoned = by
+                date_abandoned = self._convert_to_datetime(comment["timestamp"])
+            elif (RESTORED_REGEXP_1.match(comment["message"]) or 
+                   RESTORED_REGEXP_2.match(comment["message"])):
+                abandoned = False
+
+        if (abandoned):
+            change = Change(unicode("status"), unicode(""),
+                            unicode("ABANDONED"), by_abandoned, date_abandoned)
+            issue.add_change(change)
+
 
     def getReviews(self, limit, start):
 
@@ -429,7 +456,9 @@ class Gerrit():
                     reviews.append(entry["number"])
                     review_data = self.analyze_review(entry)
                     last_item = entry['sortKey']
-                    self.add_merge_abandoned_changes(entry, review_data)
+                    # extra changes not included in gerrit changes
+                    self.add_merged_abandoned_changes(entry, review_data)
+                    self.add_new_change(review_data)
                     bugsdb.insert_issue(review_data, dbtrk.id)
                     number_results += 1
                 elif 'rowCount' in entry.keys():
@@ -437,7 +466,7 @@ class Gerrit():
                     printdbg("CONTINUE FROM: " + last_item)
             total_reviews = total_reviews + int(number_results)
 
-        self.check_merge_abandoned_changes(bugsdb.store)
+        self.check_merged_abandoned_changes(bugsdb.store)
 
         print("Done. Number of reviews: " + str(total_reviews))
 
