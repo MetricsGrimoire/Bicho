@@ -354,6 +354,43 @@ class Gerrit():
         issue.add_change(change)
 
     def add_merged_abandoned_changes(self, review, issue):
+        if (issue.status<>'MERGED' and issue.status<>'ABANDONED'): return
+
+        ABANDONED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Abandoned(.*)')
+        ABANDONED_REGEXP_2 = re.compile(r'^Abandoned(.*)')
+        patchSets = review['patchSets']
+        comments = review['comments']
+        by = None
+        date = None
+        patchNumber = None
+
+        # MERGED event searched from approvals
+        if (issue.status=='MERGED'):
+            for activity in patchSets:
+                if "approvals" not in activity.keys():
+                    continue
+                patchSetNumber = activity['number']
+                for entry in activity['approvals']:
+                    if (entry['type']=='Code-Review' and entry['value']=='2'):
+                        by = People(entry['by']['username'])
+                        date = self._convert_to_datetime(entry["grantedOn"])
+                        patchNumber = patchSetNumber
+
+        # ABANDONED event searched from comments
+        if (issue.status=='ABANDONED'):
+            for comment in comments:
+                if (ABANDONED_REGEXP_1.match(comment["message"]) or
+                   ABANDONED_REGEXP_2.match(comment["message"])):
+                    by = People(comment['reviewer']["username"])
+                    date = self._convert_to_datetime(comment["timestamp"])
+
+        if (by and date):
+            change = Change(unicode("status"), patchNumber,
+                            issue.status, by, date)
+            issue.add_change(change)
+
+    # Comments are not a robust way for getting review status
+    def add_merged_abandoned_changes_from_comments(self, review, issue):
         # text like 'Patch Set %: Abandoned%' or text like 'Abandoned%'
         ABANDONED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Abandoned(.*)')
         ABANDONED_REGEXP_2 = re.compile(r'^Abandoned(.*)')
@@ -457,6 +494,7 @@ class Gerrit():
                     review_data = self.analyze_review(entry)
                     last_item = entry['sortKey']
                     # extra changes not included in gerrit changes
+                    # self.add_merged_abandoned_changes_from_comments(entry, review_data)
                     self.add_merged_abandoned_changes(entry, review_data)
                     self.add_new_change(review_data)
                     bugsdb.insert_issue(review_data, dbtrk.id)
@@ -465,7 +503,6 @@ class Gerrit():
                     pprint.pprint(entry)
                     printdbg("CONTINUE FROM: " + last_item)
             total_reviews = total_reviews + int(number_results)
-
         self.check_merged_abandoned_changes(bugsdb.store)
 
         print("Done. Number of reviews: " + str(total_reviews))
