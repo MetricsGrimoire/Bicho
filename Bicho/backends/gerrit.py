@@ -206,7 +206,7 @@ class Gerrit():
         except Exception, e:
             print "Problems with Review format: " + review['number']
             pprint.pprint(review)
-            print e
+            traceback.print_exc(file=sys.stdout)
             return None
 
     def parse_review(self, review):
@@ -259,6 +259,8 @@ class Gerrit():
         return comments
 
     def parse_comments(self, review):
+        if "comments" not in review.keys(): return []
+
         commentsList = []
         comments = review['comments']
 
@@ -314,15 +316,17 @@ class Gerrit():
 
         return changesList
 
-    def check_merged_abandoned_changes(self, store):
+    def check_merged_abandoned_changes(self, store, dbtrk_id):
         # Get expected MERGED and ABANDONED issues from issues table
         # Check with changes added from MERGED and ABANDONED comments
         query_i = "SELECT COUNT(id) FROM  "
         query_c = "SELECT COUNT(DISTINCT(issue_id)) FROM  "
-        query_i_m = query_i + 'issues WHERE status="MERGED"'
-        query_c_m = query_c + 'changes WHERE field="status" AND new_value="MERGED"'
-        query_i_a = query_i + 'issues WHERE status="ABANDONED"'
-        query_c_a = query_c + 'changes WHERE field="status" AND new_value="ABANDONED"'
+        query_i_m = query_i + 'issues WHERE status="MERGED" AND tracker_id='+str(dbtrk_id)
+        query_c_m = query_c + 'changes, issues WHERE field="status" AND new_value="MERGED"'
+        query_c_m += ' AND changes.issue_id = issues.id AND tracker_id='+str(dbtrk_id)
+        query_i_a = query_i + 'issues WHERE status="ABANDONED" AND tracker_id='+str(dbtrk_id)
+        query_c_a = query_c + 'changes, issues WHERE field="status" AND new_value="ABANDONED"'
+        query_c_a += ' AND changes.issue_id = issues.id AND tracker_id='+str(dbtrk_id)
         aux = store.execute(query_i_m)
         issues_merged = aux.get_one()[0]
         aux = store.execute(query_c_m)
@@ -503,7 +507,7 @@ class Gerrit():
                     pprint.pprint(entry)
                     printdbg("CONTINUE FROM: " + last_item)
             total_reviews = total_reviews + int(number_results)
-        self.check_merged_abandoned_changes(bugsdb.store)
+        self.check_merged_abandoned_changes(bugsdb.store, dbtrk.id)
 
         print("Done. Number of reviews: " + str(total_reviews))
 
