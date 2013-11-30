@@ -37,7 +37,7 @@ from post_processing import IssueLogger
 def main():
     """
     """
-    # Note: Default values for options are defined on
+    # Note: Default values for options are defined in
     # configuration module
     usage = 'Usage: %prog [options]'
 
@@ -50,7 +50,7 @@ def main():
     try:
         backend = Backend.create_backend(Config.backend)
     except ImportError, e:
-        printerr("Backend ''" + Config.backend + "'' not exists. " + str(e))
+        printerr("Backend ''" + Config.backend + "'' doesn't exist. " + str(e))
         sys.exit(2)
     printdbg("Bicho object created, options and backend initialized")
     backend.run()

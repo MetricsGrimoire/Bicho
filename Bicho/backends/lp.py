@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2012 GSyC/LibreSoft, Universidad Rey Juan Carlos
+# Copyright (C) 2012-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,8 +36,6 @@ from datetime import datetime
 from dateutil.parser import parse  # used to convert str time to datetime
 
 from tempfile import mkdtemp
-
-from lazr.restfulclient.errors import HTTPError
 
 
 class DBLaunchpadIssueExt(object):
@@ -136,7 +134,7 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
 
 class DBLaunchpadBackend(DBBackend):
     """
-    Adapter for Bugzilla backend.
+    Adapter for Launchpad backend.
     """
     def __init__(self):
         self.MYSQL_EXT = [DBLaunchpadIssueExtMySQL]
@@ -212,7 +210,7 @@ class DBLaunchpadBackend(DBBackend):
             db_issue_ext.web_link_standalone = self.__return_unicode(
                 issue.web_link_standalone)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -841,7 +839,7 @@ class LPBackend(Backend):
                                         unicode('duplicate_of'),
                                         unicode(bug.bug.duplicate_of.id))
             issue.add_temp_relationship(temp_rel)
-            
+
         issue.set_heat(bug.bug.heat)
         issue.set_linked_branches(bug.bug.linked_branches)
 
@@ -880,7 +878,7 @@ class LPBackend(Backend):
 
             # author and date are stored in the comment object
             aux = a['message_link']
-            comment_id = int(aux[aux.rfind('/')+1:])
+            comment_id = int(aux[aux.rfind('/') + 1:])
             comment = bug.bug.messages[comment_id]
             a_by = self._get_person(comment.owner)
             a_on = self.__drop_timezone(comment.date_created)
@@ -899,7 +897,7 @@ class LPBackend(Backend):
         return self.__drop_timezone(parse(str))
 
     def __drop_timezone(self, dt):
-        # drop the timezone from the datetime objetct
+        # drop the timezone from the datetime object
         # MySQL doesn't support timezone, we remove it
 
         if dt.isoformat().rfind('+') > 0:
@@ -932,7 +930,7 @@ class LPBackend(Backend):
             url = url[:-1]
 
         if (url.rfind('://bugs.launchpad.net') >= 0) or \
-               (url.rfind('://launchpad.net') >= 0):
+                (url.rfind('://launchpad.net') >= 0):
             project_name = url[url.rfind('/') + 1:]
 
         return project_name
@@ -962,8 +960,8 @@ class LPBackend(Backend):
         if not os.path.exists(cachedir):
             os.makedirs(cachedir)
         cre_file = os.path.join(cachedir + 'launchpad-credential')
-        self.lp = Launchpad.login_with('Bicho','production',
-                                       credentials_file = cre_file)
+        self.lp = Launchpad.login_with('Bicho', 'production',
+                                       credentials_file=cre_file)
 
         aux_status = ["New", "Incomplete", "Opinion", "Invalid", "Won't Fix",
                       "Expired", "Confirmed", "Triaged", "In Progress",
@@ -1001,7 +999,7 @@ class LPBackend(Backend):
         for bug in bugs:
 
             if bug.web_link in analyzed:
-                continue   #for the bizarre error #338
+                continue  # for the bizarre error #338
 
             try:
                 issue_data = self.analyze_bug(bug)
@@ -1021,7 +1019,7 @@ class LPBackend(Backend):
                 bugsdb.insert_issue(issue_data, dbtrk.id)
             except UnicodeEncodeError:
                 printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                      % (issue_data.issue))
+                         % (issue_data.issue))
             except NotFoundError:
                 printerr("NotFoundError: the issue %s couldn't be stored"
                          % (issue_data.issue))

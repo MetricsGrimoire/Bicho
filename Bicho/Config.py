@@ -24,6 +24,7 @@
 
 from backends import Backend
 import info
+from argparse import ArgumentParser
 from optparse import OptionGroup, OptionParser
 import os
 import pprint
@@ -48,53 +49,63 @@ class InvalidConfig(Exception):
 class Config:
 
     @staticmethod
-    def load_from_file (config_file):
+    def load_from_file(config_file):
         try:
-            f = open (config_file, 'r')
-            exec f in Config.__dict__
-            f.close ()
+            f = open(config_file, 'r')
+            exec f in Config.__dict__ # run variable assignments
+            f.close()
         except Exception, e:
-            raise ErrorLoadingConfig ("Error reading config file %s (%s)" % (\
-                    config_file, str (e)))
+            raise ErrorLoadingConfig("Error reading config file %s (%s)" % (\
+                    config_file, str(e)))
 
     @staticmethod        
-    def load ():
+    def load():
+        """
+        Try to load a config file from known default locations.
+
+        For the format of the config file, see 'config.sample' in the toplevel directory.
+        """
         # FIXME: a hack to avoid circular dependencies. 
         from utils import bicho_dot_dir, printout
 
         # First look in /etc
         # FIXME /etc is not portable
-        config_file = os.path.join ('/etc', 'bicho')
-        if os.path.isfile (config_file):
-            Config.load_from_file (config_file)
+        config_file = os.path.join('/etc', 'bicho')
+        if os.path.isfile(config_file):
+            Config.load_from_file(config_file)
 
         # Then look at $HOME
-        config_file = os.path.join (bicho_dot_dir (), 'config')
-        if os.path.isfile (config_file):
-            Config.load_from_file (config_file) 
+        config_file = os.path.join(bicho_dot_dir(), 'config')
+        if os.path.isfile(config_file):
+            Config.load_from_file(config_file) 
         else:
             # If there's an old file, migrate it
-            old_config = os.path.join (os.environ.get ('HOME'), '.bicho')
-            if os.path.isfile (old_config):
-                printout ("Old config file found in %s, moving to %s", \
+            old_config = os.path.join(os.environ.get('HOME'), '.bicho')
+            if os.path.isfile(old_config):
+                printout("Old config file found in %s, moving to %s", \
                               (old_config, config_file))
-                os.rename (old_config, config_file)
-                Config.load_from_file (config_file)
+                os.rename(old_config, config_file)
+                Config.load_from_file(config_file)
 
     @staticmethod
-    def check_params(check_params):            
+    def check_params(check_params):
         for param in check_params:
-            if not vars(Config).has_key(param) or vars(Config)[param] is None:
+            if getattr(Config, param, None) is None: # if it's None or nonexistent
                 raise InvalidConfig('Configuration parameter ''%s'' is required' % param)
 
     @staticmethod
     def check_config():
         """
+        Check crucial configuration details for existence and workability.
+
+        Runs checks to see whether bugtracker's URL is reachable, whether backend is available at the right filename, and whether the script has the key arguments it needs to run: URL, backend, and database details.
+
+        The filename for the backend in the backends/ directory needs to be the same as the configuration argument specifying that backend. For instance, invoking the Launchpad backend uses 'lp', and so the filename is 'lp.py'.
         """
         Config.check_params(['url','backend'])
         
-        if Config.backend+".py" not in Backend.get_all_backends():
-            raise InvalidConfig('Backend "'+ Config.backend + '" does not exist')
+        if Config.backend + ".py" not in Backend.get_all_backends():
+            raise InvalidConfig('Backend "' + Config.backend + '" does not exist')
 
 
         url = urlparse.urlparse(Config.url)
@@ -105,30 +116,33 @@ class Config:
             response = urlopen(req)
         except HTTPError, e:
             raise InvalidConfig('The server could not fulfill the request '
-                               + str(e.msg) + '('+ str(e.code)+')')
+                               + str(e.msg) + '(' + str(e.code) + ')')
         except URLError, e:
             raise InvalidConfig('We failed to reach a server. ' + str(e.reason))
         
         except ValueError, e:
-            print ("Not an URL: "  + Config.url)
-            
-                
-        if vars(Config).has_key('input') and Config.input == 'db':
+            print ("Not an URL: " + Config.url)
+
+
+        if getattr(Config, 'input', None) == 'db':
             Config.check_params(['db_driver_in', 'db_user_in', 'db_password_in',
-                                 'db_hostname_in', 'db_port_in', 'db_database_in'])        
-        if vars(Config).has_key('output') and Config.output == 'db':
+                                 'db_hostname_in', 'db_port_in', 'db_database_in'])
+        if getattr(Config, 'output', None) == 'db':
             Config.check_params(['db_driver_out','db_user_out','db_password_out',
                                  'db_hostname_out','db_port_out','db_database_out'])
-        
+
     @staticmethod
     def clean_empty_options(options):
-        clean_opt = {};        
-        for option in vars(options):
-            if (vars(options)[option] is not None) and \
-              ( not Config.__dict__.has_key(option)) :
-                clean_opt[option]=vars(options)[option]                    
+        """
+        Create a dict of options whose values are 'None' or nonexistent. Also, if there's a default value that came in from argparse, we don't want it ending up in the Config object.
+        """
+        clean_opt = {};
+        d = vars(options)
+        for option in d:
+            if (d[option] is not None) and not hasattr(Config, option):
+                clean_opt[option] = d[option]
         return clean_opt
-        
+
     @staticmethod
     def set_config_options(usage):
         """
@@ -210,18 +224,18 @@ class Config:
                 
         (options, args) = parser.parse_args()
                             
-        if options.cfgfile is not None:
-            Config.load_from_file(options.cfgfile)
+        if options.cfgfile is not None: # if a config file was specified on the command line
+            Config.load_from_file(options.cfgfile) # try to load from that file
         else:
-            Config.load()
+            Config.load() # try to load a config file from default locations
                         
         # Command line options have preference
         # Backwards compatibility
         if (len(args) > 0):
-            Config.backend=args[0]
+            Config.backend = args[0]
         if (len(args) == 2):
-            Config.url=args[1]
+            Config.url = args[1]
 
-        # Not remove config file options with empty default values
+        # Reconciling config file options with command-line options
         Config.__dict__.update(Config.clean_empty_options(options))
-        Config.check_config ()
+        Config.check_config()

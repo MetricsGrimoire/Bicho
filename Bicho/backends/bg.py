@@ -44,6 +44,7 @@ from Bicho.utils import printerr, printdbg, printout, valid_XML_char_ordinal
 
 BUGZILLA = "bugzilla"
 
+
 class DBBugzillaIssueExt(object):
     """
     """
@@ -150,7 +151,7 @@ class DBBugzillaBackend(DBBackend):
         @rtype: L{DBSourceForgeIssueExt}
         """
 
-        newIssue = False;
+        newIssue = False
 
         try:
             db_issue_ext = store.find(DBBugzillaIssueExt,
@@ -185,7 +186,7 @@ class DBBugzillaBackend(DBBackend):
             db_issue_ext.group = self.__return_unicode(issue.group)
             db_issue_ext.flag = self.__return_unicode(issue.flag)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
 
             store.flush()
@@ -197,11 +198,11 @@ class DBBugzillaBackend(DBBackend):
     def __return_int(self, str):
         """
         Decodes into int, and pays attention to empty ones
-        """ 
+        """
         if str is None:
             return str
         else:
-            return int(str) 
+            return int(str)
 
     def __return_unicode(self, str):
         """
@@ -256,10 +257,10 @@ class SoupHtmlParser():
     status_map = {}
     resolution_map = {}
 
-    def __init__ (self, html, idBug):
+    def __init__(self, html, idBug):
         self.html = html
         self.idBug = idBug
-        self.field_map = {'Status': u'status', 'Resolution': u'resolution',}
+        self.field_map = {'Status': u'status', 'Resolution': u'resolution'}
 
     def sanityze_change(self, field, old_value, new_value):
         field = self.field_map.get(field, field)
@@ -275,10 +276,10 @@ class SoupHtmlParser():
         return field, old_value, new_value
 
     def remove_comments(self, soup):
-        cmts = soup.findAll(text=lambda text:isinstance(text, BFComment))
+        cmts = soup.findAll(text=lambda text: isinstance(text, BFComment))
         [comment.extract() for comment in cmts]
 
-    def _to_datetime_with_secs(self,str_date):
+    def _to_datetime_with_secs(self, str_date):
         """
         Returns datetime object from string
         """
@@ -287,7 +288,7 @@ class SoupHtmlParser():
     def parse_changes(self):
         soup = BeautifulSoup(self.html)
         self.remove_comments(soup)
-        remove_tags = ['a', 'span','i']
+        remove_tags = ['a', 'span', 'i']
         changes = []
         tables = soup.findAll('table')
 
@@ -319,16 +320,16 @@ class SoupHtmlParser():
                 #
                 if len(cols[2].contents) > 1:
                     aux_c = unicode(" ".join(cols[2].contents))
-                    field = unicode(aux_c.replace("\n","").strip())
+                    field = unicode(aux_c.replace("\n", "").strip())
                 else:
-                    field = unicode(cols[2].contents[0].replace("\n","").strip())
+                    field = unicode(cols[2].contents[0].replace("\n", "").strip())
                 removed = unicode(cols[3].contents[0].strip())
                 added = unicode(cols[4].contents[0].strip())
             else:
                 # same as above with the Attachment example
                 if len(cols[0].contents) > 1:
                     aux_c = unicode(" ".join(cols[0].contents))
-                    field = aux_c.replace("\n","").strip()
+                    field = aux_c.replace("\n", "").strip()
                 else:
                     field = cols[0].contents[0].strip()
                 removed = cols[1].contents[0].strip()
@@ -558,7 +559,7 @@ class BugzillaIssue(Issue):
         @param remaining_time: remaining_time of the issue
         @type remaining_time: C{str}
         """
-        self.remaining_time =  remaining_time
+        self.remaining_time = remaining_time
 
     def set_actual_time(self, actual_time):
         """
@@ -567,7 +568,7 @@ class BugzillaIssue(Issue):
         @param actual_time: actual_time of the issue
         @type actual_time: C{str}
         """
-        self.actual_time =  actual_time
+        self.actual_time = actual_time
 
     def set_deadline(self, deadline):
         """
@@ -605,23 +606,23 @@ class BugzillaIssue(Issue):
         """
         self.flag = flag
 
+
 class BugzillaHandler(xml.sax.handler.ContentHandler):
     """
     Parses XML to get bugzilla version, the XML is using
     https://bugzilla.libresoft.es/bugzilla.dtd
     """
 
-    def __init__ (self):
+    def __init__(self):
         self.init_bugzilla()
 
     def init_bugzilla(self):
 
         self.bugzilla = {
-              "version": None,
-              "urlbase": None,
-              "maintainer": None,
-              "exporter": None
-          }
+            "version": None,
+            "urlbase": None,
+            "maintainer": None,
+            "exporter": None}
 
     def get_bugzilla(self):
         return self.bugzilla
@@ -636,24 +637,25 @@ class BugzillaHandler(xml.sax.handler.ContentHandler):
             for attrName in attrs.keys():
                 self.bugzilla[attrName] = unicode(attrs.get(attrName))
 
+
 class BugsHandler(xml.sax.handler.ContentHandler):
     """
     Parses XML for a list of bugs, the XML is using
     https://bugzilla.libresoft.es/bugzilla.dtd
     """
 
-    def __init__ (self):
+    def __init__(self):
         """
         """
-        # TBD attachments and flag, see bugzilla.dtd        
+        # TBD attachments and flag, see bugzilla.dtd
         #self.issues_data = {}
         self.issues_data = []
         self.init_bug()
-        
+
     def get_issues(self):
         return self.issues_data
 
-    def init_bug (self):
+    def init_bug(self):
         """
         Clean all the values to start parsing a new bug
         """
@@ -661,7 +663,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.atags = {
             "bug_id": None,
             "alias": None,
-            "creation_ts":None,
+            "creation_ts": None,
             "short_desc": None,
             "delta_ts": None,
             "reporter_accessible": None,
@@ -684,14 +686,14 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             "votes": None,
             "everconfirmed": None,
             "reporter": None,
-            "reporter_name": None, #attribute
+            "reporter_name": None,  # attribute
             "assigned_to": None,
-            "assigned_to_name": None, #attribute
+            "assigned_to_name": None,  # attribute
             "qa_contact": None,
             "estimated_time": None,
             "remaining_time": None,
             "actual_time": None,
-            "deadline": None }
+            "deadline": None}
 
         self.btags = {
             "keywords": [],
@@ -707,7 +709,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         self.long_desc_tags = {
             "who": None,
-            "who_name": None, #attribute
+            "who_name": None,  # attribute
             "bug_when": None,
             "work_time": None,
             "thetext": None}
@@ -729,8 +731,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         """
         It is called every time a start tag is detected.
         """
-        if self.atags.has_key( name ) or self.btags.has_key( name ) \
-                or self.long_desc_tags.has_key( name ):
+        if name in self.atags or name in self.btags \
+                or name in self.long_desc_tags:
             self.tag_name = name
             self.interestData = []
 
@@ -747,7 +749,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             elif self.tag_name == "who":
                 self.long_desc_tags["who_name"] = unicode(attrs.get(attrName))
 
-    def characters (self, chrs):
+    def characters(self, chrs):
         if self.tag_name:
             self.interestData.append(chrs)
 
@@ -768,21 +770,21 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         return aux
 
     def endElement(self, name):
-        if self.atags.has_key( name ):
+        if name in self.atags:
             aux = string.join(self.interestData)
             if not self.atags[name]:
                 #delta_ts could be overwritten by delta_ts of attachment
                 self.atags[name] = unicode(aux)
             self.tag_name = None
-        elif self.long_desc_tags.has_key( name ):
+        elif name in self.long_desc_tags:
             aux = string.join(self.interestData)
             self.long_desc_tags[name] = unicode(aux)
             self.tag_name = None
-        elif self.btags.has_key( name ):
+        elif name in self.btags:
             aux = string.join(self.interestData)
             self.btags[name].append(unicode(aux))
             self.tag_name = None
-        elif self.ctags.has_key( name ):
+        elif name in self.ctags:
             if name == 'long_desc':
                 aux = self._copy_long_desc_tags()
                 self.ctags['long_desc'].append(aux)
@@ -796,7 +798,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     def print_debug_data(self):
         printdbg("")
-        printdbg("ID: " +  self.bug_id)
+        printdbg("ID: " + self.bug_id)
         printdbg("Creation date: " + self.creation_ts)
         printdbg("Short description: " + self.short_desc)
         printdbg("Status: " + self.bug_status)
@@ -812,18 +814,18 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         Returns long description comments from 2nd to last one if the bug has
         comments. Empty list in any other case
         """
-        if len(self.ctags["long_desc"]) > 1 :
+        if len(self.ctags["long_desc"]) > 1:
             return self.ctags["long_desc"][1:]
         else:
             return []
 
-    def _convert_to_datetime(self,str_date):
+    def _convert_to_datetime(self, str_date):
         """
         Returns datetime object from string
         """
         return parse(str_date).replace(tzinfo=None)
 
-    def _to_datetime_with_secs(self,str_date):
+    def _to_datetime_with_secs(self, str_date):
         """
         Returns datetime object from string with seconds
         """
@@ -831,7 +833,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
     def get_issue(self):
         issue_id = self.atags["bug_id"]
-        type  = self.atags["bug_severity"]
+        type = self.atags["bug_severity"]
         summary = self.atags["short_desc"]
 
         if len(self.ctags["long_desc"]) > 0:
@@ -916,26 +918,28 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
 # 500 is the max recommend by bugmaster@gnome.org.
 # Use 1 for legacy working.
-MAX_ISSUES_PER_XML_QUERY = 500
+# 250 for working with bugzilla in redhat
+MAX_ISSUES_PER_XML_QUERY = 250
 
 # length of hibernation in seconds
 HIBERNATION_LENGTH = 100
 
+
 class BGBackend(Backend):
 
-    def __init__ (self):
+    def __init__(self):
         self.url = self._healthy_url(Config.url)
         self.delay = Config.delay
         self.cookies = {}
         self.version = None
         self.tracker = None
-        self.retrieved = {} # retrieved issues on this run
+        self.retrieved = {}  # retrieved issues on this run
 
         try:
             self.backend_password = Config.backend_password
             self.backend_user = Config.backend_user
         except AttributeError:
-            printout("No bugzilla account provided, mail addresses won't " +\
+            printout("No Bugzilla account provided, mail addresses won't " +
                      "be retrieved")
             self.backend_password = None
             self.backend_user = None
@@ -1032,17 +1036,18 @@ class BGBackend(Backend):
             self._retrieve_issues(ids, url, self.tracker.id)
         else:
             i = 0
-            max_rounds = 50 # 50*10000
+            max_rounds = 50  # 50*10000
             url = self._get_domain(self.url)
             last_date, next_date = self._get_last_and_next_dates()
 
             # Some bugzillas limit the number of results that a query can return.
-            # Due to this, bicho will search for new issues/changes until find
-            # no one new.
+            # Due to this, bicho will search for new issues/changes until there
+            # are no more new ones.
             ids = self._retrieve_issues_ids(self.url, self.version, next_date)
 
             while(ids):
-                if (i>=max_rounds): break
+                if (i >= max_rounds):
+                    break
                 printout("Round #%d - Total issues to retrieve: %d" % (i, len(ids)))
                 self._retrieve_issues(ids, url, self.tracker.id)
                 i += 1
@@ -1078,7 +1083,7 @@ class BGBackend(Backend):
 
             # Filter issues already retrieved
             if not_retrieved:
-                if (not self.retrieved.has_key(id)) or (self.retrieved[id] != change_ts):
+                if (not id in self.retrieved) or (self.retrieved[id] != change_ts):
                     ids.append(id)
             else:
                 ids.append(id)
@@ -1098,7 +1103,7 @@ class BGBackend(Backend):
             printdbg("Issues to retrieve from: %s" % url)
 
             handler = BugsHandler()
-            self._safe_xml_parse(url, handler);
+            self._safe_xml_parse(url, handler)
             issues = handler.get_issues()
 
             # Retrieving changes
@@ -1140,7 +1145,7 @@ class BGBackend(Backend):
 
         last_ts_str = self._timestamp_to_str(last_ts)
 
-        # We add one second to the last date to avoid retrieve the same
+        # We add one second to the last date to avoid retrieving the same
         # changes modified at that date.
         next_ts = last_ts + timedelta(seconds=1)
         next_ts_str = self._timestamp_to_str(next_ts)
@@ -1148,7 +1153,12 @@ class BGBackend(Backend):
 
     def _healthy_url(self, url):
         tokens = url.split('product=')
-        url = tokens[0]+'product='+urllib.quote(tokens[1])
+        component = tokens[1].split('&component=')
+        if len(component) > 1:
+            url = tokens[0] + 'product=' + urllib.quote(component[0])
+            url += "&component=" + urllib.quote(component[1])
+        else:
+            url = tokens[0] + 'product=' + urllib.quote(tokens[1])
         return url
 
     def _urlopen_auth(self, url):
@@ -1211,7 +1221,7 @@ class BGBackend(Backend):
         if base_url.find("show_bug.cgi") > 0:
             url = base_url + "&ctype=xml"
         else:
-            url = self._get_domain(base_url) + "show_bug.cgi?id=0&ctype=xml"
+            url = self._get_domain(base_url) + "show_bug.cgi?id=&ctype=xml"
         return url
 
     def _get_issues_list_url(self, base_url, version, from_date=None):

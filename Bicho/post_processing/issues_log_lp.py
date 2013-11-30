@@ -28,6 +28,7 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_launchpad (\
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      tracker_id INTEGER NOT NULL, \
                      issue_id INTEGER NOT NULL, \
+                     change_id INTEGER NOT NULL, \
                      issue VARCHAR(255) NOT NULL, \
                      type VARCHAR(32) NULL, \
                      summary VARCHAR(255) NOT NULL, \
@@ -77,7 +78,7 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_launchpad (\
 
 """
 The fields with the comment "# project" contain the name of the project
-and the semicolon before the tag. 
+and the semicolon before the tag.
 Example: "oslo: status"
 """
 __launchpad_issues_links__ = { # the ones seen in Maria
@@ -143,8 +144,9 @@ class LaunchpadIssuesLog(IssuesLog):
             #    db_ilog.type = value
             elif table_field == 'assigned_to':
                 uid = self._get_user_id(value)
-                db_ilog.assigned_to = self._get_people_id(uid,
-                    self._get_tracker_id(db_ilog.issue_id))
+                #db_ilog.assigned_to = self._get_people_id(uid,
+                #    self._get_tracker_id(db_ilog.issue_id))
+                db_ilog.assigned_to = self._get_people_id(uid)
             elif table_field == 'status':
                 db_ilog.status = value
             elif table_field == 'affects':
@@ -180,11 +182,15 @@ class LaunchpadIssuesLog(IssuesLog):
             return text[offset:]
 
     def _get_changes(self, issue_id):
-        aux = self.store.execute("SELECT field, new_value, changed_by, \
+        #aux = self.store.execute("SELECT id, field, new_value, changed_by, \
+        #changed_on FROM changes \
+        #WHERE (changes.issue_id=%s AND field NOT LIKE '%%:%%') \
+        #OR (changes.issue_id=%s AND field LIKE '%%%s:%%')" %
+        #(issue_id, issue_id, self._project_name))
+        aux = self.store.execute("SELECT id, field, new_value, changed_by, \
         changed_on FROM changes \
-        WHERE (changes.issue_id=%s AND field NOT LIKE '%%:%%') \
-        OR (changes.issue_id=%s AND field LIKE '%%%s:%%')" %
-        (issue_id, issue_id, self._project_name))
+        WHERE changes.issue_id=%s" %
+        (issue_id))
         return aux
 
     def _get_dbissues_object(self, issue_name, tracker_id):

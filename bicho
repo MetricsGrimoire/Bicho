@@ -6,8 +6,7 @@ import Bicho.main
 if __name__ == "__main__":
     try:
         retval = Bicho.main.main()
-        sys.exit (retval)
+        sys.exit(retval)
     except KeyboardInterrupt:
         print "\n\nReceived Ctrl-C or other break signal. Exiting."
-        sys.exit (0)
-
+        sys.exit(0)

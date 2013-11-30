@@ -31,29 +31,29 @@ import urllib
 
 from Config import Config
 
-def printout (str = '\n'):
+def printout(str='\n'):
     if str != '\n':
         str += '\n'
-    sys.stdout.write (str)
-    sys.stdout.flush ()
+    sys.stdout.write(str)
+    sys.stdout.flush()
 
-def printerr (str = '\n'):
+def printerr(str='\n'):
     if str != '\n':
         str += '\n'
-    sys.stderr.write (str)
-    sys.stderr.flush ()
+    sys.stderr.write(str)
+    sys.stderr.flush()
 
-def printwrn (str = '\n'):
+def printwrn(str='\n'):
     if Config.quiet:
         return
 
-    printerr ("WRN: " + str)
+    printerr("WRN: " + str)
 
-def printdbg (str = '\n'):
+def printdbg(str='\n'):
     if not Config.debug:
         return
     t = time.strftime("%d/%b/%Y-%X")
-    printout ("DBG: [" + t +"] "+ str)
+    printout("DBG: [" + t + "] " + str)
 
 def get_domain(url):
     strings = url.split('/')
@@ -104,24 +104,24 @@ _dirs = {}
 
 def create_dir(dir):
     try:
-        os.mkdir (dir, 0700)
+        os.mkdir(dir, 0700)
     except OSError, e:
         if e.errno == errno.EEXIST:
-            if not os.path.isdir (dir):
+            if not os.path.isdir(dir):
                 raise
         else:
             raise
 
 
-def bicho_dot_dir ():
+def bicho_dot_dir():
     try:
         return _dirs['dot']
     except KeyError:
         pass
 
-    dot_dir = os.path.join (os.environ.get ('HOME'), '.bicho')
-    create_dir (dot_dir)
-    create_dir (os.path.join(dot_dir, "cache"))
+    dot_dir = os.path.join(os.environ.get('HOME'), '.bicho')
+    create_dir(dot_dir)
+    create_dir(os.path.join(dot_dir, "cache"))
         
     _dirs['dot'] = dot_dir
 

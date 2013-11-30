@@ -20,7 +20,10 @@
 #           Ronaldo Maia <romaia@async.com.br>
 #           Daniel Izquierdo Cortazar <dizquierdo@libresoft.es>
 #           Luis Cañas Díaz <lcanas@libresoft.es>
-#
+
+"""
+The SourceForge backend is abandoned and nonfunctional as of November 2013.
+"""
 
 import re
 import urlparse
@@ -76,6 +79,7 @@ class SourceForgeParserError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
 
 class SourceForgeIssue(Issue):
     """
@@ -181,22 +185,22 @@ class DBSourceForgeBackend(DBBackend):
         @rtype: L{DBSourceForgeIssueExt}
         """
 
-        newIssue = False;
+        newIssue = False
 
         try:
             db_issue_ext = store.find(DBSourceForgeIssueExt,
-                                    DBSourceForgeIssueExt.issue_id == issue_id).one()
+                                      DBSourceForgeIssueExt.issue_id == issue_id).one()
             if not db_issue_ext:
                 newIssue = True
                 db_issue_ext = DBSourceForgeIssueExt(issue_id)
                 #db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
 
-            db_issue_ext.category = unicode(issue.category) 
+            db_issue_ext.category = unicode(issue.category)
             db_issue_ext.group = unicode(issue.group)
 
-            if newIssue == True:
+            if newIssue is True:
                 store.add(db_issue_ext)
-            
+
             store.flush()
             return db_issue_ext
         except:
@@ -208,13 +212,13 @@ class DBSourceForgeBackend(DBBackend):
         Does nothing
         """
         pass
-    
+
     def insert_attachment_ext(self, store, attch, attch_id):
         """
         Does nothing
         """
         pass
-    
+
     def insert_change_ext(self, store, change, change_id):
         """
         Does nothing
@@ -336,7 +340,7 @@ class SourceForgeParser():
     def __parse_issue_id(self, soup):
         """
         """
-        try :
+        try:
             m = ISSUE_ID_PATTERN.match(unicode(soup.title.string))
             return m.group(1)
         except:
@@ -484,9 +488,9 @@ class SourceForgeParser():
                 # Date and sender are content on the first 'p'
                 a = rawsub.find('a')
                 if a:
-                    comment['by'] = {'name' : a.get('title'), 'id' : a.string}
+                    comment['by'] = {'name': a.get('title'), 'id': a.string}
                 else:
-                    comment['by'] = {'name':'nobody', 'id':'nobody'}
+                    comment['by'] = {'name': 'nobody', 'id': 'nobody'}
 
                 # Time stamp is the first value of the 'p' contents
                 d = self.__clean_str(rawsub.contents[0])
@@ -543,7 +547,7 @@ class SourceForgeParser():
                     change['by'] = {'name': self.__clean_str(aux[3].a.get('title')),
                                     'id': self.__clean_str(aux[3].a.string)}
                 else:
-                    change['by'] = {'name':'nobody', 'id':'nobody'}
+                    change['by'] = {'name': 'nobody', 'id': 'nobody'}
 
                 changes.append(change)
         except AttributeError:
@@ -563,8 +567,8 @@ class SourceForgeParser():
     def __remove_comments(self, soup):
         """
         """
-        cmts = soup.findAll(text=lambda text:isinstance(text,
-                                                        BeautifulSoup.Comment))
+        cmts = soup.findAll(text=lambda text: isinstance(text,
+                                                         BeautifulSoup.Comment))
         [comment.extract() for comment in cmts]
 
     def __remove_tag(self, soup, tag):
@@ -578,15 +582,13 @@ class SourceForgeParser():
         return s.strip(' \n\t')
 
     def __str_to_date(self, s):
-      """
-      Convert a string with the form YYYY-MM-DD HH:MM to an well-formed
-      datatime type.
-      """
-      #dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
-      dt = parse(s).replace(tzinfo=None)
-      return dt
-
-
+        """
+        Convert a string with the form YYYY-MM-DD HH:MM to an well-formed
+        datatime type.
+        """
+        # dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S UTC')
+        dt = parse(s).replace(tzinfo=None)
+        return dt
 
 
 class SourceForge():
@@ -594,7 +596,7 @@ class SourceForge():
     SourceForge backend
     """
     URL_REQUIRED_FIELDS = ['atid', 'group_id']
-    
+
     SUPPORTED_SF_TRACKERS = ('sourceforge', 'website')
 
     def __init__(self):
@@ -610,7 +612,7 @@ class SourceForge():
         self.parser = SourceForgeParser()
 
         #first we take the bugs ids
-        if url.find("aid=")>0:
+        if url.find("aid=") > 0:
             aux = url.split("aid=")[1].split("&")[0]
             ids.append(aux)
         else:
@@ -626,14 +628,14 @@ class SourceForge():
         self.db.insert_supported_traker(SUPPORTED_SF_TRACKERS[0],
                                         SUPPORTED_SF_TRACKERS[1])
         self.__insert_tracker(self.url)
-        
+
         nbugs = len(ids)
         if nbugs == 0:
             printout("No bugs found. Did you provide the correct url?")
             sys.exit(0)
 
         for id in ids:
-            url = self.url + '&func=detail&aid=%s' % id # FIXME:urls!!!
+            url = self.url + '&func=detail&aid=%s' % id  # FIXME:urls!!!
             printdbg(url)
             issue = self.__get_issue(url)
             self.__insert_issue(issue)
@@ -702,16 +704,16 @@ class SourceForge():
         """
         """
         query = urlparse.urlsplit(url).query
-        query = query.split("&") 
+        query = query.split("&")
         query.sort()
         parameter = ""
         for q in query:
-            if q.find("atid")>-1:
+            if q.find("atid") > -1:
                 parameter = parameter + "&" + q
-            if q.find("group_id")>-1:    
+            if q.find("group_id") > -1:
                 parameter = parameter + "&" + q
-        
-        aux_url = (url.split("/?")[0] + "/?" + parameter).replace("?&","?")
+
+        aux_url = (url.split("/?")[0] + "/?" + parameter).replace("?&", "?")
         self.url = aux_url
 
 Backend.register_backend('sf', SourceForge)
