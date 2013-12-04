@@ -161,8 +161,7 @@ class IssuesLog():
         """
         aux = self._get_dbissues_object(db_ilog.issue, db_ilog.tracker_id)
         aux.issue_id = db_ilog.issue_id
-        aux.change_id = db_ilog.change_id
-        aux.changed_by = db_ilog.changed_by
+        aux.change_id = db_ilog.change_id        
         aux.type = db_ilog.type
         aux.summary = db_ilog.summary
         aux.description = db_ilog.description
@@ -267,7 +266,7 @@ class IssuesLog():
                 db_ilog = self._copy_issue(db_ilog)
                 db_ilog.date = date
                 db_ilog.change_id = change_id
-                db_ilog.changed_by = changed_by
+                db_ilog.submitted_by = changed_by
                 db_ilog = self._assign_values(db_ilog, field, new_value)
 
                 try:
@@ -276,7 +275,7 @@ class IssuesLog():
                 except:
                     # self.store.rollback() # is this useful in this context?
                     traceback.print_exc()
-            self._post_history(db_ilog, final_status)
+            ##self._post_history(db_ilog, final_status)
             self.store.commit()
             ndone += 1
         self._print_final_msg()
