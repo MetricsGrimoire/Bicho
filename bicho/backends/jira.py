@@ -29,16 +29,15 @@ import sys
 from storm.locals import Int, DateTime, Unicode, Reference, Desc
 
 from dateutil.parser import parse
-from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
-from Bicho.backends import Backend
-from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from Bicho.Config import Config
-from Bicho.utils import printout, printerr, printdbg
+from bicho.common import Issue, People, Tracker, Comment, Change, Attachment
+from bicho.backends import Backend
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.config import Config
+from bicho.utils import printout, printerr, printdbg
 from BeautifulSoup import BeautifulSoup, Tag, NavigableString
 #from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
-#from Bicho.Config import Config
-#from Bicho.utils import *
+
 
 import xml.sax.handler
 #from xml.sax._exceptions import SAXParseException

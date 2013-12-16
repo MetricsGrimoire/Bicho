@@ -19,12 +19,12 @@
 # Authors:  Alvaro del Castillo <acs@bitergia.com>
 #
 
-from Bicho.Config import Config
+from bicho.config import Config
 
-from Bicho.backends import Backend
-from Bicho.utils import create_dir, printdbg, printout, printerr
-from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from Bicho.common import Tracker, Issue, Comment, People, Change
+from bicho.backends import Backend
+from bicho.utils import create_dir, printdbg, printout, printerr
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.common import Tracker, Issue, Comment, People, Change
 
 from dateutil.parser import parse
 from datetime import datetime

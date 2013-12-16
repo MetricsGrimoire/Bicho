@@ -20,7 +20,7 @@
 #
 
 import pprint
-from Bicho.post_processing import IssueLogger
+from bicho.post_processing import IssueLogger
 from issues_log import *
 
 __sql_drop__ = 'DROP TABLE IF EXISTS issues_log_gerrit;'

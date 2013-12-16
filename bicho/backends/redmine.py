@@ -18,12 +18,12 @@
 #
 # Authors:  Alvaro del Castillo <acs@bitergia.com>
 
-from Bicho.Config import Config
+from bicho.config import Config
 
-from Bicho.backends import Backend
-from Bicho.utils import create_dir, printdbg, printout, printerr
-from Bicho.db.database import DBIssue, DBBackend, get_database
-from Bicho.common import Tracker, Issue, People, Change, Comment
+from bicho.backends import Backend
+from bicho.utils import create_dir, printdbg, printout, printerr
+from bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.common import Tracker, Issue, People, Change, Comment
 
 from BeautifulSoup import BeautifulSoup, Comment as BFComment
 

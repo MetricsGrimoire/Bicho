@@ -30,11 +30,11 @@ import traceback
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import Comment as BFComment
-from Bicho.backends import Backend
-from Bicho.Config import Config
-from Bicho.utils import printerr, printdbg, printout
-from Bicho.common import Tracker, People, Issue, Comment, Change
-from Bicho.db.database import DBIssue, DBBackend, get_database, DBTracker,\
+from bicho.backends import Backend
+from bicho.config import Config
+from bicho.utils import printerr, printdbg, printout
+from bicho.common import Tracker, People, Issue, Comment, Change
+from bicho.db.database import DBIssue, DBBackend, get_database, DBTracker,\
      DBPeople
 from storm.locals import DateTime, Int, Reference, Unicode, Desc, Store, \
      create_database
@@ -43,8 +43,6 @@ import xml.sax.handler
 
 from dateutil.parser import parse
 from datetime import datetime
-
-from Bicho.Config import Config
 
 
 class DBIssuesLog(object):

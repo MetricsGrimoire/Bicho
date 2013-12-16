@@ -20,11 +20,11 @@
 
 import errno, feedparser, json, MySQLdb, os, pprint, random, string, sys, unittest, urllib
 sys.path.insert(0, "..")
-from Bicho.backends import Backend
-from Bicho.backends.allura import DBAlluraBackend
-from Bicho.Config import Config
-from Bicho.common import Tracker #, Issue, People, Change
-from Bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.backends import Backend
+from bicho.backends.allura import DBAlluraBackend
+from bicho.Config import Config
+from bicho.common import Tracker #, Issue, People, Change
+from bicho.db.database import DBIssue, DBBackend, get_database
 
 class AlluraTest(unittest.TestCase):
 

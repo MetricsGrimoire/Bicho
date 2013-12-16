@@ -26,7 +26,7 @@
 import pprint
 import sys
 
-from Config import Config, ErrorLoadingConfig, InvalidConfig
+from config import Config, ErrorLoadingConfig, InvalidConfig
 
 from backends import Backend
 from utils import printerr, printdbg

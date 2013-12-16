@@ -22,12 +22,12 @@
 The Google Code backend is abandoned and nonfunctional as of November 2013.
 """
 
-from Bicho.Config import Config
+from bicho.config import Config
 
-from Bicho.backends import Backend
-from Bicho.utils import create_dir, printdbg, printout, printerr
-from Bicho.db.database import DBIssue, DBBackend, get_database
-from Bicho.common import Tracker, Issue, People, Change
+from bicho.backends import Backend
+from bicho.utils import create_dir, printdbg, printout, printerr
+from bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.common import Tracker, Issue, People, Change
 
 from dateutil.parser import parse
 from datetime import datetime

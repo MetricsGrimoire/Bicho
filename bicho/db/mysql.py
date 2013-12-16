@@ -27,8 +27,8 @@ import warnings
 
 from storm.locals import Store, create_database
 
-from Bicho.Config import Config
-from Bicho.db.database import DBDatabase, DBTracker, DBPeople, \
+from bicho.config import Config
+from bicho.db.database import DBDatabase, DBTracker, DBPeople, \
     DBIssue, DBIssuesWatchers, DBIssueRelationship, DBComment, DBAttachment, \
     DBChange, DBSupportedTracker, DBIssueTempRelationship
 
