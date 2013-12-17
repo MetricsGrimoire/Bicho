@@ -379,8 +379,7 @@ class SoupHtmlParser():
                 self.changes_lost += 1
                 printerr("Change author format not supported. Change lost!")
                 continue
-
-            a_link = author_date_text.findAll('a')[1]
+            a_link = table.find("a", {"class": "user-hover user-avatar"})
             # at this point a_link will be similar to the lines below:
             #<a class="user-hover user-avatar" rel="kiyoshi.lee"
             rel = a_link.attrs[1]
@@ -389,7 +388,8 @@ class SoupHtmlParser():
 
             # we look for a string similar to:
             #<time datetime="2011-11-19T00:27-0800">19/Nov/11 12:27 AM</time>
-            raw_date = author_date_text.findAll('time')[0].attrs[0][1]
+
+            raw_date = author_date_text.find('time')['datetime']
             date = parse(raw_date).replace(tzinfo=None)
 
             rows = list(table.findAll('tr'))
