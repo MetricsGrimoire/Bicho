@@ -1,7 +1,0 @@
-
-PACKAGE = "@PACKAGE_NAME@"
-VERSION = "@PACKAGE_VERSION@"
-
-# Global options
-quiet = False
-debug = False

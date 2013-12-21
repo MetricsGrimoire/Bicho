@@ -23,12 +23,12 @@ import urllib2
 import base64
 import json
 
-from Bicho.backends import Backend
-from Bicho.Config import Config
-from Bicho.utils import printerr, printdbg, printout
-from Bicho.common import Tracker, People, Issue, Comment, Change, \
+from bicho.backends import Backend
+from bicho.config import Config
+from bicho.utils import printerr, printdbg, printout
+from bicho.common import Tracker, People, Issue, Comment, Change, \
     TempRelationship, Attachment
-from Bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.db.database import DBIssue, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode, Desc
 from datetime import datetime

@@ -34,11 +34,11 @@ import time
 import BeautifulSoup
 from storm.locals import Int, Unicode, Reference
 
-from Bicho.common import Issue, People, Tracker, Comment, Attachment, Change
-from Bicho.backends import Backend
-from Bicho.db.database import DBIssue, DBBackend, get_database
-from Bicho.Config import Config
-from Bicho.utils import printdbg, printout, printerr
+from bicho.common import Issue, People, Tracker, Comment, Attachment, Change
+from bicho.backends import Backend
+from bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.config import Config
+from bicho.utils import printdbg, printout, printerr
 
 from dateutil.parser import parse
 

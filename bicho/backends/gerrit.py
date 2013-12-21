@@ -19,12 +19,12 @@
 # Authors:  Alvaro del Castillo <acs@bitergia.com>
 #
 
-from Bicho.Config import Config
+from bicho.config import Config
 
-from Bicho.backends import Backend
-from Bicho.utils import create_dir, printdbg, printout, printerr
-from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from Bicho.common import Tracker, Issue, People, Change
+from bicho.backends import Backend
+from bicho.utils import create_dir, printdbg, printout, printerr
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.common import Tracker, Issue, Comment, People, Change
 
 from dateutil.parser import parse
 from datetime import datetime
@@ -40,6 +40,7 @@ import time
 import traceback
 import urllib
 import feedparser
+import re
 
 from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
 
@@ -157,6 +158,11 @@ class DBGerritBackend(DBBackend):
 
         return None
 
+    def insert_comment_ext(self, store, comment, comment_id):
+        """
+        Does nothing
+        """
+        pass
 
 class GerritIssue(Issue):
     """
@@ -192,12 +198,15 @@ class Gerrit():
             changes = self.analyze_review_changes(review)
             for c in changes:
                 issue.add_change(c)
+            comments = self.analyze_review_comments(review)
+            for com in comments:
+                issue.add_comment(com)
             return issue
 
         except Exception, e:
             print "Problems with Review format: " + review['number']
             pprint.pprint(review)
-            print e
+            traceback.print_exc(file=sys.stdout)
             return None
 
     def parse_review(self, review):
@@ -245,11 +254,33 @@ class Gerrit():
 
         return issue
 
+    def analyze_review_comments(self, review):
+        comments = self.parse_comments(review)
+        return comments
+
+    def parse_comments(self, review):
+        if "comments" not in review.keys(): return []
+
+        commentsList = []
+        comments = review['comments']
+
+        for comment in comments:
+            if ("username" not in comment['reviewer'].keys()):
+                comment['reviewer']["username"] = comment['reviewer']["name"]
+            by = People(comment['reviewer']["username"])
+            if ("name" in comment['reviewer'].keys()):
+                by.set_name(comment['reviewer']["name"])
+            if ("email" in comment['reviewer'].keys()):
+                by.set_email(comment['reviewer']["email"])
+            com = Comment(comment["message"], by, self._convert_to_datetime(comment["timestamp"]))
+            commentsList.append(com)
+
+        return commentsList
+
     def analyze_review_changes(self, review):
         changes = self.parse_changes(review)
         return changes
 
-    # We support now just one patchSets
     def parse_changes(self, review):
         changesList = []
         patchSets = review['patchSets']
@@ -285,6 +316,118 @@ class Gerrit():
 
         return changesList
 
+    def check_merged_abandoned_changes(self, store, dbtrk_id):
+        # Get expected MERGED and ABANDONED issues from issues table
+        # Check with changes added from MERGED and ABANDONED comments
+        query_i = "SELECT COUNT(id) FROM  "
+        query_c = "SELECT COUNT(DISTINCT(issue_id)) FROM  "
+        query_i_m = query_i + 'issues WHERE status="MERGED" AND tracker_id='+str(dbtrk_id)
+        query_c_m = query_c + 'changes, issues WHERE field="status" AND new_value="MERGED"'
+        query_c_m += ' AND changes.issue_id = issues.id AND tracker_id='+str(dbtrk_id)
+        query_i_a = query_i + 'issues WHERE status="ABANDONED" AND tracker_id='+str(dbtrk_id)
+        query_c_a = query_c + 'changes, issues WHERE field="status" AND new_value="ABANDONED"'
+        query_c_a += ' AND changes.issue_id = issues.id AND tracker_id='+str(dbtrk_id)
+        aux = store.execute(query_i_m)
+        issues_merged = aux.get_one()[0]
+        aux = store.execute(query_c_m)
+        changes_merged = aux.get_one()[0]
+        aux = store.execute(query_i_a)
+        issues_abandoned = aux.get_one()[0]
+        aux = store.execute(query_c_a)
+        changes_abandoned = aux.get_one()[0]
+
+        if (issues_merged == changes_merged):
+            print "MERGED comment processing OK: " + str(issues_merged)
+        else:
+            print "[WARN] MERGED comment processing KO"
+            print "issues merged: " + str(issues_merged)
+            print "changes merged: " + str(changes_merged)
+        if (issues_abandoned == changes_abandoned):
+            print "ABANDONED comment processing OK: " + str(issues_abandoned)
+        else:
+            print "[WARN] ABANDONED comment processing KO"
+            print "issues abandoned: " + str(issues_abandoned)
+            print "changes abandoned: " + str(changes_abandoned)
+
+    def add_new_change(self, issue):
+        # Add NEW change to show when issue was created
+        by = issue.submitted_by
+        date = issue.submitted_on
+        change = Change(unicode("status"), unicode(""),
+                                unicode("NEW"), by, date)
+        issue.add_change(change)
+
+    def add_merged_abandoned_changes(self, review, issue):
+        if (issue.status<>'MERGED' and issue.status<>'ABANDONED'): return
+
+        ABANDONED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Abandoned(.*)')
+        ABANDONED_REGEXP_2 = re.compile(r'^Abandoned(.*)')
+        patchSets = review['patchSets']
+        comments = review['comments']
+        by = None
+        date = None
+        patchNumber = None
+
+        # MERGED event searched from approvals
+        if (issue.status=='MERGED'):
+            for activity in patchSets:
+                if "approvals" not in activity.keys():
+                    continue
+                patchSetNumber = activity['number']
+                for entry in activity['approvals']:
+                    if (entry['type']=='Code-Review' and entry['value']=='2'):
+                        by = People(entry['by']['username'])
+                        date = self._convert_to_datetime(entry["grantedOn"])
+                        patchNumber = patchSetNumber
+
+        # ABANDONED event searched from comments
+        if (issue.status=='ABANDONED'):
+            for comment in comments:
+                if (ABANDONED_REGEXP_1.match(comment["message"]) or
+                   ABANDONED_REGEXP_2.match(comment["message"])):
+                    by = People(comment['reviewer']["username"])
+                    date = self._convert_to_datetime(comment["timestamp"])
+
+        if (by and date):
+            change = Change(unicode("status"), patchNumber,
+                            issue.status, by, date)
+            issue.add_change(change)
+
+    # Comments are not a robust way for getting review status
+    def add_merged_abandoned_changes_from_comments(self, review, issue):
+        # text like 'Patch Set %: Abandoned%' or text like 'Abandoned%'
+        ABANDONED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Abandoned(.*)')
+        ABANDONED_REGEXP_2 = re.compile(r'^Abandoned(.*)')
+        RESTORED_REGEXP_1 = re.compile(r'^Patch Set (.*?): Restored(.*)')
+        RESTORED_REGEXP_2 = re.compile(r'^Restored(.*)')
+        abandoned = False
+
+        # Review all comments and create MERGE and ABANDONED changes
+        comments = review['comments']
+        ncomment = 0
+        for comment in comments:
+            ncomment += 1
+            by = People(comment['reviewer']["username"])
+            if (comment["message"] == "Change has been successfully merged into the git repository."):
+                change = Change(unicode("status"), unicode(""),
+                                unicode("MERGED"), by,
+                                self._convert_to_datetime(comment["timestamp"]))
+                issue.add_change(change)
+            elif (ABANDONED_REGEXP_1.match(comment["message"]) or
+                   ABANDONED_REGEXP_2.match(comment["message"])):
+                abandoned = True
+                by_abandoned = by
+                date_abandoned = self._convert_to_datetime(comment["timestamp"])
+            elif (RESTORED_REGEXP_1.match(comment["message"]) or 
+                   RESTORED_REGEXP_2.match(comment["message"])):
+                abandoned = False
+
+        if (abandoned):
+            change = Change(unicode("status"), unicode(""),
+                            unicode("ABANDONED"), by_abandoned, date_abandoned)
+            issue.add_change(change)
+
+
     def getReviews(self, limit, start):
 
         args_gerrit = "gerrit query "
@@ -292,7 +435,7 @@ class Gerrit():
         args_gerrit += " limit:" + str(limit)
         if (start != ""):
             args_gerrit += " resume_sortkey:" + start
-        args_gerrit += " --all-approvals --format=JSON"
+        args_gerrit += " --all-approvals --comments --format=JSON"
 
         if 'backend_user' in vars(Config):
             cmd = ["ssh", "-p 29418", Config.backend_user + "@" + Config.url, args_gerrit]
@@ -301,6 +444,7 @@ class Gerrit():
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh " + "-p 29418 " + Config.url + " " + args_gerrit)
         tickets_raw = subprocess.check_output(cmd)
+        # tickets_raw = open('./tickets.json', 'r').read()
         tickets_raw = "[" + tickets_raw.replace("\n", ",") + "]"
         tickets_raw = tickets_raw.replace(",]", "]")
         tickets = json.loads(tickets_raw)
@@ -353,12 +497,17 @@ class Gerrit():
                     reviews.append(entry["number"])
                     review_data = self.analyze_review(entry)
                     last_item = entry['sortKey']
+                    # extra changes not included in gerrit changes
+                    # self.add_merged_abandoned_changes_from_comments(entry, review_data)
+                    self.add_merged_abandoned_changes(entry, review_data)
+                    self.add_new_change(review_data)
                     bugsdb.insert_issue(review_data, dbtrk.id)
-                    number_results = number_results + 1
+                    number_results += 1
                 elif 'rowCount' in entry.keys():
                     pprint.pprint(entry)
                     printdbg("CONTINUE FROM: " + last_item)
             total_reviews = total_reviews + int(number_results)
+        self.check_merged_abandoned_changes(bugsdb.store, dbtrk.id)
 
         print("Done. Number of reviews: " + str(total_reviews))
 

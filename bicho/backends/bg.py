@@ -36,11 +36,11 @@ from storm.locals import DateTime, Int, Reference, Unicode, Desc
 
 from BeautifulSoup import BeautifulSoup, Comment as BFComment
 
-from Bicho.Config import Config
-from Bicho.backends import Backend
-from Bicho.common import Tracker, People, Issue, Comment, Change
-from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from Bicho.utils import printerr, printdbg, printout, valid_XML_char_ordinal
+from bicho.config import Config
+from bicho.backends import Backend
+from bicho.common import Tracker, People, Issue, Comment, Change
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.utils import printerr, printdbg, printout, valid_XML_char_ordinal
 
 BUGZILLA = "bugzilla"
 

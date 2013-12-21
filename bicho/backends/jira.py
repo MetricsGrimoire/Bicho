@@ -29,16 +29,15 @@ import sys
 from storm.locals import Int, DateTime, Unicode, Reference, Desc
 
 from dateutil.parser import parse
-from Bicho.common import Issue, People, Tracker, Comment, Change, Attachment
-from Bicho.backends import Backend
-from Bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from Bicho.Config import Config
-from Bicho.utils import printout, printerr, printdbg
+from bicho.common import Issue, People, Tracker, Comment, Change, Attachment
+from bicho.backends import Backend
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.config import Config
+from bicho.utils import printout, printerr, printdbg
 from BeautifulSoup import BeautifulSoup, Tag, NavigableString
 #from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
-#from Bicho.Config import Config
-#from Bicho.utils import *
+
 
 import xml.sax.handler
 #from xml.sax._exceptions import SAXParseException
@@ -381,16 +380,24 @@ class SoupHtmlParser():
                 printerr("Change author format not supported. Change lost!")
                 continue
 
-            a_link = author_date_text.findAll('a')[1]
-            # at this point a_link will be similar to the lines below:
-            #<a class="user-hover user-avatar" rel="kiyoshi.lee"
-            rel = a_link.attrs[1]
-            author_url = rel[1]
-            author = People(author_url)
+            a_link = table.find("a", {"class": "user-hover user-avatar"})
+
+            if a_link:
+                # at this point a_link will be similar to the lines below:
+                #<a class="user-hover user-avatar" rel="kiyoshi.lee"
+                author_url = a_link['rel']
+                author = People(author_url)
+            else:
+                # instead of <a .. we got a <span ..
+                span_link = table.find("span", {"class": "user-hover user-avatar"})
+                author_url = span_link['rel']
+                author = People(author_url)
+
 
             # we look for a string similar to:
             #<time datetime="2011-11-19T00:27-0800">19/Nov/11 12:27 AM</time>
-            raw_date = author_date_text.findAll('time')[0].attrs[0][1]
+
+            raw_date = author_date_text.find('time')['datetime']
             date = parse(raw_date).replace(tzinfo=None)
 
             rows = list(table.findAll('tr'))

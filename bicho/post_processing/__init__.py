@@ -39,7 +39,7 @@ class IssueLogger:
     def _get_logger(logger_name):
         if logger_name not in IssueLogger._loggers:
             try:
-                __import__('Bicho.post_processing.issues_log_%s' % logger_name)
+                __import__('bicho.post_processing.issues_log_%s' % logger_name)
             except ImportError:
                 raise
 
