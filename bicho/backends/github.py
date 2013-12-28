@@ -566,11 +566,9 @@ class GithubBackend(Backend):
 
         printdbg(url)
 
-        # still useless
         bugsdb.insert_supported_traker("github", "v3")
         trk = Tracker(url, "github", "v3")
         dbtrk = bugsdb.insert_tracker(trk)
-        #
 
         self.bugs_state = "open"
         self.pagecont = 1
@@ -578,7 +576,6 @@ class GithubBackend(Backend):
         self.mod_date_open = None
         self.mod_date_closed = None
 
-        ## FIXME tracker must be also checked!!!
         aux_date_open = bugsdb.get_last_modification_date(state="open",
                                                           tracker_id=dbtrk.id)
         if aux_date_open:
