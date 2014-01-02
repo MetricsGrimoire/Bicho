@@ -230,7 +230,7 @@ class DBDatabase:
             self.store.rollback()
             raise
 
-    def get_last_modification_date(self, state=None):
+    def get_last_modification_date(self, state=None, tracker_id=None):
         """
         Return last modification date stored in database
         """
@@ -238,7 +238,7 @@ class DBDatabase:
             # in the github backend we need to get both open and closed
             # issues in two different petitions
             if state:
-                return self.backend.get_last_modification_date(self.store, state)
+                return self.backend.get_last_modification_date(self.store, state, tracker_id)
             else:
                 return self.backend.get_last_modification_date(self.store)
 
