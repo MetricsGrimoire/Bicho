@@ -26,7 +26,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends import Backend
+from bicho.backends import Backend
 
 
 # Backends for unit tests

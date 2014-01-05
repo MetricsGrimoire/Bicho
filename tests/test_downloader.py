@@ -26,7 +26,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.downloader import ConnectionError, TimeoutError, HTTPError,\
+from bicho.backends.downloader import ConnectionError, TimeoutError, HTTPError,\
     HTTPDownloadManager
 from mock_http_server import MockHTTPServer
 

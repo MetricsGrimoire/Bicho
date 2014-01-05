@@ -27,7 +27,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.common import Identity, Tracker, Issue, Comment, Attachment, Change, IssueRelationship
+from bicho.common import Identity, Tracker, Issue, Comment, Attachment, Change, IssueRelationship
 
 
 # Mock identities for testing

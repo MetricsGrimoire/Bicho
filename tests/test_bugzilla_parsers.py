@@ -28,10 +28,10 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.parsers import UnmarshallingError
-from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
+from bicho.backends.parsers import UnmarshallingError
+from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
     BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue
-from Bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesSummaryParser,\
+from bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesSummaryParser,\
     BugzillaIssuesParser, BugzillaChangesParser
 
 

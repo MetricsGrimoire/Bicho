@@ -29,7 +29,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends import Backend, BackendManager, BackendImportError, BackendDoesNotExist
+from bicho.backends import Backend, BackendManager, BackendImportError, BackendDoesNotExist
 
 
 # Name of directory where the test input files are stored

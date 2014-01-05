@@ -28,9 +28,9 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.bugzilla.model import BugzillaMetadata, BugzillaIssueSummary,\
+from bicho.backends.bugzilla.model import BugzillaMetadata, BugzillaIssueSummary,\
     BugzillaIssue, BugzillaAttachment
-from Bicho.common import Identity, Attachment
+from bicho.common import Identity, Attachment
 
 
 # Mock identities for testing

@@ -20,7 +20,7 @@
 #         Santiago Dueñas <sduenas@libresoft.es>
 #
 
-from Bicho.backends import Backend
+from bicho.backends import Backend
 
 
 class A(Backend):

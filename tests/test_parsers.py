@@ -31,7 +31,7 @@ import lxml.objectify
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.parsers import UnmarshallingError,\
+from bicho.backends.parsers import UnmarshallingError,\
     CSVParserError, HTMLParserError, XMLParserError,\
     CSVParser, HTMLParser, XMLParser
 

@@ -26,7 +26,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from Bicho.backends.bugzilla.urls import BugzillaURLGenerator, InvalidBaseURLError
+from bicho.backends.bugzilla.urls import BugzillaURLGenerator, InvalidBaseURLError
 
 
 # Test case URLs
