@@ -28,10 +28,10 @@ Parsers for Bugzilla tracker.
 
 import dateutil.parser
 
-from Bicho.backends.parsers import UnmarshallingError, CSVParser, HTMLParser, XMLParser
-from Bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
+from bicho.backends.parsers import UnmarshallingError, CSVParser, HTMLParser, XMLParser
+from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
     BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue, BugzillaAttachment
-from Bicho.common import Identity, Comment, Change, IssueRelationship
+from bicho.common import Identity, Comment, Change, IssueRelationship
 
 
 # Tokens

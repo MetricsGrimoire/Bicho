@@ -26,7 +26,7 @@ Bugzilla's tracker data model.
 
 import datetime
 
-from Bicho.common import Identity, Issue, Attachment
+from bicho.common import Identity, Issue, Attachment
 
 
 # Bugzilla relationships types
