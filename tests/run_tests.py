@@ -1,11 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2012 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2014 GSyC/LibreSoft, Universidad Rey Juan Carlos
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,31 +15,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Authors: Luis Cañas Díaz <lcanas@libresoft.es>
-
-import sys
-
-if not ".." in sys.path:
-    sys.path.insert(0, '..')
-
-from tests import get_test
-
-_backends = ['launchpad']
-
-
+# Authors:
+#         Santiago Dueñas <sduenas@libresoft.es>
 #
-# we'll need a database, user and password
-#
+
+import unittest
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        _backends = sys.argv[1:]
-        for backend in _backends:
-            func = get_test(backend)
-            if func is not None:
-                t = func()
-                print "Testing %s" % (backend)
-                t.run()
-                print
+    test_suite = unittest.TestLoader().discover('.', pattern='test*.py')
+    unittest.TextTestRunner(buffer=True).run(test_suite)
