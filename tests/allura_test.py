@@ -22,10 +22,12 @@ import errno, feedparser, json, MySQLdb, os, pprint, random, string, sys, unitte
 sys.path.insert(0, "..")
 from bicho.backends import Backend
 from bicho.backends.allura import DBAlluraBackend
-from bicho.Config import Config
+from bicho.config import Config
 from bicho.common import Tracker #, Issue, People, Change
 from bicho.db.database import DBIssue, DBBackend, get_database
 
+
+@unittest.skip("deprecated Allura tests")
 class AlluraTest(unittest.TestCase):
 
     def read_issues(self, page, limit):
