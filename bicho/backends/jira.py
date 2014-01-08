@@ -923,7 +923,7 @@ class JiraBackend(Backend):
                 print(e)
 
         else:
-            self.last_mod_date = bugsdb.get_last_modification_date(dbtrk.id)
+            self.last_mod_date = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
             if self.last_mod_date:
                 # self.url = self.url + "&updated:after=" + last_mod_date
                 printdbg("Last bugs cached were modified at: %s" % self.last_mod_date)
