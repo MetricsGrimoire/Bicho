@@ -240,7 +240,7 @@ class DBDatabase:
             if state:
                 return self.backend.get_last_modification_date(self.store, state, tracker_id)
             else:
-                return self.backend.get_last_modification_date(self.store)
+                return self.backend.get_last_modification_date(self.store, tracker_id)
 
     def _insert_relationship(self, issue_id, type, rel_id):
         """
