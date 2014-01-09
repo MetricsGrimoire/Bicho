@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012 Bitergia
+# Copyright (C) 2012-2014 Bitergia
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,25 +16,28 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Authors:  Alvaro del Castillo <acs@bitergia.com>
+# Authors: Alvaro del Castillo <acs@bitergia.com>
+#          Santiago Dueñas <sduenas@bitergia.com>
+#
 
-from bicho.config import Config
-
-from bicho.backends import Backend
-from bicho.utils import create_dir, printdbg, printout, printerr
-from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
-from bicho.common import Tracker, Issue, People, Change, Comment
-
-from BeautifulSoup import BeautifulSoup, Comment as BFComment
-
-from dateutil.parser import parse
-from datetime import datetime
-
-import errno, json, os, random, time, traceback, urllib, urllib2, feedparser, base64, sys
+import json
+import time
+import urllib2
+import base64
 import pprint
 import re
 
-from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
+from dateutil.parser import parse
+
+from storm.locals import DateTime, Desc, Int, Reference
+
+from BeautifulSoup import BeautifulSoup
+
+from bicho.config import Config
+from bicho.backends import Backend
+from bicho.utils import printdbg, printout
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.common import Tracker, Issue, People, Change, Comment
 
 
 class DBRedmineIssueExt(object):
