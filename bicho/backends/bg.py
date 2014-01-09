@@ -1137,7 +1137,7 @@ class BGBackend(Backend):
                      % issue.issue)
 
     def _get_last_and_next_dates(self):
-        last_ts = self.bugsdb.get_last_modification_date(self.tracker.id)
+        last_ts = self.bugsdb.get_last_modification_date(tracker_id=self.tracker.id)
 
         if not last_ts:
             return None, None

@@ -28,7 +28,7 @@ from bicho.config import Config
 from bicho.utils import printerr, printdbg, printout
 from bicho.common import Tracker, People, Issue, Comment, Change, \
     TempRelationship, Attachment
-from bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.db.database import DBIssue, DBTracker, DBBackend, get_database
 
 from storm.locals import DateTime, Int, Reference, Unicode, Desc
 from datetime import datetime
@@ -101,7 +101,7 @@ class DBGithubBackend(DBBackend):
     def __init__(self):
         self.MYSQL_EXT = [DBGithubIssueExtMySQL]
 
-    def get_last_modification_date(self, store, bugs_state):
+    def get_last_modification_date(self, store, bugs_state, tracker_id):
         # get last modification date stored in the database for a given status
         # select date_last_updated as date from issues_ext_github order by date
         # desc limit 1;
@@ -110,14 +110,24 @@ class DBGithubBackend(DBBackend):
         #state=closed&per_page=100&sort=updated&direction=asc&
         #since=2012-05-28T21:11:28Z
 
-        result = store.find(DBGithubIssueExt)
+        result = store.find(DBGithubIssueExt,
+                            DBGithubIssueExt.issue_id == DBIssue.id,
+                            DBIssue.tracker_id == DBTracker.id,
+                            DBTracker.id == tracker_id)
+        #printdbg (str(Tracker(url, "github", "v3")))
 
         if (bugs_state == OPEN_STATE):
             result = store.find(DBGithubIssueExt,
-                                DBGithubIssueExt.status == u"open")
+                                DBGithubIssueExt.status == u"open",
+                                DBGithubIssueExt.issue_id == DBIssue.id,
+                                DBIssue.tracker_id == DBTracker.id,
+                                DBTracker.id == tracker_id)
         elif (bugs_state == CLOSED_STATE):
             result = store.find(DBGithubIssueExt,
-                                DBGithubIssueExt.status == u"closed")
+                                DBGithubIssueExt.status == u"closed",
+                                DBGithubIssueExt.issue_id == DBIssue.id,
+                                DBIssue.tracker_id == DBTracker.id,
+                                DBTracker.id == tracker_id)
         aux = result.order_by(Desc(DBGithubIssueExt.updated_at))[:1]
 
         for entry in aux:
@@ -556,17 +566,22 @@ class GithubBackend(Backend):
 
         printdbg(url)
 
+        bugsdb.insert_supported_traker("github", "v3")
+        trk = Tracker(url, "github", "v3")
+        dbtrk = bugsdb.insert_tracker(trk)
+
         self.bugs_state = "open"
         self.pagecont = 1
 
         self.mod_date_open = None
         self.mod_date_closed = None
 
-        ## FIXME tracker must be also checked!!!
-        aux_date_open = bugsdb.get_last_modification_date(state="open")
+        aux_date_open = bugsdb.get_last_modification_date(state="open",
+                                                          tracker_id=dbtrk.id)
         if aux_date_open:
             self.mod_date_open = aux_date_open.isoformat()
-        aux_date_closed = bugsdb.get_last_modification_date(state="closed")
+        aux_date_closed = bugsdb.get_last_modification_date(state="closed",
+                                                            tracker_id=dbtrk.id)
         if aux_date_closed:
             self.mod_date_closed = aux_date_closed.isoformat()
 
@@ -574,12 +589,6 @@ class GithubBackend(Backend):
         printdbg("Last closed bug already cached: %s" % self.mod_date_closed)
         bugs = self.__get_batch_bugs()
         nbugs = len(bugs)
-
-        # still useless
-        bugsdb.insert_supported_traker("github", "v3")
-        trk = Tracker(url, "github", "v3")
-        dbtrk = bugsdb.insert_tracker(trk)
-        #
 
         if len(bugs) == 0:
             if aux_date_open or aux_date_closed:
@@ -617,6 +626,7 @@ class GithubBackend(Backend):
                     printerr("ERROR: ")
                     print e
 
+                printdbg ("Getting ticket number " + str(bug["number"]))
                 time.sleep(self.delay)
 
             self.pagecont += 1

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012 Bitergia
+# Copyright (C) 2012-2014 Bitergia
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,25 +16,28 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Authors:  Alvaro del Castillo <acs@bitergia.com>
+# Authors: Alvaro del Castillo <acs@bitergia.com>
+#          Santiago Dueñas <sduenas@bitergia.com>
+#
 
-from bicho.config import Config
-
-from bicho.backends import Backend
-from bicho.utils import create_dir, printdbg, printout, printerr
-from bicho.db.database import DBIssue, DBBackend, get_database
-from bicho.common import Tracker, Issue, People, Change, Comment
-
-from BeautifulSoup import BeautifulSoup, Comment as BFComment
-
-from dateutil.parser import parse
-from datetime import datetime
-
-import errno, json, os, random, time, traceback, urllib, urllib2, feedparser, base64, sys
+import json
+import time
+import urllib2
+import base64
 import pprint
 import re
 
-from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
+from dateutil.parser import parse
+
+from storm.locals import DateTime, Desc, Int, Reference
+
+from BeautifulSoup import BeautifulSoup
+
+from bicho.config import Config
+from bicho.backends import Backend
+from bicho.utils import printdbg, printout
+from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
+from bicho.common import Tracker, Issue, People, Change, Comment
 
 
 class DBRedmineIssueExt(object):
@@ -54,6 +57,8 @@ class DBRedmineIssueExt(object):
     project_id = Int()
     root_id = Int()
     start_date = DateTime()
+    # WARNING: this tracker_id is not related to trackers table,
+    # it's a field from Redmine
     tracker_id = Int()
     updated_on = DateTime()
     issue_id = Int()
@@ -150,16 +155,21 @@ class DBRedmineBackend(DBBackend):
         """
         pass
 
-    def get_last_modification_date(self, store):
-        # get last modification date (day) stored in the database
-        # select date_last_updated as date from issues_ext_redmine order by date
-#        result = store.find(DBRedmineIssueExt)
-#        aux = result.order_by(Desc(DBRedmineIssueExt.mod_date))[:1]
-#
-#        for entry in aux:
-#            return entry.mod_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+    def get_last_modification_date(self, store, tracker_id):
+        """
+        Does nothing
+        """
+        result = store.find(DBRedmineIssueExt,
+                            DBRedmineIssueExt.issue_id == DBIssue.id,
+                            DBIssue.tracker_id == DBTracker.id,
+                            DBTracker.id == tracker_id)
 
-        return None
+        if result.is_empty():
+            return None
+
+        db_issue_ext = result.order_by(Desc(DBRedmineIssueExt.updated_on))[0]
+        updated_on = db_issue_ext.updated_on
+        return updated_on
 
 
 class RedmineIssue(Issue):
@@ -311,6 +321,21 @@ class Redmine():
 
         return issue
 
+    def _get_issues_url(self, updated_on=None):
+        issue_url = Config.url + "issues.json?status_id=*&sort=updated_on"
+
+        if updated_on:
+            # Redmine API does not support dates in timestamp format, just dates like
+            # "2014-01-01". Timestamp format was included in #8842 issues
+            # (http://www.redmine.org/issues/8842) and added into r12477 revision
+            # (http://www.redmine.org/projects/redmine/repository/revisions/12477)
+            # Due to there is no way to know from which Redmine version we are retrieving
+            # data (see #5901, http://www.redmine.org/issues/5901) we will use dates
+            # instead of timestamps on this query.
+            dt = updated_on.strftime('%Y-%m-%d')
+            issue_url = issue_url + "&updated_on=>=" + dt
+        return issue_url
+
     def _get_issue_url(self, issue_id):
         issue_url = self._get_redmine_root(Config.url)
         issue_url = issue_url + "issues/" + unicode(issue_id) + ".json?include=journals"
@@ -402,8 +427,11 @@ class Redmine():
         trk = Tracker(Config.url, "redmine", "beta")
         dbtrk = bugsdb.insert_tracker(trk)
 
-        self.url_issues = Config.url + "issues.json?status_id=*&sort=updated_on&page=" + str(last_page)
-        request = urllib2.Request(self.url_issues)
+        updated_on = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
+        self.url_issues = self._get_issues_url(updated_on)
+        url = self.url_issues + "&page=" + str(last_page)
+        request = urllib2.Request(url)
+
         if self.backend_user:
             base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
             request.add_header("Authorization", "Basic %s" % base64string)   
@@ -416,13 +444,14 @@ class Redmine():
         for ticket in tickets["issues"]:
             issue = self.analyze_bug(ticket)
             bugsdb.insert_issue(issue, dbtrk.id)
+            time.sleep(self.delay)
 
         last_ticket = tickets["issues"][0]['id']
 
         while True:
             last_page += 1
-            self.url_issues = Config.url + "issues.json?status_id=*&sort=updated_on&page=" + str(last_page)
-            request = urllib2.Request(self.url_issues)
+            url = self.url_issues + "&page=" + str(last_page)
+            request = urllib2.Request(url)
             #base64string = base64.encodestring('%s:%s' % (Config.backend_user, Config.backend_password)).replace('\n', '')
             #request.add_header("Authorization", "Basic %s" % base64string)
             f = urllib2.urlopen(request)
@@ -439,6 +468,7 @@ class Redmine():
             for ticket in tickets["issues"]:
                 issue = self.analyze_bug(ticket)
                 bugsdb.insert_issue(issue, dbtrk.id)
+                time.sleep(self.delay)
 
         pprint.pprint("Total pages: " + str(last_page))
 
