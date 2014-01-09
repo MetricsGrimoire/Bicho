@@ -416,6 +416,7 @@ class Redmine():
         for ticket in tickets["issues"]:
             issue = self.analyze_bug(ticket)
             bugsdb.insert_issue(issue, dbtrk.id)
+            time.sleep(self.delay)
 
         last_ticket = tickets["issues"][0]['id']
 
@@ -439,6 +440,7 @@ class Redmine():
             for ticket in tickets["issues"]:
                 issue = self.analyze_bug(ticket)
                 bugsdb.insert_issue(issue, dbtrk.id)
+                time.sleep(self.delay)
 
         pprint.pprint("Total pages: " + str(last_page))
 
