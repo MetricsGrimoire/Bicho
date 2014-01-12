@@ -32,8 +32,8 @@ if not '..' in sys.path:
     sys.path.insert(0, '..')
 
 from bicho.backends.parsers import UnmarshallingError,\
-    CSVParserError, HTMLParserError, XMLParserError,\
-    CSVParser, HTMLParser, XMLParser
+    CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
+    CSVParser, HTMLParser, XMLParser, JSONParser
 
 
 # Name of directory where the test input files are stored
@@ -47,6 +47,9 @@ HTML_UTF8_FILE = 'html_utf8.html'
 XML_VALID_FILE = 'xml_valid.xml'
 XML_INVALID_FILE = 'xml_invalid.xml'
 XML_UTF8_FILE = 'xml_utf8.xml'
+JSON_VALID_FILE = 'json_valid.json'
+JSON_INVALID_FILE = 'json_invalid.json'
+JSON_UTF8_FILE = 'json_utf8.json'
 
 
 def read_file(filename):
@@ -322,6 +325,96 @@ class TestXMLParser(unittest.TestCase):
         self.assertEqual(u'sdueñas', root.comment.get('editor'))
         self.assertEqual(u'\nEn el Este, éste está,está éste en el Este, pero el Este, ¿dónde está?\n',
                          root.comment)
+
+
+class TestJSONParserError(unittest.TestCase):
+
+    def test_type(self):
+        # Check whether raises a TypeError exception when
+        # is not given an Exception class as first parameter
+        self.assertRaises(TypeError, JSONParserError, 'error')
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = JSONParserError()
+        self.assertEqual('error parsing JSON.', str(e))
+
+        e = JSONParserError(Exception())
+        self.assertEqual('error parsing JSON. Exception()', str(e))
+
+
+class TestJSONParser(unittest.TestCase):
+
+    def test_readonly_properties(self):
+        parser = JSONParser('{"x":[{"id":1,"":{"x":24,"y":"test"}]')
+        self.assertRaises(AttributeError, setattr, parser, 'data', '')
+        self.assertEqual(None, parser.data)
+
+    def test_parse_invalid_type_stream(self):
+        parser = JSONParser(None)
+        self.assertRaises(TypeError, parser.parse)
+
+    def test_parse_valid_json(self):
+        # Check whether it parses a valid JSON stream
+        filepath = os.path.join(TEST_FILES_DIRNAME, JSON_VALID_FILE)
+        json = read_file(filepath)
+
+        parser = JSONParser(json)
+        parser.parse()
+
+        data = parser.data
+        self.assertIsInstance(data, dict)
+
+        self.assertEqual(4, len(data.keys()))
+        self.assertEqual(5, data['total_count'])
+        self.assertEqual(0, data['offset'])
+        self.assertEqual(3, data['limit'])
+
+        issues = data['issues']
+        self.assertIsInstance(issues, list)
+        self.assertEqual(3, len(issues))
+
+        issue = issues[0]
+        self.assertEqual(2543, issue['id'])
+
+        issue = issues[1]
+        self.assertEqual(2825, issue['id'])
+        self.assertEqual('Data not shown in chart', issue['subject'])
+        self.assertEqual('Error in charts.', issue['description'])
+        self.assertEqual('2014/01/10 12:37:10 +0100', issue['created_on'])
+        self.assertEqual('Santiago Duenas', issue['author']['name'])
+        self.assertEqual(17, issue['author']['id'])
+
+        issue = issues[2]
+        self.assertEqual('Management', issue['subject'])
+        self.assertEqual('Daniel Izquierdo', issue['author']['name'])
+        self.assertEqual(89, issue['author']['id'])
+
+    def test_parse_invalid_xml(self):
+        # Check whether it parses an invalid JSON stream
+        filepath = os.path.join(TEST_FILES_DIRNAME, JSON_INVALID_FILE)
+        json = read_file(filepath)
+
+        parser = JSONParser(json)
+        self.assertRaisesRegexp(JSONParserError,
+                                'error parsing JSON\. ValueError',
+                                parser.parse)
+
+    def test_parse_uf8_characters_json(self):
+        # Check whether it parses a valid JSON stream that
+        # contains UFT-8 characters
+        filepath = os.path.join(TEST_FILES_DIRNAME, JSON_UTF8_FILE)
+        json = read_file(filepath)
+
+        parser = JSONParser(json)
+        parser.parse()
+        issues = parser.data
+
+        issue = issues['issues'][0]
+        self.assertEqual(u'Santiago Dueñas', issue['author']['name'])
+
+        issue = issues['issues'][2]
+        self.assertEqual(u'Luís Cañas', issue['assigned_to']['name'])
 
 
 if __name__ == '__main__':

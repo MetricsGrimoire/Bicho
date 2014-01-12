@@ -24,6 +24,7 @@
 Generic parsers for backends.
 """
 
+import json
 from csv import DictReader
 
 from bs4 import BeautifulSoup, Comment
@@ -89,6 +90,21 @@ class XMLParserError(Exception):
 
     def __str__(self):
         msg = 'error parsing XML.'
+        if self.error is not None:
+            msg += ' %s' % repr(self.error)
+        return msg
+
+
+class JSONParserError(Exception):
+    """Exception raised when an error occurs parsing a JSON stream."""
+
+    def __init__(self, error=None):
+        if error is not None and not isinstance(error, Exception):
+            raise TypeError('expected type Exception in error parameter.')
+        self.error = error
+
+    def __str__(self):
+        msg = 'error parsing JSON.'
         if self.error is not None:
             msg += ' %s' % repr(self.error)
         return msg
@@ -207,5 +223,38 @@ class XMLParser(object):
         """Returns the parsed data.
 
         :rtype: lxml.objectify.ObjectifiedElement
+        """
+        return self._data
+
+
+class JSONParser(object):
+    """Generic JSON parser
+
+    :param stream: stream to parse
+    :type stream: str
+    """
+    def __init__(self, stream):
+        self.stream = stream
+        self._data = None
+
+    def parse(self):
+        """Parse the JSON stream
+
+        :raises: TypeError: when the json to parse is not a instance of str.
+        :raises: JSONParserError: when an error occurs parsing the stream.
+        """
+        if not isinstance(self.stream, str):
+            raise TypeError('expected type str in stream parameter.')
+
+        try:
+            self._data = json.loads(self.stream)
+        except Exception, e:
+            raise JSONParserError(e)
+
+    @property
+    def data(self):
+        """Returns the parsed data.
+
+        :rtype: object
         """
         return self._data
