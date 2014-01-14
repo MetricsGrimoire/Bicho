@@ -51,6 +51,9 @@ JSON_VALID_FILE = 'json_valid.json'
 JSON_INVALID_FILE = 'json_invalid.json'
 JSON_UTF8_FILE = 'json_utf8.json'
 
+# RegExps for testing exceptions
+KEYERROR_ERROR_REGEXP = 'error'
+
 
 def read_file(filename):
     with open(filename, 'r') as f:
@@ -86,34 +89,62 @@ class TestUnmarshallingError(unittest.TestCase):
 
 class TestCSVParserError(unittest.TestCase):
 
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as first parameter
-        self.assertRaises(TypeError, CSVParserError, 'error')
-
     def test_error_message(self):
         # Make sure that prints the correct error
-        e = CSVParserError()
-        self.assertEqual('error parsing CSV.', str(e))
+        e = CSVParserError(error='Invalid CSV stream')
+        self.assertEqual('error parsing CSV. Invalid CSV stream', str(e))
 
-        e = CSVParserError(Exception())
-        self.assertEqual('error parsing CSV. Exception()', str(e))
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # is not given a 'error' as parameter
+        kwargs = {'msg' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_ERROR_REGEXP,
+                                CSVParserError, **kwargs)
 
 
 class TestHTMLParserError(unittest.TestCase):
 
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as first parameter
-        self.assertRaises(TypeError, HTMLParserError, 'error')
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = HTMLParserError(error='Invalid format')
+        self.assertEqual('error parsing HTML. Invalid format', str(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # is not given a 'error' as parameter
+        kwargs = {'msg' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_ERROR_REGEXP,
+                                HTMLParserError, **kwargs)
+
+
+class TestXMLParserError(unittest.TestCase):
 
     def test_error_message(self):
         # Make sure that prints the correct error
-        e = HTMLParserError()
-        self.assertEqual('error parsing HTML.', str(e))
+        e = XMLParserError(error='xml entity not found')
+        self.assertEqual('error parsing XML. xml entity not found', str(e))
 
-        e = HTMLParserError(Exception())
-        self.assertEqual('error parsing HTML. Exception()', str(e))
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # is not given a 'error' as parameter
+        kwargs = {'msg' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_ERROR_REGEXP,
+                                XMLParserError, **kwargs)
+
+
+class TestJSONParserError(unittest.TestCase):
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = JSONParserError(error='Invalid stream')
+        self.assertEqual('error parsing JSON. Invalid stream', str(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # is not given a 'error' as parameter
+        kwargs = {'msg' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_ERROR_REGEXP,
+                                JSONParserError, **kwargs)
 
 
 class TestCSVParser(unittest.TestCase):
@@ -244,22 +275,6 @@ class TestHTMLParser(unittest.TestCase):
                          root.p.string)
 
 
-class TestXMLParserError(unittest.TestCase):
-
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as first parameter
-        self.assertRaises(TypeError, XMLParserError, 'error')
-
-    def test_error_message(self):
-        # Make sure that prints the correct error
-        e = XMLParserError()
-        self.assertEqual('error parsing XML.', str(e))
-
-        e = XMLParserError(Exception())
-        self.assertEqual('error parsing XML. Exception()', str(e))
-
-
 class TestXMLParser(unittest.TestCase):
 
     def test_readonly_properties(self):
@@ -325,22 +340,6 @@ class TestXMLParser(unittest.TestCase):
         self.assertEqual(u'sdueñas', root.comment.get('editor'))
         self.assertEqual(u'\nEn el Este, éste está,está éste en el Este, pero el Este, ¿dónde está?\n',
                          root.comment)
-
-
-class TestJSONParserError(unittest.TestCase):
-
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as first parameter
-        self.assertRaises(TypeError, JSONParserError, 'error')
-
-    def test_error_message(self):
-        # Make sure that prints the correct error
-        e = JSONParserError()
-        self.assertEqual('error parsing JSON.', str(e))
-
-        e = JSONParserError(Exception())
-        self.assertEqual('error parsing JSON. Exception()', str(e))
 
 
 class TestJSONParser(unittest.TestCase):

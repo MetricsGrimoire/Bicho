@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -30,6 +31,8 @@ from csv import DictReader
 from bs4 import BeautifulSoup, Comment
 from lxml import objectify
 
+from bicho.exceptions import BichoException
+
 
 class UnmarshallingError(Exception):
     """Exception raised when an error is found unmarshalling parsed XML objects"""
@@ -50,64 +53,48 @@ class UnmarshallingError(Exception):
         return msg
 
 
-class CSVParserError(Exception):
-    """Exception raised when an error occurs parsing a CSV stream."""
+class ParserError(BichoException):
+    """Base exception class for parser errors.
 
-    def __init__(self, error=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.error = error
-
-    def __str__(self):
-        msg = 'error parsing CSV.'
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
+    Parser exceptions should derive from this class.
+    """
+    message = 'error parsing stream'
 
 
-class HTMLParserError(Exception):
-    """Exception raised when an error occurs parsing a HTML stream."""
+class CSVParserError(ParserError):
+    """Exception raised when an error occurs parsing a CSV stream.
 
-    def __init__(self, error=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.error = error
-
-    def __str__(self):
-        msg = 'error parsing HTML.'
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
+    :param error: explanation of the error
+    :type error: str
+    """
+    message = 'error parsing CSV. %(error)s'
 
 
-class XMLParserError(Exception):
-    """Exception raised when an error occurs parsing a XML stream."""
+class HTMLParserError(ParserError):
+    """Exception raised when an error occurs parsing a HTML stream.
 
-    def __init__(self, error=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.error = error
-
-    def __str__(self):
-        msg = 'error parsing XML.'
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
+    :param error: explanation of the error
+    :type error: str
+    """
+    message = 'error parsing HTML. %(error)s'
 
 
-class JSONParserError(Exception):
-    """Exception raised when an error occurs parsing a JSON stream."""
+class XMLParserError(ParserError):
+    """Exception raised when an error occurs parsing a XML stream.
 
-    def __init__(self, error=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.error = error
+    :param error: explanation of the error
+    :type error: str
+    """
+    message = 'error parsing XML. %(error)s'
 
-    def __str__(self):
-        msg = 'error parsing JSON.'
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
+
+class JSONParserError(ParserError):
+    """Exception raised when an error occurs parsing a JSON stream.
+
+    :param error: explanation of the error
+    :type error: str
+    """
+    message = 'error parsing JSON. %(error)s'
 
 
 class CSVParser(object):
@@ -145,7 +132,7 @@ class CSVParser(object):
                                     delimiter=self.delimiter,
                                     quotechar=self.quotechar)
         except Exception, e:
-            raise CSVParserError(e)
+            raise CSVParserError(error=repr(e))
 
     @property
     def data(self):
@@ -179,7 +166,7 @@ class HTMLParser(object):
             self._data = BeautifulSoup(self.html)
             self._remove_comments()
         except Exception, e:
-            raise HTMLParserError(e)
+            raise HTMLParserError(error=repr(e))
 
     @property
     def data(self):
@@ -216,7 +203,7 @@ class XMLParser(object):
         try:
             self._data = objectify.fromstring(self.xml)
         except Exception, e:
-            raise XMLParserError(e)
+            raise XMLParserError(error=repr(e))
 
     @property
     def data(self):
@@ -249,7 +236,7 @@ class JSONParser(object):
         try:
             self._data = json.loads(self.stream)
         except Exception, e:
-            raise JSONParserError(e)
+            raise JSONParserError(error=repr(e))
 
     @property
     def data(self):
