@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -28,7 +29,8 @@ Parsers for Bugzilla tracker.
 
 import dateutil.parser
 
-from bicho.backends.parsers import UnmarshallingError, CSVParser, HTMLParser, XMLParser
+from bicho.exceptions import UnmarshallingError
+from bicho.backends.parsers import CSVParser, HTMLParser, XMLParser
 from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
     BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue, BugzillaAttachment
 from bicho.common import Identity, Comment, Change, IssueRelationship
@@ -103,18 +105,20 @@ class BugzillaIssuesSummaryParser(CSVParser):
             changed_on = self._unmarshal_timestamp(bg_summary[CHANGEDDATE_TOKEN])
             return BugzillaIssueSummary(issue_id, changed_on)
         except KeyError, e:
-            raise UnmarshallingError('BugzillaIssueSummary', e)
+            raise UnmarshallingError(instance='BugzillaIssueSummary',
+                                     cause=repr(e))
 
     def _unmarshal_timestamp(self, bg_ts):
         try:
             str_ts = self._unmarshal_str(bg_ts)
             return dateutil.parser.parse(str_ts).replace(tzinfo=None)
         except Exception, e:
-            raise UnmarshallingError('datetime', e)
+            raise UnmarshallingError(instance='datetime', cause=repr(e))
 
     def _unmarshal_str(self, s):
         if s is None or s == u'':
-            raise UnmarshallingError('str', cause='string cannot be None or empty')
+            raise UnmarshallingError(instance='str',
+                                     cause='string cannot be None or empty')
         return unicode(s)
 
 
@@ -187,7 +191,7 @@ class BugzillaIssuesParser(XMLParser):
 
             return issue
         except AttributeError, e:
-            raise UnmarshallingError('BugzillaIssue', e)
+            raise UnmarshallingError(instance='BugzillaIssue', cause=repr(e))
 
     def _unmarshal_issue_custom_tags(self, bg_issue, issue):
         # Unmarshal required tags
@@ -203,7 +207,7 @@ class BugzillaIssuesParser(XMLParser):
             issue.delta_ts = self._unmarshal_timestamp(bg_issue.delta_ts)
             issue.reporter_accessible = self._unmarshal_str(bg_issue.reporter_accessible)
         except AttributeError, e:
-            raise UnmarshallingError('BugzillaIssue', e)
+            raise UnmarshallingError(instance='BugzillaIssue', cause=repr(e))
 
         # Unmarshal optional tags
         for field in BugzillaIssuesParser.BG_OPTIONAL_FIELDS:
@@ -222,7 +226,7 @@ class BugzillaIssuesParser(XMLParser):
                 issue.remaining_time = self._unmarshal_timestamp(bg_issue.remaining_time)
                 issue.actual_time = self._unmarshal_timestamp(bg_issue.actual_time)
             except AttributeError, e:
-                raise UnmarshallingError('BugzillaIssue', e)
+                raise UnmarshallingError(instance='BugzillaIssue', cause=repr(e))
 
         if hasattr(bg_issue, DEADLINE_TOKEN):
             issue.deadline = self._unmarshal_timestamp(bg_issue.deadline)
@@ -239,7 +243,7 @@ class BugzillaIssuesParser(XMLParser):
             submitted_on = self._unmarshal_timestamp(bg_comment.bug_when)
             return Comment(text, submitted_by, submitted_on)
         except AttributeError, e:
-            raise UnmarshallingError('Comment', e)
+            raise UnmarshallingError(instance='Comment', cause=repr(e))
 
     def _unmarshal_issue_attachments(self, bg_issue):
         bg_attachments = bg_issue.iterchildren(tag=ATTACHMENT_TOKEN)
@@ -268,7 +272,7 @@ class BugzillaIssuesParser(XMLParser):
                                       filetype, size, delta_ts,
                                       is_patch, is_obsolete)
         except AttributeError, e:
-            raise UnmarshallingError('BugzillaAttachment', e)
+            raise UnmarshallingError(instance='BugzillaAttachment', cause=repr(e))
 
     def _unmarshal_issue_watchers(self, bg_issue):
         bg_watchers = bg_issue.iterchildren(tag=CC_TOKEN)
@@ -296,7 +300,7 @@ class BugzillaIssuesParser(XMLParser):
             rel_type = BG_RELATIONSHIP_DEPENDS_ON
         else:
             cause = 'unknown relationship type: %s' % bg_rel.tag
-            raise UnmarshallingError('IssueRelationship', cause=cause)
+            raise UnmarshallingError(instance='IssueRelationship', cause=cause)
 
         related_to = self._unmarshal_str(bg_rel)
         return IssueRelationship(rel_type, related_to)
@@ -316,7 +320,7 @@ class BugzillaIssuesParser(XMLParser):
         elif b == '1':
             return True
         else:
-            raise UnmarshallingError('bool',
+            raise UnmarshallingError(instance='bool',
                                      cause='Value should be either 0 or 1. %s provided' % str(b))
 
     def _unmarshal_identity(self, bg_id):
@@ -332,14 +336,14 @@ class BugzillaIssuesParser(XMLParser):
 
             return Identity(user_id, name, email)
         except Exception, e:
-            raise UnmarshallingError('Identity', e)
+            raise UnmarshallingError(instance='Identity', cause=repr(e))
 
     def _unmarshal_timestamp(self, bg_ts):
         try:
             str_ts = self._unmarshal_str(bg_ts)
             return dateutil.parser.parse(str_ts).replace(tzinfo=None)
         except Exception, e:
-            raise UnmarshallingError('datetime', e)
+            raise UnmarshallingError(instance='datetime', cause=repr(e))
 
 
 class BugzillaChangesParser(HTMLParser):
@@ -433,11 +437,11 @@ class BugzillaChangesParser(HTMLParser):
                 email = None
             return Identity(user_id, None, email)
         except Exception, e:
-            raise UnmarshallingError('Identity', e)
+            raise UnmarshallingError(instance='Identity', cause=repr(e))
 
     def _unmarshal_timestamp(self, bg_ts):
         try:
             str_ts = self._unmarshal_str(bg_ts)
             return dateutil.parser.parse(str_ts).replace(tzinfo=None)
         except Exception, e:
-            raise UnmarshallingError('datetime', e)
+            raise UnmarshallingError(instance='datetime', cause=repr(e))

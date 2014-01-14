@@ -43,3 +43,15 @@ class BichoException(Exception):
 
     def __unicode__(self):
         return unicode(self.msg)
+
+
+class UnmarshallingError(BichoException):
+    """Exception raised when an error is found unmarshalling objects".
+
+    :param instance: type of the instance that was being unmarshalled
+    :type instance: str
+    :param cause: reason why the exception was raised
+    :type cause: str
+    """
+
+    message = 'error unmarshalling object to %(instance)s. %(cause)s'

@@ -34,25 +34,6 @@ from lxml import objectify
 from bicho.exceptions import BichoException
 
 
-class UnmarshallingError(Exception):
-    """Exception raised when an error is found unmarshalling parsed XML objects"""
-
-    def __init__(self, instance, error=None, cause=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.instance = instance
-        self.error = error
-        self.cause = cause
-
-    def __str__(self):
-        msg = 'error unmarshalling object to %s.' % self.instance
-        if self.cause is not None:
-            msg += ' %s.' % self.cause
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
-
-
 class ParserError(BichoException):
     """Base exception class for parser errors.
 

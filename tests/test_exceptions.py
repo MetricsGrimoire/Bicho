@@ -27,7 +27,12 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.exceptions import BichoException
+from bicho.exceptions import BichoException, UnmarshallingError
+
+
+# RegExps for testing exceptions
+KEYERROR_INSTANCE_REGEXP = 'instance'
+KEYERROR_CAUSE_REGEXP = 'cause'
 
 
 # Mock classes for testing BichoException base class
@@ -76,6 +81,33 @@ class TestBichoException(unittest.TestCase):
         # not given. This raises an KeyError.
         kwargs = {'code' : 404, 'error' : 'Not Found'}
         self.assertRaises(KeyError, MockSubClassExceptionArgs, **kwargs)
+
+
+class TestUnmarshallingError(unittest.TestCase):
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = UnmarshallingError(instance='Identity',
+                               cause='Invalid email address')
+        self.assertEqual('error unmarshalling object to Identity. Invalid email address',
+                         str(e))
+        self.assertEqual(u'error unmarshalling object to Identity. Invalid email address',
+                         unicode(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # the required parameters are not given
+        kwargs = {}
+        self.assertRaisesRegexp(KeyError, KEYERROR_INSTANCE_REGEXP,
+                                UnmarshallingError, **kwargs)
+
+        kwargs = {'cause' : 'could not convert Unicode chars'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_INSTANCE_REGEXP,
+                                UnmarshallingError, **kwargs)
+
+        kwargs = {'instance' : 'MockClass'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_CAUSE_REGEXP,
+                                UnmarshallingError, **kwargs)
 
 
 if __name__ == "__main__":

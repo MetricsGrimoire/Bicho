@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -28,7 +29,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.backends.parsers import UnmarshallingError
+from bicho.exceptions import UnmarshallingError
 from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
     BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue
 from bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesSummaryParser,\

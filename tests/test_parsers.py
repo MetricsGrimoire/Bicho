@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -31,7 +32,7 @@ import lxml.objectify
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.backends.parsers import UnmarshallingError,\
+from bicho.backends.parsers import \
     CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
     CSVParser, HTMLParser, XMLParser, JSONParser
 
@@ -59,32 +60,6 @@ def read_file(filename):
     with open(filename, 'r') as f:
         content = f.read()
     return content
-
-
-class TestUnmarshallingError(unittest.TestCase):
-
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as third parameter
-        self.assertRaises(TypeError, UnmarshallingError,
-                          'Identity', True, 'invalid name',)
-
-    def test_error_message(self):
-        # Make sure that prints the correct error
-        e = UnmarshallingError('Attachment')
-        self.assertEqual('error unmarshalling object to Attachment.', str(e))
-
-        e = UnmarshallingError('Identity', AttributeError())
-        self.assertEqual('error unmarshalling object to Identity. AttributeError()',
-                         str(e))
-
-        e = UnmarshallingError('Identity', AttributeError(), 'Invalid email address')
-        self.assertEqual('error unmarshalling object to Identity. Invalid email address. AttributeError()',
-                         str(e))
-
-        e = UnmarshallingError('Comment', cause='Invalid date')
-        self.assertEqual('error unmarshalling object to Comment. Invalid date.',
-                         str(e))
 
 
 class TestCSVParserError(unittest.TestCase):
