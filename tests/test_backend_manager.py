@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2011-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -22,14 +23,15 @@
 
 import os.path
 import tempfile
-import shutil 
+import shutil
 import sys
 import unittest
 
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.backends import Backend, BackendManager, BackendImportError, BackendDoesNotExist
+from bicho.backends import Backend, BackendManager,\
+    BackendError, BackendImportError, BackendDoesNotExist
 
 
 # Name of directory where the test input files are stored
@@ -45,29 +47,65 @@ ANOTHER_INVALID_BACKEND_DIRNAME = 'invalid2'
 BACKENDS_DIRNAME = 'test_backends'
 ALT_BACKENDS_DIRNAME = 'alt_backends'
 
+# RegExps for testing exceptions
+KEYERROR_NAME_REGEXP = 'name'
+KEYERROR_ERROR_REGEXP = 'error'
+
+
+class TestBackendError(unittest.TestCase):
+
+    def test_error_message(self):
+        # Make sure that prints the right error
+        e = BackendError(name='MockBackend')
+        self.assertEqual('error in backend MockBackend', str(e))
+        self.assertEqual(u'error in backend MockBackend', unicode(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # 'name' parameter is not given
+        kwargs = {'msg' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_NAME_REGEXP,
+                                BackendError, **kwargs)
+
 
 class TestBackendImportError(unittest.TestCase):
 
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as second parameter
-        self.assertRaises(TypeError, BackendImportError, 'test', 0)
-
     def test_error_message(self):
-        # Make sure that prints the correct error
-        e = BackendImportError('test1')
-        self.assertEqual('error importing backend test1.', str(e))
+        # Make sure that prints the right error
+        e = BackendImportError(name='test1', error='Exception')
+        self.assertEqual('error importing backend test1. Exception', str(e))
+        self.assertEqual(u'error importing backend test1. Exception', unicode(e))
 
-        e = BackendImportError('test2', Exception())
-        self.assertEqual('error importing backend test2. Exception()', str(e))
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # the required parameters are not given
+        kwargs = {}
+        self.assertRaisesRegexp(KeyError, KEYERROR_NAME_REGEXP,
+                                BackendImportError, **kwargs)
+
+        kwargs = {'error' : 'invalid module'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_NAME_REGEXP,
+                                BackendImportError, **kwargs)
+
+        kwargs = {'name' : 'MockBackend'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_ERROR_REGEXP,
+                                BackendImportError, **kwargs)
 
 
 class TestBackendDoesNotExist(unittest.TestCase):
 
     def test_error_message(self):
-        # Make sure that prints the correct error
-        e = BackendDoesNotExist('test')
-        self.assertEqual('backend test not found.', str(e))
+        # Make sure that prints the right error
+        e = BackendDoesNotExist(name='MockBackend')
+        self.assertEqual('backend MockBackend not found.', str(e))
+        self.assertEqual(u'backend MockBackend not found.', unicode(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # 'name' parameter is not given
+        kwargs = {'error' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_NAME_REGEXP,
+                                BackendDoesNotExist, **kwargs)
 
 
 class TestBackendManager(unittest.TestCase):

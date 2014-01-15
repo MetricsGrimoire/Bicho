@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2011-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -32,31 +33,38 @@ Bicho backends framework.
 import os
 import sys
 
-
-class BackendImportError(Exception):
-    """Exception raised when an error occurs importing a backend."""
-
-    def __init__(self, name, error=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.name = name
-        self.error = error
-
-    def __str__(self):
-        msg = 'error importing backend %s.' % self.name
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
+from bicho.exceptions import BichoException
 
 
-class BackendDoesNotExist(Exception):
-    """Exception raised when a backend is not found."""
+class BackendError(BichoException):
+    """Base exception class for backend errors.
 
-    def __init__(self, name):
-        self.name = name
+    Parser exceptions should derive from this class.
 
-    def __str__(self):
-        return 'backend %s not found.' % self.name
+    :param name: name of the backend
+    :type name: str
+    """
+    message = 'error in backend %(name)s'
+
+
+class BackendImportError(BackendError):
+    """Exception raised when an error occurs importing a backend.
+
+    :param name: name of the backend
+    :type name: str
+    :param error: error raised while importing the backend
+    :type error: str
+    """
+    message = 'error importing backend %(name)s. %(error)s'
+
+
+class BackendDoesNotExist(BackendError):
+    """Exception raised when a backend is not found.
+
+    :param name: name of the backend
+    :type name: str
+    """
+    message = 'backend %(name)s not found.'
 
 
 class Backend(object):
@@ -95,7 +103,7 @@ class BackendManager(object):
         try:
             return self._backends[name]
         except KeyError:
-            raise BackendDoesNotExist(name)
+            raise BackendDoesNotExist(name=name)
 
     def _load_backends(self):
         backends = self._find_backends()
@@ -118,7 +126,7 @@ class BackendManager(object):
             try:
                 __import__(candidate)
             except Exception, e:
-                ex = BackendImportError(candidate, e)
+                ex = BackendImportError(name=candidate, error=repr(e))
 
                 if self._debug:
                     raise ex
