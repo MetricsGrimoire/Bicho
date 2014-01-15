@@ -82,6 +82,7 @@ class TestCSVParserError(unittest.TestCase):
         # Make sure that prints the correct error
         e = CSVParserError(error='Invalid CSV stream')
         self.assertEqual('error parsing CSV. Invalid CSV stream', str(e))
+        self.assertEqual(u'error parsing CSV. Invalid CSV stream', unicode(e))
 
     def test_no_args(self):
         # Check whether raises a KeyError exception when
@@ -97,6 +98,7 @@ class TestHTMLParserError(unittest.TestCase):
         # Make sure that prints the correct error
         e = HTMLParserError(error='Invalid format')
         self.assertEqual('error parsing HTML. Invalid format', str(e))
+        self.assertEqual(u'error parsing HTML. Invalid format', unicode(e))
 
     def test_no_args(self):
         # Check whether raises a KeyError exception when
@@ -112,6 +114,7 @@ class TestXMLParserError(unittest.TestCase):
         # Make sure that prints the correct error
         e = XMLParserError(error='xml entity not found')
         self.assertEqual('error parsing XML. xml entity not found', str(e))
+        self.assertEqual(u'error parsing XML. xml entity not found', unicode(e))
 
     def test_no_args(self):
         # Check whether raises a KeyError exception when
@@ -127,6 +130,7 @@ class TestJSONParserError(unittest.TestCase):
         # Make sure that prints the correct error
         e = JSONParserError(error='Invalid stream')
         self.assertEqual('error parsing JSON. Invalid stream', str(e))
+        self.assertEqual(u'error parsing JSON. Invalid stream', unicode(e))
 
     def test_no_args(self):
         # Check whether raises a KeyError exception when
