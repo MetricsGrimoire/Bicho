@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -30,41 +31,32 @@ import socket
 import urllib
 import urllib2
 
+from bicho.exceptions import BichoException
 
-class ConnectionError(Exception):
-    """Exception raised when an connection error is found"""
 
-    def __init__(self, error=None):
-        if error is not None and not isinstance(error, Exception):
-            raise TypeError('expected type Exception in error parameter.')
-        self.error = error
+class ConnectionError(BichoException):
+    """Exception raised when an connection error is found.
 
-    def __str__(self):
-        msg = 'connection error.'
-        if self.error is not None:
-            msg += ' %s' % repr(self.error)
-        return msg
+    :param error: cause of the error
+    :type error: str
+    """
+    message = 'connection error. %(error)s.'
 
 
 class TimeoutError(ConnectionError):
-    """Exception raised when a timeout occurs on the connection"""
-
-    def __init__(self):
-        ConnectionError.__init__(self)
-
-    def __str__(self):
-        return 'timed out.'
+    """Exception raised when a timeout occurs on the connection."""
+    message = 'timed out.'
 
 
-class HTTPError(Exception):
-    """Exception raised when a HTTP response with a code error arrives"""
+class HTTPError(BichoException):
+    """Exception raised when a HTTP response with a code error arrives.
 
-    def __init__(self, code, msg):
-        self.code = code
-        self.msg = msg
-
-    def __str__(self):
-        return 'Error %s: %s.' % (self.code, self.msg)
+    :param code: code error
+    :type code: str
+    :param message: error message
+    :type message: str
+    """
+    message = 'Error %(code)s: %(message)s.'
 
 
 class HTTPDownloadManager(object):
@@ -140,8 +132,8 @@ class HTTPDownloadManager(object):
             response = urllib2.urlopen(url_or_request)
             return response.read()
         except urllib2.HTTPError, e:
-            raise HTTPError(e.code, e.msg)
+            raise HTTPError(code=e.code, message=e.msg)
         except urllib2.URLError, e:
-            raise ConnectionError(e)
+            raise ConnectionError(error=repr(e))
         except socket.timeout:
             raise TimeoutError()

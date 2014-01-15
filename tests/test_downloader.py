@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -37,21 +38,26 @@ HTTP_PORT = 8000
 TEST_FILES_DIRNAME = '/tmp'
 TIMEOUT = 5
 
+# RegExps for testing exceptions
+KEYERROR_ERROR_REGEXP = 'error'
+KEYERROR_CODE_REGEXP = 'code'
+KEYERROR_MESSAGE_REGEXP = 'message'
+
 
 class TestConnectionError(unittest.TestCase):
 
-    def test_type(self):
-        # Check whether raises a TypeError exception when
-        # is not given an Exception class as third parameter
-        self.assertRaises(TypeError, ConnectionError, False)
-
     def test_error_message(self):
-        # Make sure that prints the correct error
-        e = ConnectionError()
-        self.assertEqual('connection error.', str(e))
+        # Make sure that prints the right error
+        e = ConnectionError(error='Server not found')
+        self.assertEqual('connection error. Server not found.', str(e))
+        self.assertEqual(u'connection error. Server not found.', unicode(e))
 
-        e = ConnectionError(Exception())
-        self.assertEqual('connection error. Exception()', str(e))
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # 'error' parameter is not given
+        kwargs = {'msg' : 'error'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_ERROR_REGEXP,
+                                ConnectionError, **kwargs)
 
 
 class TestTimeoutError(unittest.TestCase):
@@ -60,14 +66,31 @@ class TestTimeoutError(unittest.TestCase):
         # Make sure that prints the correct error
         e = TimeoutError()
         self.assertEqual('timed out.', str(e))
+        self.assertEqual(u'timed out.', unicode(e))
 
 
 class TestHTTPError(unittest.TestCase):
 
     def test_error_message(self):
-        # Make sure that prints the correct error
-        e = HTTPError('404', 'Not found')
+        # Make sure that prints the right error
+        e = HTTPError(code='404', message='Not found')
         self.assertEqual('Error 404: Not found.', str(e))
+        self.assertEqual(u'Error 404: Not found.', unicode(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # the required parameters are not given
+        kwargs = {}
+        self.assertRaisesRegexp(KeyError, KEYERROR_CODE_REGEXP,
+                                HTTPError, **kwargs)
+
+        kwargs = {'message' : 'Not Found'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_CODE_REGEXP,
+                                HTTPError, **kwargs)
+
+        kwargs = {'code' : '404'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_MESSAGE_REGEXP,
+                                HTTPError, **kwargs)
 
 
 class TestDownloadManager(unittest.TestCase):
