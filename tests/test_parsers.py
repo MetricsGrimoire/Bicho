@@ -34,7 +34,7 @@ if not '..' in sys.path:
 
 from bicho.backends.parsers import \
     CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
-    CSVParser, HTMLParser, XMLParser, JSONParser
+    Parser, CSVParser, HTMLParser, XMLParser, JSONParser
 
 
 # Name of directory where the test input files are stored
@@ -122,10 +122,26 @@ class TestJSONParserError(unittest.TestCase):
                                 JSONParserError, **kwargs)
 
 
+class TestAbstractParser(unittest.TestCase):
+
+    def test_readonly_properties(self):
+        parser = Parser('stream to parse')
+        self.assertRaises(AttributeError, setattr, parser, 'data', '')
+        self.assertEqual(None, parser.data)
+
+    def test_stream_property(self):
+        parser = Parser('text to parse')
+        self.assertEqual('text to parse', parser.stream)
+
+    def test_parse(self):
+        parser = Parser('stream to parse')
+        self.assertRaises(NotImplementedError, parser.parse)
+
+
 class TestCSVParser(unittest.TestCase):
 
     def test_readonly_properties(self):
-        parser = CSVParser('', )
+        parser = CSVParser('')
         self.assertRaises(AttributeError, setattr, parser, 'data', '')
         self.assertEqual(None, parser.data)
 

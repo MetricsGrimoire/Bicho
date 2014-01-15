@@ -78,11 +78,38 @@ class JSONParserError(ParserError):
     message = 'error parsing JSON. %(error)s'
 
 
-class CSVParser(object):
-    """"Generic CSV parser
+class Parser(object):
+    """Abstract parsing class.
 
-    :param csv: stream to parse
-    :type html: str
+    :param stream: stream to parse
+    :type stream: str
+    """
+
+    def __init__(self, stream):
+        self.stream = stream
+        self._data = None
+
+    def parse(self):
+        """Parse the given stream
+
+        Abstract method. Returns the parsed data.
+        """
+        raise NotImplementedError
+
+    @property
+    def data(self):
+        """Returns the parsed data.
+
+        :rtype: object
+        """
+        return self._data
+
+
+class CSVParser(Parser):
+    """"Generic CSV parser.
+
+    :param stream: stream to parse
+    :type stream: str
     :param fieldnames: name of each column
     :type list of str
     :param delimiter: delimiter of fields, by default it is set to comma
@@ -91,123 +118,105 @@ class CSVParser(object):
       doble quote
     :type quotechar: str
     """
-    def __init__(self, csv, fieldnames=None, delimiter=',', quotechar='"'):
-        self.csv = csv
+    def __init__(self, stream, fieldnames=None, delimiter=',', quotechar='"'):
+        super(CSVParser, self).__init__(stream)
         self.fieldnames = fieldnames
         self.delimiter = delimiter
         self.quotechar = quotechar
-        self._data = None
 
     def parse(self):
-        """Parse the CSV stream
+        """Parse the CSV stream.
 
-        :raises: TypeError: when the cvs to parse is not a instance of str.
-        :raises: CSVParserError: when an error occurs parsing the stream.
+        :returns: returns the parsed data
+        :rtype: csv.DictReader
+        :raises: TypeError: when the cvs to parse is not a instance of str
+        :raises: CSVParserError: when an error occurs parsing the stream
         """
-        if not isinstance(self.csv, str):
+        if not isinstance(self.stream, str):
             raise TypeError('expected type str in csv parameter.')
 
         try:
-            rows = self.csv.split('\n')
+            rows = self.stream.split('\n')
             self._data = DictReader(rows, fieldnames=self.fieldnames,
                                     delimiter=self.delimiter,
                                     quotechar=self.quotechar)
+            return self._data
         except Exception, e:
             raise CSVParserError(error=repr(e))
 
-    @property
-    def data(self):
-        """Returns the parsed data.
 
-        :rtype: csv.DictReader
-        """
-        return self._data
+class HTMLParser(Parser):
+    """Generic HTML parser.
 
-
-class HTMLParser(object):
-    """Generic HTML parser
-
-    :param html: stream to parse
-    :type html: str
+    :param stream: stream to parse
+    :type stream: str
     """
-    def __init__(self, html):
-        self.html = html
-        self._data = None
+    def __init__(self, stream):
+        super(HTMLParser, self).__init__(stream)
 
     def parse(self):
-        """Parse the HTML stream
+        """Parse the HTML stream.
 
+        :returns: returns the parsed data
+        :rtype: bs4.BeautifulSoup
         :raises: TypeError: when the html to parse is not a instance of str.
         :raises: HTMLParserError: when an error occurs parsing the stream.
         """
-        if not isinstance(self.html, str):
+        if not isinstance(self.stream, str):
             raise TypeError('expected type str in html parameter.')
 
         try:
-            self._data = BeautifulSoup(self.html)
+            self._data = BeautifulSoup(self.stream)
             self._remove_comments()
+            return self._data
         except Exception, e:
             raise HTMLParserError(error=repr(e))
-
-    @property
-    def data(self):
-        """Returns the parsed data.
-
-        :rtype: bs4.BeautifulSoup
-        """
-        return self._data
 
     def _remove_comments(self):
         comments = self._data.findAll(text=lambda text:isinstance(text, Comment))
         [comment.extract() for comment in comments]
 
 
-class XMLParser(object):
-    """Generic XML parser
-
-    :param xml: stream to parse
-    :type xml: str
-    """
-    def __init__(self, xml):
-        self.xml = xml
-        self._data = None
-
-    def parse(self):
-        """Parse the XML stream
-
-        :raises: TypeError: when the xml to parse is not a instance of str.
-        :raises: XMLParserError: when an error occurs parsing the stream.
-        """
-        if not isinstance(self.xml, str):
-            raise TypeError('expected type str in xml parameter.')
-
-        try:
-            self._data = objectify.fromstring(self.xml)
-        except Exception, e:
-            raise XMLParserError(error=repr(e))
-
-    @property
-    def data(self):
-        """Returns the parsed data.
-
-        :rtype: lxml.objectify.ObjectifiedElement
-        """
-        return self._data
-
-
-class JSONParser(object):
-    """Generic JSON parser
+class XMLParser(Parser):
+    """Generic XML parser.
 
     :param stream: stream to parse
     :type stream: str
     """
     def __init__(self, stream):
-        self.stream = stream
-        self._data = None
+        super(XMLParser, self).__init__(stream)
 
     def parse(self):
-        """Parse the JSON stream
+        """Parse the XML stream.
 
+        :returns: returns the parsed data
+        :rtype: lxml.objectify.ObjectifiedElement
+        :raises: TypeError: when the xml to parse is not a instance of str.
+        :raises: XMLParserError: when an error occurs parsing the stream.
+        """
+        if not isinstance(self.stream, str):
+            raise TypeError('expected type str in xml parameter.')
+
+        try:
+            self._data = objectify.fromstring(self.stream)
+        except Exception, e:
+            raise XMLParserError(error=repr(e))
+
+
+class JSONParser(Parser):
+    """Generic JSON parser.
+
+    :param stream: stream to parse
+    :type stream: str
+    """
+    def __init__(self, stream):
+        super(JSONParser, self).__init__(stream)
+
+    def parse(self):
+        """Parse the JSON stream.
+
+        :returns: returns the parser data
+        :rtype: object (dict or list)
         :raises: TypeError: when the json to parse is not a instance of str.
         :raises: JSONParserError: when an error occurs parsing the stream.
         """
@@ -218,11 +227,3 @@ class JSONParser(object):
             self._data = json.loads(self.stream)
         except Exception, e:
             raise JSONParserError(error=repr(e))
-
-    @property
-    def data(self):
-        """Returns the parsed data.
-
-        :rtype: object
-        """
-        return self._data
