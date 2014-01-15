@@ -33,7 +33,7 @@ if not '..' in sys.path:
     sys.path.insert(0, '..')
 
 from bicho.backends.parsers import \
-    CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
+    ParserError, CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
     Parser, CSVParser, HTMLParser, XMLParser, JSONParser
 
 
@@ -60,6 +60,20 @@ def read_file(filename):
     with open(filename, 'r') as f:
         content = f.read()
     return content
+
+
+class TestParserError(unittest.TestCase):
+
+    def test_error_message(self):
+        # Make sure it prints the right error
+        e = ParserError()
+        self.assertEqual('error parsing stream', str(e))
+        self.assertEqual(u'error parsing stream', unicode(e))
+
+        # Should ignore arguments
+        e = ParserError(msg='invalid stream')
+        self.assertEqual('error parsing stream', str(e))
+        self.assertEqual(u'error parsing stream', unicode(e))
 
 
 class TestCSVParserError(unittest.TestCase):
