@@ -36,6 +36,7 @@ ISSUES_SUFFIX = 'issues'
 JSON_SUFFIX = '.json'
 PROJECT_SUFFIX = 'projects/'
 STATUSES_SUFFIX = 'issue_statuses'
+USERS_SUFFIX = 'users/'
 
 # URL parameters
 INCLUDE_PARAM = 'include'
@@ -104,6 +105,12 @@ class RedmineURLGenerator(object):
         suffix = STATUSES_SUFFIX + JSON_SUFFIX
         return self._get_url(suffix, {})
 
+    def get_user_url(self, user_id):
+        if not user_id:
+            raise ValueError('user_id cannot be None or empty')
+        suffix = USERS_SUFFIX + user_id + JSON_SUFFIX
+        return self._get_url(suffix, {})
+
     def _parse_base_url(self, url):
         if not url:
             msg = 'Empty URL'
@@ -131,6 +138,8 @@ class RedmineURLGenerator(object):
         return parts
 
     def _get_url(self, suffix, qs):
+        if qs is None:
+            qs = {}
         query = urllib.urlencode(qs, True)
         url = urlparse.ParseResult(self._url_parts.scheme, self._url_parts.netloc,
                                    self._url_parts.path + suffix,

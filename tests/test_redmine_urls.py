@@ -79,6 +79,18 @@ class TestRedmineURLGenerator(unittest.TestCase):
         self.assertEqual('http://example.org/redmine/issue_statuses.json',
                          generator.get_statuses_url())
 
+    def test_user_url(self):
+        generator = RedmineURLGenerator(REDMINE_URL)
+        self.assertEqual('http://example.org/redmine/users/12.json',
+                         generator.get_user_url('12'))
+
+    def test_user_url_invalid_id(self):
+        generator = RedmineURLGenerator(REDMINE_URL)
+        self.assertRaisesRegexp(ValueError, 'user_id cannot be None or empty',
+                                generator.get_user_url, user_id=None)
+        self.assertRaisesRegexp(ValueError, 'user_id cannot be None or empty',
+                                generator.get_user_url, user_id='')
+
     def test_invalid_urls(self):
         # Test if the generator fails when a new instance is created
         # passing invalid URLs
