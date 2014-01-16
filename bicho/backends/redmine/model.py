@@ -38,6 +38,8 @@ class RedmineIdentity(Identity):
     :type name: str
     :param email: email of the identity
     :type email: str
+    :param login: nick of the user
+    :type login: str
     :param created_on: date when this identity was created
     :type created_on: datetime.datetime
     :param last_login_on: last time this identity logged in
@@ -45,8 +47,9 @@ class RedmineIdentity(Identity):
     """
 
     def __init__(self, user_id, name=None, email=None,
-                 created_on=None, last_login_on=None):
+                 login=None, created_on=None, last_login_on=None):
         super(RedmineIdentity, self).__init__(user_id, name, email)
+        self.login = login
         self.created_on = created_on
         self.last_login_on = last_login_on
 
