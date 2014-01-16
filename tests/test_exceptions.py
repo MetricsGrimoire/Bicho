@@ -27,12 +27,16 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.exceptions import BichoException, UnmarshallingError
+from bicho.exceptions import BichoException, UnmarshallingError, InvalidBaseURLError
 
 
 # RegExps for testing exceptions
-KEYERROR_INSTANCE_REGEXP = 'instance'
 KEYERROR_CAUSE_REGEXP = 'cause'
+KEYERROR_INSTANCE_REGEXP = 'instance'
+KEYERROR_URL_REGEXP = 'url'
+
+# Test case URL
+QUERY_URL = 'http:/example.com/issues/show_bug.cgi?'
 
 
 # Mock classes for testing BichoException base class
@@ -108,6 +112,33 @@ class TestUnmarshallingError(unittest.TestCase):
         kwargs = {'instance' : 'MockClass'}
         self.assertRaisesRegexp(KeyError, KEYERROR_CAUSE_REGEXP,
                                 UnmarshallingError, **kwargs)
+
+
+class TestInvalidBaseURLError(unittest.TestCase):
+
+    def test_error_message(self):
+        # Make sure that prints the correct error
+        e = InvalidBaseURLError(url=QUERY_URL,
+                                cause='Query parameters not found')
+        self.assertEqual('error in URL %s. Query parameters not found' % QUERY_URL,
+                         str(e))
+        self.assertEqual(u'error in URL %s. Query parameters not found' % QUERY_URL,
+                         unicode(e))
+
+    def test_no_args(self):
+        # Check whether raises a KeyError exception when
+        # the required parameters are not given
+        kwargs = {}
+        self.assertRaisesRegexp(KeyError, KEYERROR_URL_REGEXP,
+                                InvalidBaseURLError, **kwargs)
+
+        kwargs = {'cause' : 'Query parameters not found'}
+        self.assertRaisesRegexp(KeyError, KEYERROR_URL_REGEXP,
+                                InvalidBaseURLError, **kwargs)
+
+        kwargs = {'url' : QUERY_URL}
+        self.assertRaisesRegexp(KeyError, KEYERROR_CAUSE_REGEXP,
+                                InvalidBaseURLError, **kwargs)
 
 
 if __name__ == "__main__":

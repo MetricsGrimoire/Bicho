@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Authors:
-#         Santiago Dueñas <sduenas@libresoft.es>
+#         Santiago Dueñas <sduenas@bitergia.com>
 #
 
 """
@@ -55,3 +55,15 @@ class UnmarshallingError(BichoException):
     """
 
     message = 'error unmarshalling object to %(instance)s. %(cause)s'
+
+
+class InvalidBaseURLError(BichoException):
+    """"Exception raised when the URL provided as basis is invalid.
+
+    :param url: invalid URL
+    :type url: str
+    :param cause: reason why the URL is invalid
+    :type cause: str
+    """
+
+    message = 'error in URL %(url)s. %(cause)s'

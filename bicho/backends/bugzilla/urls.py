@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2007-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -17,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Authors:
-#         Santiago Dueñas <sduenas@libresoft.es>
+#         Santiago Dueñas <sduenas@bitergia.com>
 #
 
 """
@@ -26,6 +27,8 @@ URLs generator for Bugzilla tracker
 
 import urllib
 import urlparse
+
+from bicho.exceptions import InvalidBaseURLError
 
 
 # Bugzilla versions that follow the old style queries
@@ -55,18 +58,6 @@ COLUMN_DATE_OLD_STYLE = 'Last+Changed'
 # Content-type values
 CTYPE_CSV = 'csv'
 CTYPE_XML = 'xml'
-
-
-class InvalidBaseURLError(Exception):
-    """"Exception raised when the URL provided as basis is invalid"""
-
-    def __init__(self, url, cause):
-        self.url = url
-        self.cause = cause
-
-    def __str__(self):
-        msg = 'error in URL %s. %s' % (self.url, self.cause)
-        return msg
 
 
 class BugzillaURLGenerator(object):
@@ -142,17 +133,17 @@ class BugzillaURLGenerator(object):
     def _parse_base_url(self, url):
         if not url:
             msg = 'Empty URL'
-            raise InvalidBaseURLError(url, msg)
+            raise InvalidBaseURLError(url=url, cause=msg)
 
         parts = urlparse.urlparse(url)
 
         # Possible errors
         if parts.query:
             msg = 'Query parameters found'
-            raise InvalidBaseURLError(url, msg)
+            raise InvalidBaseURLError(url=url, cause=msg)
         elif parts.path[-4:] == '.cgi':
             msg = 'URL related to a CGI'
-            raise InvalidBaseURLError(url, msg)
+            raise InvalidBaseURLError(url=url, cause=msg)
 
         # Add trailing slash to avoid future problems joining paths with
         # urljoin function. Without this slash, the path of the base URL

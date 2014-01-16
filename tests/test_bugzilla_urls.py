@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2014 Bitergia
 # Copyright (C) 2011-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or
@@ -17,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Authors:
-#         Santiago Dueñas <sduenas@libresoft.es>
+#         Santiago Dueñas <sduenas@bitergia.com>
 #
 
 import sys
@@ -26,7 +27,8 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.backends.bugzilla.urls import BugzillaURLGenerator, InvalidBaseURLError
+from bicho.exceptions import InvalidBaseURLError
+from bicho.backends.bugzilla.urls import BugzillaURLGenerator
 
 
 # Test case URLs
@@ -40,14 +42,6 @@ CGI_SUBSTRING_URL = 'http://bugzilla.example.cgi/.cgis/'
 # Test case dates
 ISSUE_DATE = '2001-01-01'
 ISSUE_TIMESTAMP = '2003-06-27 22:10:08'
-
-
-class TestInvalidBaseURLError(unittest.TestCase):
-
-    def test_error_message(self):
-        # Make sure that prints the correct error
-        e = InvalidBaseURLError(QUERY_URL, 'Query parameters found')
-        self.assertEqual('error in URL %s. Query parameters found' % QUERY_URL, str(e))
 
 
 class TestBugzillaURLGenerator(unittest.TestCase):
