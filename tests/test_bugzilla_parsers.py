@@ -34,6 +34,7 @@ from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSH
     BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue
 from bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesSummaryParser,\
     BugzillaIssuesParser, BugzillaChangesParser
+from utilities import read_file
 
 
 # Name of directory where the test input files are stored
@@ -81,19 +82,6 @@ DATETIME_MONTH_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'month must be 
 COMMENT_WHO_ERROR = UNMARSHALLING_ERROR_REGEXP % ('Comment', 'no such child: who.')
 ATTACHMENT_FILENAME_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaAttachment', 'no such child: filename.')
 ATTACHMENT_BOOL_ERROR = UNMARSHALLING_ERROR_REGEXP % ('bool', 'Value should be either 0 or 1.')
-
-
-def read_file(filename):
-    """Generic function for reading files
-
-    :param filename: path of the file to read
-    :type filename: str
-    :return: content of the file
-    :rtype: str
-    """
-    with open(filename, 'r') as f:
-        content = f.read()
-    return content
 
 
 class TestBugzillaMetadataParser(unittest.TestCase):

@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Authors:
-#         Santiago Dueñas <sduenas@libresoft.es>
+#         Santiago Dueñas <sduenas@bitergia.com>
 #
 
 import csv
@@ -35,6 +35,7 @@ if not '..' in sys.path:
 from bicho.backends.parsers import \
     ParserError, CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
     Parser, CSVParser, HTMLParser, XMLParser, JSONParser
+from utilities import read_file
 
 
 # Name of directory where the test input files are stored
@@ -54,12 +55,6 @@ JSON_UTF8_FILE = 'json_utf8.json'
 
 # RegExps for testing exceptions
 KEYERROR_ERROR_REGEXP = 'error'
-
-
-def read_file(filename):
-    with open(filename, 'r') as f:
-        content = f.read()
-    return content
 
 
 class TestParserError(unittest.TestCase):
