@@ -30,17 +30,21 @@ import dateutil.parser
 
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParser
-from bicho.backends.redmine.model import RedmineIdentity
+from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
 
 
 # Tokens
 CREATED_ON_TOKEN = 'created_on'
 ID_TOKEN = 'id'
+ISSUE_STATUSES_TOKEN = 'issue_statuses'
+IS_CLOSED_TOKEN = 'is_closed'
+IS_DEFAULT_TOKEN = 'is_default'
 FIRSTNAME_TOKEN = 'firstname'
 LASTNAME_TOKEN = 'lastname'
 LAST_LOGIN_ON_TOKEN = 'last_login_on'
 LOGIN_TOKEN = 'login'
 MAIL_TOKEN = 'mail'
+NAME_TOKEN = 'name'
 
 
 class RedmineIdentityParser(JSONParser):
@@ -90,6 +94,55 @@ class RedmineIdentityParser(JSONParser):
             return dateutil.parser.parse(str_ts).replace(tzinfo=None)
         except Exception, e:
             raise UnmarshallingError(instance='datetime', cause=repr(e))
+
+    def _unmarshal_str(self, s, not_empty=False):
+        if s is None:
+            return None
+        elif not_empty and s == u'':
+            return None
+        return unicode(s)
+
+
+class RedmineStatusesParser(JSONParser):
+    """JSON parser for parsing available statuses on Redmine.
+
+    :param json: JSON stream with a list of statuses
+    :type json: str
+    """
+
+    def __init__(self, json):
+        super(RedmineStatusesParser, self).__init__(json)
+
+    @property
+    def statuses(self):
+        return self._unmarshal()
+
+    def _unmarshal(self):
+        try:
+            issue_statuses = self._data[ISSUE_STATUSES_TOKEN]
+            return [self._unmarshal_status(status)\
+                    for status in issue_statuses]
+        except KeyError, e:
+            raise UnmarshallingError(instance='list(RedmineStatus)', cause=repr(e))
+
+    def _unmarshal_status(self, status):
+        try:
+            status_id = self._unmarshal_str(status[ID_TOKEN])
+            name = self._unmarshal_str(status[NAME_TOKEN])
+
+            if IS_CLOSED_TOKEN in status:
+                is_closed = status[IS_CLOSED_TOKEN]
+            else:
+                is_closed = False
+
+            if IS_DEFAULT_TOKEN in status:
+                is_default = status[IS_DEFAULT_TOKEN]
+            else:
+                is_default = False
+
+            return RedmineStatus(status_id, name, is_closed, is_default)
+        except KeyError, e:
+            raise UnmarshallingError(instance='RedmineStatus', cause=repr(e))
 
     def _unmarshal_str(self, s, not_empty=False):
         if s is None:

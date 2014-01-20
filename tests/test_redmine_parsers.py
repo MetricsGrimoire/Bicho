@@ -29,8 +29,8 @@ if not '..' in sys.path:
 
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParserError
-from bicho.backends.redmine.model import RedmineIdentity
-from bicho.backends.redmine.parsers import RedmineIdentityParser
+from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
+from bicho.backends.redmine.parsers import RedmineIdentityParser, RedmineStatusesParser
 from utilities import read_file
 
 
@@ -50,12 +50,20 @@ IDENTITY_NO_LAST_LOGIN_ON = 'identity_no_last_login_on.json'
 IDENTITY_INVALID_CREATED_ON = 'identity_invalid_created_on.json'
 IDENTITY_INVALID_LAST_LOGIN_ON = 'identity_invalid_last_login_on.json'
 IDENTITY_INVALID_STREAM = 'identity_invalid_stream.json'
+STATUSES_FILE = 'statuses.json'
+STATUSES_NO_ISSUE_STATUSES = 'statuses_no_issue_statuses.json'
+STATUSES_NO_ID = 'statuses_no_id.json'
+STATUSES_NO_NAME = 'statuses_no_name.json'
+STATUSES_INVALID_IS_CLOSED = 'statuses_invalid_is_closed.json'
+STATUSES_INVALID_IS_DEFAULT = 'statuses_invalid_is_default.json'
+STATUSES_INVALID_STREAM = 'statuses_invalid_stream.json'
+
 
 # RegExps for testing JSONParserError exceptions
 PARSING_ERROR_REGEXP = 'error parsing JSON.+%s'
 INVALID_STREAM_VALUE_ERROR = PARSING_ERROR_REGEXP % ('ValueError')
 
-# RegExps for testing TypeError exceptions
+# RegExps for testing UnmarshallingError exceptions
 UNMARSHALLING_ERROR_REGEXP = 'error unmarshalling object to %s.+%s'
 USERS_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'user')
 ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'id')
@@ -65,7 +73,15 @@ MAIL_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'mail')
 LOGIN_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'login')
 CREATED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'created_on')
 LAST_LOGIN_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'last_login_on')
+ISSUE_STATUSES_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('list\(RedmineStatus\)', 'issue_statuses')
+STATUSES_ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineStatus', 'id')
+STATUSES_NAME_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineStatus', 'name')
 DATETIME_MONTH_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'month must be in 1..12')
+
+# RegExps for testing TypeError exceptions
+TYPE_ERROR_REGEXP = 'Parameter "%s" should be a %s instance. %s given'
+IS_CLOSED_BOOL_ERROR = TYPE_ERROR_REGEXP % ('is_closed', 'bool', 'int')
+IS_DEFAULT_BOOL_ERROR = TYPE_ERROR_REGEXP % ('is_default', 'bool', 'int')
 
 
 class TestRedmineIdentityParser(unittest.TestCase):
@@ -101,10 +117,6 @@ class TestRedmineIdentityParser(unittest.TestCase):
     def test_no_values(self):
         # Test if the parser fails when the required
         # values are not present
-        self.assertRaisesRegexp(UnmarshallingError,
-                                USERS_KEY_ERROR,
-                                self._parse,
-                                filename=IDENTITY_NO_USER)
         self.assertRaisesRegexp(UnmarshallingError,
                                 ID_KEY_ERROR,
                                 self._parse,
@@ -152,14 +164,14 @@ class TestRedmineIdentityParser(unittest.TestCase):
 
     def test_invalid_identity_stream(self):
         # Check whether it fails parsing an invalid
-        # identity stream
+        # identity streamlist(RedmineStatus)
         self.assertRaisesRegexp(JSONParserError,
                                 INVALID_STREAM_VALUE_ERROR,
                                 self._parse,
                                 filename=IDENTITY_INVALID_STREAM)
 
     def _parse(self, filename):
-        """Generic method to parse Redmine issues from a JSON stream
+        """Generic method to parse a Redmine identity from a JSON stream.
 
         :param filename: path of the file to parse
         :type filename: str
@@ -171,6 +183,97 @@ class TestRedmineIdentityParser(unittest.TestCase):
         self.parser = RedmineIdentityParser(json)
         self.parser.parse()
         return self.parser.identity
+
+
+class TestRedmineStatusesParser(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = None
+
+    def test_statuses_set(self):
+        # Test if there is no fail parsing Redmine statuses
+        statuses = self._parse(STATUSES_FILE)
+
+        self.assertEqual(15, len(statuses))
+
+        status = statuses[0]
+        self.assertIsInstance(status, RedmineStatus)
+        self.assertEqual(u'1', status.status_id)
+        self.assertEqual(u'New', status.name)
+        self.assertEqual(False, status.is_closed)
+        self.assertEqual(True, status.is_default)
+
+        status = statuses[1]
+        self.assertIsInstance(status, RedmineStatus)
+        self.assertEqual(u'12', status.status_id)
+        self.assertEqual(u'Verified', status.name)
+        self.assertEqual(False, status.is_closed)
+        self.assertEqual(False, status.is_default)
+
+        status = statuses[13]
+        self.assertIsInstance(status, RedmineStatus)
+        self.assertEqual(u'9', status.status_id)
+        self.assertEqual(u'Can\'t reproduce', status.name)
+        self.assertEqual(True, status.is_closed)
+        self.assertEqual(False, status.is_default)
+
+    def test_no_statuses_data(self):
+        # Test if fails when there is no data about the identity
+        # in the JSON, i.e no 'user' key set or it's empty
+        self.assertRaisesRegexp(UnmarshallingError,
+                                ISSUE_STATUSES_KEY_ERROR,
+                                self._parse,
+                                filename=STATUSES_NO_ISSUE_STATUSES)
+
+    def test_no_values(self):
+        # Test if the parser fails when the required
+        # values are not present
+        self.assertRaisesRegexp(UnmarshallingError,
+                                STATUSES_ID_KEY_ERROR,
+                                self._parse,
+                                filename=STATUSES_NO_ID)
+        self.assertRaisesRegexp(UnmarshallingError,
+                                STATUSES_NAME_KEY_ERROR,
+                                self._parse,
+                                filename=STATUSES_NO_NAME)
+
+    def test_invalid_is_closed(self):
+        # Test if the parser fails when is_closed has
+        # and invalid type
+        self.assertRaisesRegexp(TypeError,
+                                IS_CLOSED_BOOL_ERROR,
+                                self._parse,
+                                filename=STATUSES_INVALID_IS_CLOSED)
+
+    def test_invalid_is_default(self):
+        # Test if the parser fails when is_default has
+        # and invalid types
+        self.assertRaisesRegexp(TypeError,
+                                IS_DEFAULT_BOOL_ERROR,
+                                self._parse,
+                                filename=STATUSES_INVALID_IS_DEFAULT)
+
+    def test_invalid_statuses_stream(self):
+        # Test whether it raises an exception when the
+        # stream is invalid
+        self.assertRaisesRegexp(JSONParserError,
+                                INVALID_STREAM_VALUE_ERROR,
+                                self._parse,
+                                filename=STATUSES_INVALID_STREAM)
+
+    def _parse(self, filename):
+        """Generic method to parse Redmine statuses from a JSON stream.
+
+        :param filename: path of the file to parse
+        :type filename: str
+        :return: a identity parsed from Redmine
+        :rtype: list of RedmineStatus
+        """
+        filepath = os.path.join(TEST_FILES_DIRNAME, filename)
+        json = read_file(filepath)
+        self.parser = RedmineStatusesParser(json)
+        self.parser.parse()
+        return self.parser.statuses
 
 
 if __name__ == "__main__":
