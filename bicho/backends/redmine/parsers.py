@@ -26,7 +26,7 @@
 Parsers for Redmine tracker.
 """
 
-import dateutil
+import dateutil.parser
 
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParser
@@ -84,9 +84,9 @@ class RedmineIdentityParser(JSONParser):
         name = self._unmarshal_str(firstname) + ' ' + self._unmarshal_str(lastname)
         return name
 
-    def _unmarshal_timestamp(self, bg_ts):
+    def _unmarshal_timestamp(self, redmine_ts):
         try:
-            str_ts = self._unmarshal_str(bg_ts)
+            str_ts = self._unmarshal_str(redmine_ts)
             return dateutil.parser.parse(str_ts).replace(tzinfo=None)
         except Exception, e:
             raise UnmarshallingError(instance='datetime', cause=repr(e))
