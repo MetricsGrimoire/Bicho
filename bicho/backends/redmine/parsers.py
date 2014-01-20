@@ -51,7 +51,7 @@ class RedmineIdentityParser(JSONParser):
     """
 
     def __init__(self, json):
-        JSONParser.__init__(self, json)
+        super(RedmineIdentityParser, self).__init__(json)
 
     @property
     def identity(self):
