@@ -74,3 +74,46 @@ class RedmineIdentity(Identity):
             raise TypeError('Parameter "last_login_on" should be a %s instance. %s given.' %
                             ('datetime', value.__class__.__name__))
         self._last_login_on = value
+
+
+class RedmineStatus(object):
+    """Status from Redmine.
+
+    :param status_id: status identifier
+    :type status_id: str
+    :param name: name of the status
+    :type name: str
+    :param is_closed: indicates if the status closes a ticket
+    :type is_closed: bool
+    :param is_default: indicates if the status is assigned by default
+    :type is_default: bool
+    """
+    def __init__(self, status_id, name, is_closed=False, is_default=False):
+        if not isinstance(is_closed, bool):
+            raise TypeError('Parameter "is_closed" should be a %s instance. %s given.' %
+                            ('bool', is_closed.__class__.__name__,))
+
+        if not isinstance(is_default, bool):
+            raise TypeError('Parameter "is_default" should be a %s instance. %s given.' %
+                            ('bool', is_default.__class__.__name__,))
+
+        self._status_id = status_id
+        self._name = name
+        self._is_closed = is_closed
+        self._is_default = is_default
+
+    @property
+    def status_id(self):
+        return self._status_id
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def is_closed(self):
+        return self._is_closed
+
+    @property
+    def is_default(self):
+        return self._is_default

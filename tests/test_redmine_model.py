@@ -28,7 +28,7 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.backends.redmine.model import RedmineIdentity
+from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
 
 
 # Mock dates for testing
@@ -40,6 +40,10 @@ MOCK_DATETIME_STR = '2001-01-01T00:00:01'
 TYPE_ERROR_REGEXP = '.+%s.+ should be a %s instance\. %s given'
 CREATED_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('created_on', 'datetime', 'str')
 LAST_LOGIN_ON_STR_ERROR = TYPE_ERROR_REGEXP % ('last_login_on', 'datetime', 'str')
+IS_CLOSED_NONE_ERROR = TYPE_ERROR_REGEXP % ('is_closed', 'bool', 'NoneType')
+IS_CLOSED_STR_ERROR = TYPE_ERROR_REGEXP % ('is_closed', 'bool', 'str')
+IS_DEFAULT_NONE_ERROR = TYPE_ERROR_REGEXP % ('is_default', 'bool', 'NoneType')
+IS_DEFAULT_STR_ERROR = TYPE_ERROR_REGEXP % ('is_default', 'bool', 'str')
 
 
 class TestRedmineIdentity(unittest.TestCase):
@@ -104,6 +108,55 @@ class TestRedmineIdentity(unittest.TestCase):
                                 created_on=MOCK_DATETIME,
                                 last_login_on=MOCK_DATETIME_STR)
 
+
+class TestRedmineStatus(unittest.TestCase):
+
+    def setUp(self):
+        self.status = RedmineStatus('88', 'Open')
+
+    def test_simple_status(self):
+        self.assertEqual('88', self.status.status_id)
+        self.assertEqual('Open', self.status.name)
+        self.assertEqual(False, self.status.is_closed)
+        self.assertEqual(False, self.status.is_default)
+
+    def test_status(self):
+        status = RedmineStatus('1', 'Fixed', True, True)
+        self.assertEqual('1', status.status_id)
+        self.assertEqual('Fixed', status.name)
+        self.assertEqual(True, status.is_closed)
+        self.assertEqual(True, status.is_default)
+
+        status = RedmineStatus('2', 'New', False, True)
+        self.assertEqual(False, status.is_closed)
+        self.assertEqual(True, status.is_default)
+
+    def test_read_only_properties(self):
+        self.assertRaises(AttributeError, setattr, self.status, 'status_id', '')
+        self.assertEqual('88', self.status.status_id)
+
+        self.assertRaises(AttributeError, setattr, self.status, 'name', '')
+        self.assertEqual('Open', self.status.name)
+
+        self.assertRaises(AttributeError, setattr, self.status, 'is_closed', True)
+        self.assertEqual(False, self.status.is_closed)
+
+        self.assertRaises(AttributeError, setattr, self.status, 'is_default', True)
+        self.assertEqual(False, self.status.is_default)
+
+    def test_invalid_init(self):
+        self.assertRaisesRegexp(TypeError, IS_CLOSED_NONE_ERROR,
+                                RedmineStatus, status_id='1', name='Closed',
+                                is_closed=None)
+        self.assertRaisesRegexp(TypeError, IS_CLOSED_STR_ERROR,
+                                RedmineStatus, status_id='1', name='Closed',
+                                is_closed='')
+        self.assertRaisesRegexp(TypeError, IS_DEFAULT_NONE_ERROR,
+                                RedmineStatus, status_id='1', name='Closed',
+                                is_default=None)
+        self.assertRaisesRegexp(TypeError, IS_DEFAULT_STR_ERROR,
+                                RedmineStatus, status_id='1', name='Closed',
+                                is_default='')
 
 if __name__ == "__main__":
     unittest.main()
