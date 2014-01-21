@@ -27,7 +27,8 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.common import Identity, Tracker, Issue, Comment, Attachment, Change, IssueRelationship
+from bicho.common import Identity, Tracker, IssueSummary, Issue,\
+    Comment, Attachment, Change, IssueRelationship
 
 
 # Mock identities for testing
@@ -85,6 +86,28 @@ class TestTracker(unittest.TestCase):
 
         self.assertRaises(AttributeError, setattr, self.tracker, 'version', 'v2.0')
         self.assertEqual('v1.0', self.tracker.version)
+
+
+class TestIssueSummary(unittest.TestCase):
+
+    def setUp(self):
+        self.summary = IssueSummary('1', MOCK_DATETIME)
+
+    def test_summary(self):
+        self.assertEqual('1', self.summary.issue_id)
+        self.assertEqual(MOCK_DATETIME, self.summary.changed_on)
+
+    def test_readonly_properties(self):
+        self.assertRaises(AttributeError, setattr, self.summary, 'changed_on', datetime.datetime.utcnow())
+        self.assertEqual(MOCK_DATETIME, self.summary.changed_on)
+
+    def test_invalid_init(self):
+        self.assertRaisesRegexp(TypeError, CHANGED_ON_NONE_ERROR,
+                                IssueSummary,
+                                issue_id='1', changed_on=None)
+        self.assertRaisesRegexp(TypeError, CHANGED_ON_STR_ERROR,
+                                IssueSummary,
+                                issue_id='1', changed_on=MOCK_DATETIME_STR)
 
 
 class TestIssue(unittest.TestCase):
