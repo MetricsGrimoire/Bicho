@@ -169,6 +169,7 @@ class TestRedmineIssuesSummary(unittest.TestCase):
         self.assertEqual('150', self.summary.total_count)
         self.assertEqual('0', self.summary.offset)
         self.assertEqual('25', self.summary.limit)
+        self.assertListEqual([], self.summary.summary)
 
     def test_readonly_properties(self):
         self.assertRaises(AttributeError, setattr, self.summary, 'total_count', '')
