@@ -28,23 +28,29 @@ Parsers for Redmine tracker.
 
 import dateutil.parser
 
+from bicho.common import IssueSummary
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParser
-from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
+from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus, RedmineIssuesSummary
 
 
 # Tokens
 CREATED_ON_TOKEN = 'created_on'
 ID_TOKEN = 'id'
+ISSUES_TOKEN = 'issues'
 ISSUE_STATUSES_TOKEN = 'issue_statuses'
 IS_CLOSED_TOKEN = 'is_closed'
 IS_DEFAULT_TOKEN = 'is_default'
 FIRSTNAME_TOKEN = 'firstname'
 LASTNAME_TOKEN = 'lastname'
 LAST_LOGIN_ON_TOKEN = 'last_login_on'
+LIMIT_TOKEN = 'limit'
 LOGIN_TOKEN = 'login'
 MAIL_TOKEN = 'mail'
 NAME_TOKEN = 'name'
+TOTAL_COUNT_TOKEN = 'total_count'
+OFFSET_TOKEN = 'offset'
+UPDATED_ON_TOKEN = 'updated_on'
 
 
 class RedmineIdentityParser(JSONParser):
@@ -150,3 +156,64 @@ class RedmineStatusesParser(JSONParser):
         elif not_empty and s == u'':
             return None
         return unicode(s)
+
+
+class RedmineIssuesSummaryParser(JSONParser):
+    """JSON parser for parsing a summary of issues.
+
+    :param json: JSON stream with a list of issues
+    :type json: str
+    """
+
+    def __init__(self, json):
+        super(RedmineIssuesSummaryParser, self).__init__(json)
+
+    @property
+    def summary(self):
+        return self._unmarshal()
+
+    def _unmarshal(self):
+        try:
+            # Unmarshal metadata
+            total_count = self._unmarshal_str(self._data[TOTAL_COUNT_TOKEN])
+            offset = self._unmarshal_str(self._data[OFFSET_TOKEN])
+            limit = self._unmarshal_str(self._data[LIMIT_TOKEN])
+
+            # Unmarshal issues summary
+            issues_summary = self._unmarshal_summary(self._data[ISSUES_TOKEN])
+
+            # Create summary instance
+            summary = RedmineIssuesSummary(total_count, offset, limit)
+
+            for issue_summary in issues_summary:
+                summary.add_summary(issue_summary)
+
+            return summary
+        except KeyError, e:
+            raise UnmarshallingError(instance='RedmineIssuesSummary', cause=repr(e))
+
+    def _unmarshal_summary(self, redmine_issues):
+        return [self._unmarshal_issue_summary(redmine_issue)
+                for redmine_issue in redmine_issues]
+
+    def _unmarshal_issue_summary(self, redmine_issue):
+        try:
+            issue_id = self._unmarshal_str(redmine_issue[ID_TOKEN])
+            changed_on = self._unmarshal_timestamp(redmine_issue[UPDATED_ON_TOKEN])
+            return IssueSummary(issue_id, changed_on)
+        except KeyError, e:
+            raise UnmarshallingError(instance='IssueSummary', cause=repr(e))
+
+    def _unmarshal_str(self, s, not_empty=False):
+        if s is None:
+            return None
+        elif not_empty and s == u'':
+            return None
+        return unicode(s)
+
+    def _unmarshal_timestamp(self, redmine_ts):
+        try:
+            str_ts = self._unmarshal_str(redmine_ts)
+            return dateutil.parser.parse(str_ts).replace(tzinfo=None)
+        except Exception, e:
+            raise UnmarshallingError(instance='datetime', cause=repr(e))
