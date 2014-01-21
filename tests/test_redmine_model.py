@@ -28,7 +28,8 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
-from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
+from bicho.common import IssueSummary
+from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus, RedmineIssuesSummary
 
 
 # Mock dates for testing
@@ -157,6 +158,39 @@ class TestRedmineStatus(unittest.TestCase):
         self.assertRaisesRegexp(TypeError, IS_DEFAULT_STR_ERROR,
                                 RedmineStatus, status_id='1', name='Closed',
                                 is_default='')
+
+
+class TestRedmineIssuesSummary(unittest.TestCase):
+
+    def setUp(self):
+        self.summary = RedmineIssuesSummary('150', '0', '25')
+
+    def test_summary(self):
+        self.assertEqual('150', self.summary.total_count)
+        self.assertEqual('0', self.summary.offset)
+        self.assertEqual('25', self.summary.limit)
+
+    def test_readonly_properties(self):
+        self.assertRaises(AttributeError, setattr, self.summary, 'total_count', '')
+        self.assertEqual('150', self.summary.total_count)
+
+        self.assertRaises(AttributeError, setattr, self.summary, 'offset', '')
+        self.assertEqual('0', self.summary.offset)
+
+        self.assertRaises(AttributeError, setattr, self.summary, 'limit', True)
+        self.assertEqual('25', self.summary.limit)
+
+    def test_issue_summary(self):
+        isummary1 = 'Issue Summary #1'
+        self.assertRaises(TypeError, self.summary.add_summary,
+                          issue_summary=isummary1)
+
+        isummary1 = IssueSummary('1', MOCK_DATETIME)
+        isummary2 = IssueSummary('2', MOCK_LAST_LOGIN_DATETIME)
+        self.summary.add_summary(isummary1)
+        self.summary.add_summary(isummary2)
+        self.assertListEqual([isummary1, isummary2], self.summary.summary)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -26,7 +26,7 @@ Redmine's tracker data model.
 
 import datetime
 
-from bicho.common import Identity
+from bicho.common import Identity, IssueSummary
 
 
 class RedmineIdentity(Identity):
@@ -117,3 +117,50 @@ class RedmineStatus(object):
     @property
     def is_default(self):
         return self._is_default
+
+
+class RedmineIssuesSummary(object):
+    """Issues summary page.
+
+    :param total_count: total number of issues available on the tracker
+    :type total_count: int
+    :param offset: current position of the first issue of this summary
+    :type offset: int
+    :param limit: max issues on this summary
+    :type limit: int
+    """
+
+    def __init__(self, total_count, offset, limit):
+        self._total_count = total_count
+        self._offset = offset
+        self._limit = limit
+        self._summary = []
+
+    @property
+    def summary(self):
+        return self._summary
+
+    @property
+    def total_count(self):
+        return self._total_count
+
+    @property
+    def offset(self):
+        return self._offset
+
+    @property
+    def limit(self):
+        return self._limit
+
+    def add_summary(self, issue_summary):
+        """Add a issue summary to the list.
+
+        :param issue_summary: a summary of the issue
+        :type issue_summary: IssueSummary
+
+        :raise TypeError: raised if the type of issue summary is not valid.
+        """
+        if not isinstance(issue_summary, IssueSummary):
+            raise TypeError('Parameter "issue_summary" should be a %s instance. %s given.' %
+                            ('IssueSummary', issue_summary.__class__.__name__,))
+        self._summary.append(issue_summary)
