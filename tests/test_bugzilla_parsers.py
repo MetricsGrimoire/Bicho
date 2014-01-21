@@ -29,9 +29,10 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
+from bicho.common import IssueSummary
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
-    BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue
+    BugzillaMetadata, BugzillaIssue
 from bicho.backends.bugzilla.parsers import BugzillaMetadataParser, BugzillaIssuesSummaryParser,\
     BugzillaIssuesParser, BugzillaChangesParser
 from utilities import read_file
@@ -74,8 +75,8 @@ CHANGES_EMPTY_FILE = 'changes_empty.html'
 
 # RegExps for testing TypeError exceptions
 UNMARSHALLING_ERROR_REGEXP = 'error unmarshalling object to %s.+%s'
-BUG_ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaIssueSummary', 'bug_id')
-CHANGED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('BugzillaIssueSummary', 'changeddate')
+BUG_ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('IssueSummary', 'bug_id')
+CHANGED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('IssueSummary', 'changeddate')
 CHANGED_ON_INVALID_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'unknown string format')
 STR_EMPTY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('str', 'string cannot be None or empty')
 DATETIME_MONTH_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'month must be in 1..12')
@@ -128,27 +129,27 @@ class TestBugzillaIssuesSummaryParser(unittest.TestCase):
         self.assertEqual(5, len(summaries))
 
         summary = summaries[0]
-        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertIsInstance(summary, IssueSummary)
         self.assertEqual('3', summary.issue_id)
         self.assertEqual(u'2009-07-01 12:16:03', unicode(summary.changed_on))
 
         summary = summaries[1]
-        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertIsInstance(summary, IssueSummary)
         self.assertEqual('9', summary.issue_id)
         self.assertEqual(u'2009-07-01 13:45:31', unicode(summary.changed_on))
 
         summary = summaries[2]
-        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertIsInstance(summary, IssueSummary)
         self.assertEqual('13', summary.issue_id)
         self.assertEqual(u'2009-07-02 13:40:35', unicode(summary.changed_on))
 
         summary = summaries[3]
-        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertIsInstance(summary, IssueSummary)
         self.assertEqual('15', summary.issue_id)
         self.assertEqual(u'2009-07-22 15:27:25', unicode(summary.changed_on))
 
         summary = summaries[4]
-        self.assertIsInstance(summary, BugzillaIssueSummary)
+        self.assertIsInstance(summary, IssueSummary)
         self.assertEqual('18', summary.issue_id)
         self.assertEqual(u'2009-07-28 20:09:20', unicode(summary.changed_on))
 

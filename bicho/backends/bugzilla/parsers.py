@@ -32,8 +32,8 @@ import dateutil.parser
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import CSVParser, HTMLParser, XMLParser
 from bicho.backends.bugzilla.model import BG_RELATIONSHIP_BLOCKED, BG_RELATIONSHIP_DEPENDS_ON,\
-    BugzillaMetadata, BugzillaIssueSummary, BugzillaIssue, BugzillaAttachment
-from bicho.common import Identity, Comment, Change, IssueRelationship
+    BugzillaMetadata, BugzillaIssue, BugzillaAttachment
+from bicho.common import Identity, IssueSummary, Comment, Change, IssueRelationship
 
 
 # Tokens
@@ -103,9 +103,9 @@ class BugzillaIssuesSummaryParser(CSVParser):
         try:
             issue_id = self._unmarshal_str(bg_summary[BUG_ID_TOKEN])
             changed_on = self._unmarshal_timestamp(bg_summary[CHANGEDDATE_TOKEN])
-            return BugzillaIssueSummary(issue_id, changed_on)
+            return IssueSummary(issue_id, changed_on)
         except KeyError, e:
-            raise UnmarshallingError(instance='BugzillaIssueSummary',
+            raise UnmarshallingError(instance='IssueSummary',
                                      cause=repr(e))
 
     def _unmarshal_timestamp(self, bg_ts):
