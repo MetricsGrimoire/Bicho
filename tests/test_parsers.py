@@ -34,7 +34,7 @@ if not '..' in sys.path:
 
 from bicho.backends.parsers import \
     ParserError, CSVParserError, HTMLParserError, XMLParserError, JSONParserError,\
-    Parser, CSVParser, HTMLParser, XMLParser, JSONParser
+    Parser, CSVParser, HTMLParser, XMLParser, JSONParser, JSONStruct
 from utilities import read_file
 
 
@@ -349,13 +349,21 @@ class TestXMLParser(unittest.TestCase):
 class TestJSONParser(unittest.TestCase):
 
     def test_readonly_properties(self):
-        parser = JSONParser('{"x":[{"id":1,"":{"x":24,"y":"test"}]')
+        parser = JSONParser('{"user":{"id":1}}')
         self.assertRaises(AttributeError, setattr, parser, 'data', '')
         self.assertEqual(None, parser.data)
 
     def test_parse_invalid_type_stream(self):
         parser = JSONParser(None)
         self.assertRaises(TypeError, parser.parse)
+
+    def test_key_error(self):
+        filepath = os.path.join(TEST_FILES_DIRNAME, JSON_VALID_FILE)
+        json = read_file(filepath)
+
+        parser = JSONParser(json)
+        obj = parser.data
+        self.assertRaises(AttributeError, getattr, obj, 'X')
 
     def test_parse_valid_json(self):
         # Check whether it parses a valid JSON stream
@@ -366,34 +374,33 @@ class TestJSONParser(unittest.TestCase):
         parser.parse()
 
         data = parser.data
-        self.assertIsInstance(data, dict)
+        self.assertIsInstance(data, JSONStruct)
 
-        self.assertEqual(4, len(data.keys()))
-        self.assertEqual(5, data['total_count'])
-        self.assertEqual(0, data['offset'])
-        self.assertEqual(3, data['limit'])
+        self.assertEqual(5, data.total_count)
+        self.assertEqual(0, data.offset)
+        self.assertEqual(3, data.limit)
 
-        issues = data['issues']
+        issues = data.issues
         self.assertIsInstance(issues, list)
         self.assertEqual(3, len(issues))
 
         issue = issues[0]
-        self.assertEqual(2543, issue['id'])
+        self.assertEqual(2543, issue.id)
 
         issue = issues[1]
-        self.assertEqual(2825, issue['id'])
-        self.assertEqual('Data not shown in chart', issue['subject'])
-        self.assertEqual('Error in charts.', issue['description'])
-        self.assertEqual('2014/01/10 12:37:10 +0100', issue['created_on'])
-        self.assertEqual('Santiago Duenas', issue['author']['name'])
-        self.assertEqual(17, issue['author']['id'])
+        self.assertEqual(2825, issue.id)
+        self.assertEqual('Data not shown in chart', issue.subject)
+        self.assertEqual('Error in charts.', issue.description)
+        self.assertEqual('2014/01/10 12:37:10 +0100', issue.created_on)
+        self.assertEqual('Santiago Duenas', issue.author.name)
+        self.assertEqual(17, issue.author.id)
 
         issue = issues[2]
-        self.assertEqual('Management', issue['subject'])
-        self.assertEqual('Daniel Izquierdo', issue['author']['name'])
-        self.assertEqual(89, issue['author']['id'])
+        self.assertEqual('Management', issue.subject)
+        self.assertEqual('Daniel Izquierdo', issue.author.name)
+        self.assertEqual(89, issue.author.id)
 
-    def test_parse_invalid_xml(self):
+    def test_parse_invalid_json(self):
         # Check whether it parses an invalid JSON stream
         filepath = os.path.join(TEST_FILES_DIRNAME, JSON_INVALID_FILE)
         json = read_file(filepath)
@@ -413,11 +420,11 @@ class TestJSONParser(unittest.TestCase):
         parser.parse()
         issues = parser.data
 
-        issue = issues['issues'][0]
-        self.assertEqual(u'Santiago Dueñas', issue['author']['name'])
+        issue = issues.issues[0]
+        self.assertEqual(u'Santiago Dueñas', issue.author.name)
 
-        issue = issues['issues'][2]
-        self.assertEqual(u'Luís Cañas', issue['assigned_to']['name'])
+        issue = issues.issues[2]
+        self.assertEqual(u'Luís Cañas', issue.assigned_to.name)
 
 
 if __name__ == '__main__':
