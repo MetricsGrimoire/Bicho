@@ -141,6 +141,16 @@ class TestRedmineBaseParser(unittest.TestCase):
         self.assertEqual(0, ts.second)
         self.assertEqual(u'2007-10-31 00:00:00', unicode(ts))
 
+        ts = self.parser.unmarshal_timestamp('2014/01/22 10:54:30 +0100')
+        self.assertIsInstance(ts, datetime.datetime)
+        self.assertEqual(2014, ts.year)
+        self.assertEqual(01, ts.month)
+        self.assertEqual(22, ts.day)
+        self.assertEqual(10, ts.hour)
+        self.assertEqual(54, ts.minute)
+        self.assertEqual(30, ts.second)
+        self.assertEqual(u'2014-01-22 10:54:30', unicode(ts))
+
     def test_none_or_empty_timestamp(self):
         # Test invalid values
         self.assertRaises(UnmarshallingError, self.parser.unmarshal_timestamp, None)
