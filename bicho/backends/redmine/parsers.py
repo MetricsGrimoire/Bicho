@@ -39,7 +39,51 @@ IS_CLOSED_TOKEN = 'is_closed'
 IS_DEFAULT_TOKEN = 'is_default'
 
 
-class RedmineIdentityParser(JSONParser):
+class RedmineBaseParser(JSONParser):
+    """Redmine base parser.
+
+    :param stream: JSON stream to parse
+    :type stream: str
+    """
+
+    def __init__(self, stream):
+        super(RedmineBaseParser, self).__init__(stream)
+
+    def _unmarshal_timestamp(self, rdm_ts):
+        """Unmarshal Redmine string dates.
+
+        :param rdm_ts: Redmine date in string format.
+        :type rdm_ts: str
+        :returns: datetime.
+        :rtype: datetime
+        :raise UnmarshallinError: when the date is None, empty or an error
+            occurs unmarshalling the gitven date.
+        """
+        if not rdm_ts:
+            raise UnmarshallingError(instance='datetime',
+                                     cause='rdm_ts cannot be None or empty')
+        try:
+            str_ts = self._unmarshal_str(rdm_ts)
+            return dateutil.parser.parse(str_ts).replace(tzinfo=None)
+        except Exception, e:
+            raise UnmarshallingError(instance='datetime', cause=repr(e))
+
+    def _unmarshal_str(self, rdm_str):
+        """Unmarshal strings from Redmine.
+
+        :param rdm_str: Redmine string to parse.
+        :type rdm_str: str
+        :returns: unicode string, None if the string is empty or None.
+        :rtype: unicode
+        """
+        if rdm_str is None:
+            return None
+        elif rdm_str == u'':
+            return None
+        return unicode(rdm_str)
+
+
+class RedmineIdentityParser(RedmineBaseParser):
     """JSON parser for parsing identities from Redmine.
 
     :param json: JSON stream containing identities
@@ -82,22 +126,8 @@ class RedmineIdentityParser(JSONParser):
         name = self._unmarshal_str(firstname) + ' ' + self._unmarshal_str(lastname)
         return name
 
-    def _unmarshal_timestamp(self, rdm_ts):
-        try:
-            str_ts = self._unmarshal_str(rdm_ts)
-            return dateutil.parser.parse(str_ts).replace(tzinfo=None)
-        except Exception, e:
-            raise UnmarshallingError(instance='datetime', cause=repr(e))
 
-    def _unmarshal_str(self, s, not_empty=False):
-        if s is None:
-            return None
-        elif not_empty and s == u'':
-            return None
-        return unicode(s)
-
-
-class RedmineStatusesParser(JSONParser):
+class RedmineStatusesParser(RedmineBaseParser):
     """JSON parser for parsing available statuses on Redmine.
 
     :param json: JSON stream with a list of statuses
@@ -138,15 +168,8 @@ class RedmineStatusesParser(JSONParser):
         except KeyError, e:
             raise UnmarshallingError(instance='RedmineStatus', cause=repr(e))
 
-    def _unmarshal_str(self, s, not_empty=False):
-        if s is None:
-            return None
-        elif not_empty and s == u'':
-            return None
-        return unicode(s)
 
-
-class RedmineIssuesSummaryParser(JSONParser):
+class RedmineIssuesSummaryParser(RedmineBaseParser):
     """JSON parser for parsing a summary of issues.
 
     :param json: JSON stream with a list of issues
@@ -193,17 +216,3 @@ class RedmineIssuesSummaryParser(JSONParser):
             return IssueSummary(issue_id, changed_on)
         except KeyError, e:
             raise UnmarshallingError(instance='IssueSummary', cause=repr(e))
-
-    def _unmarshal_str(self, s, not_empty=False):
-        if s is None:
-            return None
-        elif not_empty and s == u'':
-            return None
-        return unicode(s)
-
-    def _unmarshal_timestamp(self, redmine_ts):
-        try:
-            str_ts = self._unmarshal_str(redmine_ts)
-            return dateutil.parser.parse(str_ts).replace(tzinfo=None)
-        except Exception, e:
-            raise UnmarshallingError(instance='datetime', cause=repr(e))

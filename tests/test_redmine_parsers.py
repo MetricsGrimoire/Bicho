@@ -20,6 +20,7 @@
 #         Santiago Dueñas <sduenas@bitergia.com>
 #
 
+import datetime
 import os
 import sys
 import unittest
@@ -30,8 +31,8 @@ if not '..' in sys.path:
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParserError
 from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
-from bicho.backends.redmine.parsers import RedmineIdentityParser, RedmineStatusesParser,\
-    RedmineIssuesSummaryParser
+from bicho.backends.redmine.parsers import RedmineBaseParser, RedmineIdentityParser,\
+    RedmineStatusesParser, RedmineIssuesSummaryParser
 from utilities import read_file
 
 
@@ -99,6 +100,76 @@ DATETIME_UNKNOWN_FORMAT = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'unknown str
 TYPE_ERROR_REGEXP = 'Parameter "%s" should be a %s instance. %s given'
 IS_CLOSED_BOOL_ERROR = TYPE_ERROR_REGEXP % ('is_closed', 'bool', 'int')
 IS_DEFAULT_BOOL_ERROR = TYPE_ERROR_REGEXP % ('is_default', 'bool', 'int')
+
+
+# Mock class for testing RedmineBaseParser
+class MockRedmineParser(RedmineBaseParser):
+
+    def __init__(self, stream):
+        super(RedmineBaseParser, self).__init__(stream)
+
+    def unmarshal_timestamp(self, rdm_ts):
+        return self._unmarshal_timestamp(rdm_ts)
+
+    def unmarshal_str(self, rdm_str):
+        return self._unmarshal_str(rdm_str)
+
+
+class TestRedmineBaseParser(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = MockRedmineParser('')
+
+    def test_unmarshal_timestamp(self):
+        ts = self.parser.unmarshal_timestamp('2014-01-20T17:06:31Z')
+        self.assertIsInstance(ts, datetime.datetime)
+        self.assertEqual(2014, ts.year)
+        self.assertEqual(1, ts.month)
+        self.assertEqual(20, ts.day)
+        self.assertEqual(17, ts.hour)
+        self.assertEqual(6, ts.minute)
+        self.assertEqual(31, ts.second)
+        self.assertEqual(u'2014-01-20 17:06:31', unicode(ts))
+
+        ts = self.parser.unmarshal_timestamp('2007-10-31')
+        self.assertIsInstance(ts, datetime.datetime)
+        self.assertEqual(2007, ts.year)
+        self.assertEqual(10, ts.month)
+        self.assertEqual(31, ts.day)
+        self.assertEqual(0, ts.hour)
+        self.assertEqual(0, ts.minute)
+        self.assertEqual(0, ts.second)
+        self.assertEqual(u'2007-10-31 00:00:00', unicode(ts))
+
+    def test_none_or_empty_timestamp(self):
+        # Test invalid values
+        self.assertRaises(UnmarshallingError, self.parser.unmarshal_timestamp, None)
+        self.assertRaises(UnmarshallingError, self.parser.unmarshal_timestamp, '')
+
+    def test_invalid_timestamp(self):
+        # Test invalid date
+        self.assertRaisesRegexp(UnmarshallingError,
+                                DATETIME_MONTH_ERROR,
+                                self.parser.unmarshal_timestamp,
+                                '2012-13-01 01:02:03')
+
+    def test_invalid_timestamp_format(self):
+        # Test invalid date format
+        self.assertRaisesRegexp(UnmarshallingError,
+                                DATETIME_UNKNOWN_FORMAT,
+                                self.parser.unmarshal_timestamp,
+                                'invalid date')
+
+    def test_unmarshal_str(self):
+        s = self.parser.unmarshal_str('Redmine parser')
+        self.assertIsInstance(s, unicode)
+        self.assertEqual(u'Redmine parser', s)
+
+        s = self.parser.unmarshal_str(None)
+        self.assertIsNone(s)
+
+        s = self.parser.unmarshal_str('')
+        self.assertIsNone(s)
 
 
 class TestRedmineIdentityParser(unittest.TestCase):
