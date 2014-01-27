@@ -471,7 +471,7 @@ class Gerrit():
         dbtrk = bugsdb.insert_tracker(trk)
 
         last_mod_time = 0
-        last_mod_date = bugsdb.get_last_modification_date(dbtrk.id)
+        last_mod_date = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
         if last_mod_date:
             printdbg("Last reviews analyzed were modified on date: %s"
                      % last_mod_date)
