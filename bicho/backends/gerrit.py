@@ -266,7 +266,10 @@ class Gerrit():
 
         for comment in comments:
             if ("username" not in comment['reviewer'].keys()):
-                comment['reviewer']["username"] = comment['reviewer']["name"]
+                if ("name" in comment['reviewer'].keys()):
+                    comment['reviewer']["username"] = comment['reviewer']["name"]
+                else:
+                    comment['reviewer']["username"] = None
             by = People(comment['reviewer']["username"])
             if ("name" in comment['reviewer'].keys()):
                 by.set_name(comment['reviewer']["name"])
