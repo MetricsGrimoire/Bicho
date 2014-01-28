@@ -499,6 +499,11 @@ class Gerrit():
                         break
                     reviews.append(entry["number"])
                     review_data = self.analyze_review(entry)
+
+                    if review_data is None:
+                        pprint.pprint("ERROR in review. Ignoring it.")
+                        continue
+
                     last_item = entry['sortKey']
                     # extra changes not included in gerrit changes
                     # self.add_merged_abandoned_changes_from_comments(entry, review_data)
