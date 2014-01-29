@@ -160,7 +160,7 @@ class TestIssue(unittest.TestCase):
 
     def test_assigned_to(self):
         self.assertRaises(TypeError, setattr, self.issue, 'assigned_to', 'John Doe')
-        self.assertEqual(JOHN_SMITH, self.issue.submitted_by)
+        self.assertEqual(JOHN_DOE, self.issue.assigned_to)
 
         self.issue.assigned_to = None
         self.assertEqual(None, self.issue.assigned_to)
