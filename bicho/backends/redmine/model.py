@@ -29,6 +29,12 @@ import datetime
 from bicho.common import Identity, IssueSummary, Issue, Attachment
 
 
+# Redmine relationships types
+RDM_RELATIONSHIP_BLOCKED = u'BLOCKED'
+RDM_RELATIONSHIP_BLOCKS = u'BLOCKS'
+RDM_RELATIONSHIP_RELATES = u'RELATES'
+
+
 class RedmineIdentity(Identity):
     """An identity from Redmine.
 

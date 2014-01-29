@@ -28,15 +28,24 @@ Parsers for Redmine tracker.
 
 import dateutil.parser
 
-from bicho.common import IssueSummary
+from bicho.common import IssueSummary, Comment, Change, IssueRelationship
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParser
-from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus, RedmineIssuesSummary
+from bicho.backends.redmine.model import RDM_RELATIONSHIP_BLOCKED,\
+    RDM_RELATIONSHIP_BLOCKS, RDM_RELATIONSHIP_RELATES,\
+    RedmineIdentity, RedmineStatus, RedmineIssuesSummary, RedmineIssue, RedmineAttachment
 
 
 # Tokens
+ASSIGNED_TO_TOKEN = 'assigned_to'
+BLOCKS_TOKEN = 'blocks'
+DETAILS_TOKEN = 'details'
 IS_CLOSED_TOKEN = 'is_closed'
 IS_DEFAULT_TOKEN = 'is_default'
+NEW_VALUE_TOKEN = 'new_value'
+NOTES_TOKEN = 'notes'
+OLD_VALUE_TOKEN = 'old_value'
+RELATES_TOKEN = 'relates'
 
 
 class RedmineBaseParser(JSONParser):
@@ -216,3 +225,181 @@ class RedmineIssuesSummaryParser(RedmineBaseParser):
             return IssueSummary(issue_id, changed_on)
         except KeyError, e:
             raise UnmarshallingError(instance='IssueSummary', cause=repr(e))
+
+
+class RedmineIssueParser(RedmineBaseParser):
+    """JSON parser for parsing a summary of issues.
+
+    :param json: JSON stream containing a Redmine issue
+    :type json: str
+
+    ..TODO: timezones and custom defined tags
+    ..FIXME: resolution value is set to status
+    """
+
+    def __init__(self, json):
+        super(RedmineIssueParser, self).__init__(json)
+
+    @property
+    def issue(self):
+        return self._unmarshal()
+
+    def _unmarshal(self):
+        try:
+            rdm_issue = self._data.issue
+            return self._unmarshal_issue(rdm_issue)
+        except KeyError, e:
+            raise UnmarshallingError(instance='RedmineIssue', cause=repr(e))
+
+    def _unmarshal_issue(self, rdm_issue):
+        try:
+            # Unmarshal common fields
+            issue_id = self._unmarshal_str(rdm_issue.id)
+            issue_type = self._unmarshal_str(rdm_issue.tracker.name)
+            summary = self._unmarshal_str(rdm_issue.subject)
+            desc = self._unmarshal_str(rdm_issue.description)
+            submitted_by = self._unmarshal_identity(rdm_issue.author)
+            submitted_on = self._unmarshal_timestamp(rdm_issue.created_on)
+            status = self._unmarshal_str(rdm_issue.status.name)
+            resolution = status #FIXME
+            priority = self._unmarshal_str(rdm_issue.priority.name)
+
+            if ASSIGNED_TO_TOKEN in rdm_issue:
+                assigned_to = self._unmarshal_identity(rdm_issue.assigned_to)
+            else:
+                assigned_to = None
+
+            # Unmarshal comments, attachments, changes and relationships
+            comments = self._unmarshal_issue_comments(rdm_issue.journals)
+            attachments = self._unmarshal_issue_attachments(rdm_issue.attachments)
+            changes = self._unmarshal_issue_changes(rdm_issue.journals)
+            relationships = self._unmarshal_issue_relationships(rdm_issue.relations, issue_id)
+
+            issue = RedmineIssue(issue_id, issue_type, summary, desc,
+                                 submitted_by, submitted_on,
+                                 status, resolution, priority,
+                                 assigned_to)
+
+            for comment in comments:
+                issue.add_comment(comment)
+            for attachment in attachments:
+                issue.add_attachment(attachment)
+            for change in changes:
+                issue.add_change(change)
+            for relation in relationships:
+                issue.add_relationship(relation)
+            self._unmarshal_issue_custom_tags(rdm_issue, issue)
+
+            return issue
+        except KeyError, e:
+            raise UnmarshallingError(instance='RedmineIssue', cause=repr(e))
+
+    def _unmarshal_issue_custom_tags(self, rdm_issue, issue):
+        # Unmarshal required tags
+        try:
+            issue.project_id = self._unmarshal_str(rdm_issue.project.id)
+            issue.project = self._unmarshal_str(rdm_issue.project.name)
+            issue.rdm_tracker_id = self._unmarshal_str(rdm_issue.tracker.id)
+            issue.rdm_tracker = self._unmarshal_str(rdm_issue.tracker.name)
+            issue.updated_on = self._unmarshal_timestamp(rdm_issue.created_on)
+        except KeyError, e:
+            raise UnmarshallingError(instance='RedmineIssue', cause=repr(e))
+
+    def _unmarshal_issue_comments(self, rdm_journals):
+        return [self._unmarshal_issue_comment(rdm_journal)
+                for rdm_journal in rdm_journals
+                if NOTES_TOKEN in rdm_journal
+                and rdm_journal.notes]
+
+    def _unmarshal_issue_comment(self, rdm_journal):
+        try:
+            text = self._unmarshal_str(rdm_journal.notes)
+            submitted_by = self._unmarshal_identity(rdm_journal.user)
+            submitted_on = self._unmarshal_timestamp(rdm_journal.created_on)
+            return Comment(text, submitted_by, submitted_on)
+        except KeyError, e:
+            raise UnmarshallingError(instance='Comment', cause=repr(e))
+
+    def _unmarshal_issue_attachments(self, rdm_attachments):
+        return [self._unmarshal_issue_attachment(rdm_attachment)
+                for rdm_attachment in rdm_attachments]
+
+    def _unmarshal_issue_attachment(self, rdm_attachment):
+        try:
+            name = self._unmarshal_str(rdm_attachment.filename)
+            url = self._unmarshal_str(rdm_attachment.content_url)
+            desc = self._unmarshal_str(rdm_attachment.description)
+            submitted_by = self._unmarshal_identity(rdm_attachment.author)
+            submitted_on = self._unmarshal_timestamp(rdm_attachment.created_on)
+            size = self._unmarshal_str(rdm_attachment.filesize)
+            rdm_attachment_id = self._unmarshal_str(rdm_attachment.id)
+
+            return RedmineAttachment(name, url, desc,
+                                     submitted_by, submitted_on,
+                                     size, rdm_attachment_id)
+        except KeyError, e:
+            raise UnmarshallingError(instance='RedmineAttachment', cause=repr(e))
+
+    def _unmarshal_issue_changes(self, rdm_journals):
+        try:
+            changes = []
+
+            for rdm_journal in rdm_journals:
+                if not DETAILS_TOKEN in rdm_journal:
+                    continue
+
+                changed_by = self._unmarshal_identity(rdm_journal.user)
+                changed_on = self._unmarshal_timestamp(rdm_journal.created_on)
+
+                for detail in rdm_journal.details:
+                    old_value = None
+                    new_value = None
+
+                    field = detail.name
+
+                    if OLD_VALUE_TOKEN in detail:
+                        old_value = unicode(detail.old_value)
+                    if NEW_VALUE_TOKEN in detail:
+                        new_value = unicode(detail.new_value)
+
+                    change = Change(field, old_value, new_value, changed_by, changed_on)
+                    changes.append(change)
+            return changes
+        except KeyError, e:
+            raise UnmarshallingError(instance='Change', cause=repr(e))
+
+    def _unmarshal_issue_relationships(self, rdm_relationships, issue_id):
+        return [self._unmarshal_issue_relation(rdm_relation, issue_id)
+                for rdm_relation in rdm_relationships]
+
+    def _unmarshal_issue_relation(self, rdm_relation, issue_id):
+        try:
+            related_to = self._unmarshal_str(rdm_relation.issue_to_id)
+
+            if rdm_relation.relation_type == BLOCKS_TOKEN:
+                # issue_id is required in order to know if the parsed
+                # issue blocks or is blocked
+                if issue_id == related_to:
+                    # the current issue is blocked by 'rdm_relation.issue_id'
+                    rel_type = RDM_RELATIONSHIP_BLOCKED
+                    related_to = self._unmarshal_str(rdm_relation.issue_id)
+                else:
+                    # the current issue blocks 'rdm_relation.issue_id'
+                    rel_type =  RDM_RELATIONSHIP_BLOCKS
+            elif rdm_relation.relation_type == RELATES_TOKEN:
+                rel_type = RDM_RELATIONSHIP_RELATES
+            else:
+                cause = 'unknown relationship type: %s' % rdm_relation.relation_type
+                raise UnmarshallingError(instance='IssueRelationship', cause=cause)
+
+            return IssueRelationship(rel_type, related_to)
+        except KeyError, e:
+            raise UnmarshallingError(instance='IssueRelationship', cause=repr(e))
+
+    def _unmarshal_identity(self, rdm_id):
+        try:
+            user_id = self._unmarshal_str(rdm_id.id)
+            name = self._unmarshal_str(rdm_id.name)
+            return RedmineIdentity(user_id, name=name)
+        except Exception, e:
+            raise UnmarshallingError(instance='RedmineIdentity', cause=repr(e))
