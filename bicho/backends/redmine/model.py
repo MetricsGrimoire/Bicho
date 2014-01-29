@@ -26,7 +26,7 @@ Redmine's tracker data model.
 
 import datetime
 
-from bicho.common import Identity, IssueSummary, Issue
+from bicho.common import Identity, IssueSummary, Issue, Attachment
 
 
 class RedmineIdentity(Identity):
@@ -238,3 +238,37 @@ class RedmineIssue(Issue):
             raise TypeError('Parameter "updated_on" should be a %s instance. %s given.' %
                             ('datetime', value.__class__.__name__))
         self._updated_on = value
+
+
+class RedmineAttachment(Attachment):
+    """Redmine attachment instance.
+
+    :param name: name of the attachemnt
+    :type name: str
+    :param url: URL of the attachment
+    :type url: str
+    :param description: description of the attachment
+    :type description: str
+    :param submitted_by: submitter of the attachment
+    :type submitted_by: RedmineIdentity
+    :param submitted_on: date when the attachment was submitted
+    :type submitted_on: datetime.datetime
+    :param size: file size of the attachment
+    :type size: str
+    :param rdm_attachment_id: id of the attachment
+    :type rdm_attachment_id: int
+
+    :raise TypeError: raised when the type of the parameters is not valid.
+    """
+    def __init__(self, name, url, description,
+                 submitted_by, submitted_on,
+                 size=None, rdm_attachment_id=None):
+
+        if not isinstance(submitted_by, RedmineIdentity):
+            raise TypeError('Parameter "submitted_by" should be a %s instance. %s given.' %
+                            ('RedmineIdentity', submitted_by.__class__.__name__,))
+
+        super(RedmineAttachment, self).__init__(name, url, description,
+                                                submitted_by, submitted_on)
+        self.size = size
+        self.rdm_attachment_id = rdm_attachment_id

@@ -30,7 +30,7 @@ if not '..' in sys.path:
 
 from bicho.common import Identity, IssueSummary
 from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus,\
-    RedmineIssuesSummary, RedmineIssue
+    RedmineIssuesSummary, RedmineIssue, RedmineAttachment
 
 
 # Mock dates for testing
@@ -255,6 +255,31 @@ class TestRedmineIssue(unittest.TestCase):
                                 description='unit test for RedmineIssue class',
                                 submitted_by=JANE_ROE, submitted_on=MOCK_DATETIME,
                                 assigned_to=JOHN_DOE)
+
+
+class TestRedmineAttachment(unittest.TestCase):
+
+    def test_attachment(self):
+        attachment = RedmineAttachment('attch1',
+                                       'http://redmine.example.com/1',
+                                       'an attachment',
+                                       JANE_ROE, MOCK_DATETIME,
+                                       size='8', rdm_attachment_id='1')
+        self.assertEqual('attch1', attachment.name)
+        self.assertEqual('http://redmine.example.com/1', attachment.url)
+        self.assertEqual('an attachment', attachment.description)
+        self.assertEqual(JANE_ROE, attachment.submitted_by)
+        self.assertEqual(MOCK_DATETIME, attachment.submitted_on)
+        self.assertEqual('8', attachment.size)
+        self.assertEqual('1', attachment.rdm_attachment_id)
+
+    def test_invalid_init(self):
+        self.assertRaisesRegexp(TypeError, SUBMITTED_BY_IDENTITY_ERROR,
+                                RedmineAttachment, name='attch1',
+                                url='http://redmine.example.com/1',
+                                description='an attachment',
+                                submitted_by=JOHN_DOE, submitted_on=MOCK_DATETIME,
+                                size='8', rdm_attachment_id='1')
 
 
 if __name__ == "__main__":
