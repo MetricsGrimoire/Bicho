@@ -1,0 +1,13 @@
+{"issue":{"id":7210,"project":{"id":55,"name":"Redmine"},"tracker":{"id":1,"name":"Bug"},"status":{"id":1,"name":"New"},"priority":{"id":4,"name":"Normal"},"author":{"id":5,"name":"Daniel Izquierdo"},"assigned_to":{"id":461,"name":"Alvaro del Castillo"},"category":{"id":3,"name":"Monitor"},"fixed_version":{"id":283,"name":"v0.76b"},"subject":"mock: issue test","description":"Lorem ipsum dolor sit amet.","start_date":"2014-01-23","done_ratio":0,"spent_hours":0.0,"custom_fields":[{"id":1,"name":"Source","value":"Community (user)"},{"id":2,"name":"Backport","value":""},{"id":3,"name":"Tags","value":""},{"id":4,"name":"Severity","value":"3 - minor"},{"id":5,"name":"Reviewed","value":""}],"created_on":"2014-01-23T15:42:01Z","updated_on":"2014-01-23T15:42:01Z",
+"journals":[{"id":31081,"user":{"id":3,"name":"Jesus Gonzalez-Barahona"},"notes":"","created_on":"2014-01-20T17:06:31Z","details":[{"property":"attr","name":"description","new_value":"when the queue gets backed up by several days it is awkward to clear out the queue.\r\n\r\nbonus points for:\r\n- filtering by user\r\n- filtering by machine type"}]},{"id":31113,"user":{"id":461,"name":"Alvaro del Castillo"},"notes":"Just a comment","created_on":"2014-01-21T20:44:14Z","details":[{"property":"attr","name":"status_id","old_value":"1","new_value":"11"}]},{"id":31118,"user":{"id":3,"name":"Jesus Gonzalez-Barahona"},"notes":"Mock comment of this bug","created_on":"2014-01-21T20:57:39Z","details":[]},{"id":31122,"user":{"id":757,"name":"Manrique"},"notes":"","created_on":"2014-01-21T21:02:37Z","details":[{"property":"attr","name":"fixed_version_id","old_value":"271"}]}],
+"attachments":[{"id":1,"filename":"clone-gits.sh","filesize":151,"description":"",
+"content_url":"https://example.org/attachments/download/1/clone-gits.sh",
+"author":{"id":17,"name":"Santiago Due\u00f1as"},"created_on":"2013/10/04 17:02:57 +0200"},
+{"id":2,"filename":"setup.py","filesize":8,"description":"Setup script",
+"content_url":"https://example.org/attachments/download/2/setup.py",
+"author":{"id":18,"name":"Daniel Izquierdo"},"created_on":"2014/01/13 12:55:21 +0200"},
+{"id":10,"filename":"install.sh","description":"No description",
+"content_url":"https://example.org/attachments/download/10/install.sh",
+"author":{"id":18,"name":"Daniel Izquierdo"},"created_on":"2014/01/13 12:55:21 +0200"}
+],
+"relations":[]}}

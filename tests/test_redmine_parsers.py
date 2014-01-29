@@ -28,11 +28,14 @@ import unittest
 if not '..' in sys.path:
     sys.path.insert(0, '..')
 
+from bicho.common import Comment, Change, IssueRelationship
 from bicho.exceptions import UnmarshallingError
 from bicho.backends.parsers import JSONParserError
-from bicho.backends.redmine.model import RedmineIdentity, RedmineStatus
+from bicho.backends.redmine.model import RDM_RELATIONSHIP_BLOCKED,\
+    RDM_RELATIONSHIP_BLOCKS, RDM_RELATIONSHIP_RELATES,\
+    RedmineIdentity, RedmineStatus, RedmineIssue, RedmineAttachment
 from bicho.backends.redmine.parsers import RedmineBaseParser, RedmineIdentityParser,\
-    RedmineStatusesParser, RedmineIssuesSummaryParser
+    RedmineStatusesParser, RedmineIssuesSummaryParser, RedmineIssueParser
 from utilities import read_file
 
 
@@ -52,6 +55,7 @@ IDENTITY_NO_LAST_LOGIN_ON = 'identity_no_last_login_on.json'
 IDENTITY_INVALID_CREATED_ON = 'identity_invalid_created_on.json'
 IDENTITY_INVALID_LAST_LOGIN_ON = 'identity_invalid_last_login_on.json'
 IDENTITY_INVALID_STREAM = 'identity_invalid_stream.json'
+
 STATUSES_FILE = 'statuses.json'
 STATUSES_NO_ISSUE_STATUSES = 'statuses_no_issue_statuses.json'
 STATUSES_NO_ID = 'statuses_no_id.json'
@@ -59,6 +63,7 @@ STATUSES_NO_NAME = 'statuses_no_name.json'
 STATUSES_INVALID_IS_CLOSED = 'statuses_invalid_is_closed.json'
 STATUSES_INVALID_IS_DEFAULT = 'statuses_invalid_is_default.json'
 STATUSES_INVALID_STREAM = 'statuses_invalid_stream.json'
+
 SUMMARY_FILE = 'summary.json'
 SUMMARY_NO_ISSUES_SUMMARY = 'summary_no_issues_summary.json'
 SUMMARY_NO_TOTAL_COUNT = 'summary_no_total_count.json'
@@ -68,6 +73,24 @@ SUMMARY_NO_ID = 'summary_no_id.json'
 SUMMARY_NO_UPDATED_ON = 'summary_no_updated_on.json'
 SUMMARY_INVALID_UPDATED_ON = 'summary_invalid_updated_on.json'
 SUMMARY_INVALID_STREAM = 'summary_invalid_stream.json'
+
+ISSUE_FILE = 'issue.json'
+ISSUE_CHANGES_FILE = 'issue_changes.json'
+ISSUE_INVALID_DATE_FILE = 'issue_invalid_date.json'
+ISSUE_INVALID_COMMENT_FILE = 'issue_invalid_comment.json'
+ISSUE_INVALID_ATTACHMENT_FILE = 'issue_invalid_attachment.json'
+ISSUE_INVALID_CHANGE_FILE = 'issue_invalid_changes.json'
+ISSUE_INVALID_RELATION_FILE = 'issue_invalid_relation.json'
+ISSUE_NO_ASSIGNED_TO_FILE = 'issue_no_assigned_to.json'
+ISSUE_NO_COMMENTS_FILE = 'issue_no_comments.json'
+ISSUE_NO_ATTACHMENTS_FILE = 'issue_no_attachments.json'
+ISSUE_NO_CHANGES_FILE = 'issue_no_changes.json'
+ISSUE_NO_RELATIONSHIPS_FILE = 'issue_no_relationships.json'
+ISSUE_NO_ATTACHMENTS_KEY_FILE = 'issue_no_attachments_key.json'
+ISSUE_NO_JOURNALS_KEY_FILE = 'issue_no_journals_key.json'
+ISSUE_NO_RELATIONSHIPS_KEY_FILE = 'issue_no_relationships_key.json'
+ISSUE_UNKNOWN_RELATION_TYPE_FILE = 'issue_unknown_relation_type.json'
+ISSUE_EMPTY_JOURNALS_FILE = 'issue_empty_journals.json'
 
 
 # RegExps for testing JSONParserError exceptions
@@ -84,17 +107,36 @@ MAIL_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'mail')
 LOGIN_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'login')
 CREATED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'created_on')
 LAST_LOGIN_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIdentity', 'last_login_on')
+
 ISSUE_STATUSES_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('list\(RedmineStatus\)', 'issue_statuses')
 STATUSES_ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineStatus', 'id')
 STATUSES_NAME_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineStatus', 'name')
+
 SUMMARY_ISSUES_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssuesSummary', 'issues')
 SUMMARY_TOTAL_COUNT_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssuesSummary', 'total_count')
 SUMMARY_OFFSET_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssuesSummary', 'offset')
 SUMMARY_LIMIT_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssuesSummary', 'limit')
+
 SUMMARY_ID_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('IssueSummary', 'id')
 SUMMARY_UPDATED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('IssueSummary', 'updated_on')
+
+ISSUE_JOURNALS_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssue', 'journals')
+ISSUE_ATTACHMENTS_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssue', 'attachments')
+ISSUE_RELATIONS_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineIssue', 'relations')
+
+RELATION_TYPE_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('IssueRelationship', 'relation_type')
+
+COMMENT_CREATED_ON_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('Comment', 'created_on')
+
+ATTACHMENT_SIZE_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('RedmineAttachment', 'size')
+
+CHANGE_NAME_KEY_ERROR = UNMARSHALLING_ERROR_REGEXP % ('Change', 'name')
+
 DATETIME_MONTH_ERROR = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'month must be in 1..12')
 DATETIME_UNKNOWN_FORMAT = UNMARSHALLING_ERROR_REGEXP % ('datetime', 'unknown string format')
+
+# RegExp for unkwnon types of relationships
+RELATION_UNKNOWN_ERROR = 'unknown relationship type: blocked by'
 
 # RegExps for testing TypeError exceptions
 TYPE_ERROR_REGEXP = 'Parameter "%s" should be a %s instance. %s given'
@@ -463,6 +505,336 @@ class TestRedmineIssuesSummaryParser(unittest.TestCase):
         self.parser = RedmineIssuesSummaryParser(json)
         self.parser.parse()
         return self.parser.summary
+
+
+class TestRedmineIssueParser(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = None
+
+    def test_common_data(self):
+        # Test if there is no fail parsing issue common fields
+        # to the rest of the trackers
+        issue = self._parse(ISSUE_FILE)
+        self.assertIsInstance(issue, RedmineIssue)
+
+        self.assertEqual(u'7210', issue.issue_id)
+        self.assertEqual(u'Bug', issue.issue_type)
+        self.assertEqual(u'mock: issue test', issue.summary)
+        self.assertEqual(u'Lorem ipsum dolor sit amet.', issue.description)
+        self.assertEqual(u'New', issue.status)
+        self.assertEqual(u'New', issue.resolution)
+        self.assertEqual(u'Normal', issue.priority)
+
+    def test_redmine_data(self):
+        # Test if there is no fail parsing Redmine specific fields
+        issue = self._parse(ISSUE_FILE)
+        self.assertEqual(u'55', issue.project_id)
+        self.assertEqual(u'Redmine', issue.project)
+        self.assertEqual(u'1', issue.rdm_tracker_id)
+        self.assertEqual(u'Bug', issue.rdm_tracker)
+        self.assertEqual(u'2014-01-23 15:42:01', unicode(issue.updated_on))
+
+    def test_submitted_by(self):
+        # Test whether the parsing process does not fail
+        # retrieving submitter identity
+        issue = self._parse(ISSUE_FILE)
+        submitter = issue.submitted_by
+
+        self.assertIsInstance(submitter, RedmineIdentity)
+        self.assertEqual(u'5', submitter.user_id)
+        self.assertEqual(u'Daniel Izquierdo', submitter.name)
+        self.assertEqual(None, submitter.email)
+
+    def test_submitted_on(self):
+        # Test if the submission date is parsed
+        issue = self._parse(ISSUE_FILE)
+        submitted_on = issue.submitted_on
+
+        self.assertIsInstance(submitted_on, datetime.datetime)
+        self.assertEqual(u'2014-01-23 15:42:01', unicode(submitted_on))
+
+    def test_invalid_submitted_on(self):
+        # Test if the parser raises an exception
+        # paring the submission date
+        self.assertRaisesRegexp(UnmarshallingError,
+                                DATETIME_MONTH_ERROR,
+                                self._parse,
+                                filename=ISSUE_INVALID_DATE_FILE)
+
+    def test_assigned_to(self):
+        # Test whether the parsing process does not fail
+        # retrieving asignee identity
+        issue = self._parse(ISSUE_FILE)
+        assigned_to = issue.assigned_to
+
+        self.assertIsInstance(assigned_to, RedmineIdentity)
+        self.assertEqual(u'461', assigned_to.user_id)
+        self.assertEqual(u'Alvaro del Castillo', assigned_to.name)
+        self.assertEqual(None, assigned_to.email)
+
+    def test_no_assigned_to(self):
+        # Test whether the parsing process does not fail
+        # when assigned_to is not set
+        issue = self._parse(ISSUE_NO_ASSIGNED_TO_FILE)
+        assigned_to = issue.assigned_to
+        self.assertEqual(None, assigned_to)
+
+    def test_empty_journals(self):
+        # Test if no comments are parser when
+        # journals is empty
+        issue = self._parse(ISSUE_EMPTY_JOURNALS_FILE)
+        self.assertEqual(0, len(issue.comments))
+
+    def test_no_journdals_key(self):
+        # Test whether it raises an exception when
+        # journals key is not found in the stream
+        self.assertRaisesRegexp(UnmarshallingError,
+                                ISSUE_JOURNALS_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_NO_JOURNALS_KEY_FILE)
+
+    def test_comments(self):
+        # Test the comments parsing process
+        issue = self._parse(ISSUE_FILE)
+        comments = issue.comments
+        self.assertEqual(2, len(comments))
+
+        comment = comments[0]
+        self.assertIsInstance(comment, Comment)
+        self.assertEqual(u'Just a comment', comment.text)
+        self.assertEqual(u'461', comment.submitted_by.user_id)
+        self.assertEqual(u'Alvaro del Castillo', comment.submitted_by.name)
+        self.assertEqual(None, comment.submitted_by.email)
+        self.assertEqual(u'2014-01-21 20:44:14', unicode(comment.submitted_on))
+
+        comment = comments[1]
+        self.assertIsInstance(comment, Comment)
+        self.assertEqual(u'Mock comment of this bug', comment.text)
+        self.assertEqual(u'3', comment.submitted_by.user_id)
+        self.assertEqual(u'Jesus Gonzalez-Barahona', comment.submitted_by.name)
+        self.assertEqual(None, comment.submitted_by.email)
+        self.assertEqual(u'2014-01-21 20:57:39', unicode(comment.submitted_on))
+
+    def test_invalid_comment(self):
+        # Test if the parser raises an exception
+        # parsing a comment not well formed
+        self.assertRaisesRegexp(UnmarshallingError,
+                                COMMENT_CREATED_ON_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_INVALID_COMMENT_FILE)
+
+    def test_no_comments(self):
+        # Test if nothing is parsed from a stream
+        # without notes tags
+        issue = self._parse(ISSUE_NO_COMMENTS_FILE)
+        self.assertEqual(0, len(issue.comments))
+
+    def test_attachments(self):
+        # Test the attachments parsing process
+        issue = self._parse(ISSUE_FILE)
+        attachments = issue.attachments
+        self.assertEqual(3, len(attachments))
+
+        attachment = attachments[0]
+        self.assertIsInstance(attachment, RedmineAttachment)
+        self.assertEqual(u'clone-gits.sh', attachment.name)
+        self.assertEqual(u'https://example.org/attachments/download/1/clone-gits.sh', attachment.url)
+        self.assertEqual(None, attachment.description)
+        self.assertEqual(u'17', attachment.submitted_by.user_id)
+        self.assertEqual(u'Santiago Dueñas', attachment.submitted_by.name)
+        self.assertEqual(None, attachment.submitted_by.email)
+        self.assertEqual(u'2013-10-04 17:02:57', unicode(attachment.submitted_on))
+        self.assertEqual(u'151', attachment.size)
+        self.assertEqual(u'1', attachment.rdm_attachment_id)
+
+        attachment = attachments[1]
+        self.assertIsInstance(attachment, RedmineAttachment)
+        self.assertEqual(u'setup.py', attachment.name)
+        self.assertEqual(u'https://example.org/attachments/download/2/setup.py', attachment.url)
+        self.assertEqual(u'Setup script', attachment.description)
+        self.assertEqual(u'18', attachment.submitted_by.user_id)
+        self.assertEqual(u'Daniel Izquierdo', attachment.submitted_by.name)
+        self.assertEqual(None, attachment.submitted_by.email)
+        self.assertEqual(u'2014-01-13 12:55:21', unicode(attachment.submitted_on))
+        self.assertEqual(u'8', attachment.size)
+        self.assertEqual(u'2', attachment.rdm_attachment_id)
+
+        attachment = attachments[2]
+        self.assertIsInstance(attachment, RedmineAttachment)
+        self.assertEqual(u'install.sh', attachment.name)
+        self.assertEqual(u'https://example.org/attachments/download/10/install.sh', attachment.url)
+        self.assertEqual(u'No description', attachment.description)
+        self.assertEqual(u'18', attachment.submitted_by.user_id)
+        self.assertEqual(u'Daniel Izquierdo', attachment.submitted_by.name)
+        self.assertEqual(None, attachment.submitted_by.email)
+        self.assertEqual(u'2014-01-13 12:55:21', unicode(attachment.submitted_on))
+        self.assertEqual(u'256', attachment.size)
+        self.assertEqual(u'10', attachment.rdm_attachment_id)
+
+    def test_no_attachments(self):
+        # Test if nothing is parsed from a stream
+        # without attachment content
+        issue = self._parse(ISSUE_NO_ATTACHMENTS_FILE)
+        self.assertEqual(0, len(issue.attachments))
+
+    def test_invalid_attachment(self):
+        # Test if the parser raises an exception
+        # parsing an invalid attachment
+        self.assertRaisesRegexp(UnmarshallingError,
+                                ATTACHMENT_SIZE_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_INVALID_ATTACHMENT_FILE)
+
+    def test_no_attachments_key(self):
+        # Test whether it raises an exception when
+        # attachments key is not found in the stream
+        self.assertRaisesRegexp(UnmarshallingError,
+                                ISSUE_ATTACHMENTS_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_NO_ATTACHMENTS_KEY_FILE)
+
+    def test_changes(self):
+        # Test whether there is no fail parsing the changes
+        # from an issue
+        issue = self._parse(ISSUE_CHANGES_FILE)
+        changes = issue.changes
+        self.assertEqual(8, len(changes))
+
+        # Changes from #1 to #6 should have same values in 'changed_by'
+        # and 'changed_on' attribs
+        change = changes[0]
+        self.assertIsInstance(change, Change)
+        self.assertEqual(u'461', change.changed_by.user_id)
+        self.assertEqual(u'Joao Luis', change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2014-01-16 10:16:15', unicode(change.changed_on))
+        self.assertEqual(u'subject', unicode(change.field))
+        self.assertEqual(u'Error ENOENT', change.old_value)
+        self.assertEqual(u'mon: Error ENOENT: unrecognized pool', change.new_value)
+
+        change = changes[1]
+        self.assertIsInstance(change, Change)
+        self.assertEqual(u'461', change.changed_by.user_id)
+        self.assertEqual(u'Joao Luis', change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2014-01-16 10:16:15', unicode(change.changed_on))
+        self.assertEqual(u'category_id', change.field)
+        self.assertEqual(None, change.old_value)
+        self.assertEqual(u'3', change.new_value)
+
+        change = changes[2]
+        self.assertIsInstance(change, Change)
+        self.assertEqual(u'461', change.changed_by.user_id)
+        self.assertEqual(u'Joao Luis', change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2014-01-16 10:16:15', unicode(change.changed_on))
+        self.assertEqual(u'status_id', change.field)
+        self.assertEqual(u'12', change.old_value)
+        self.assertEqual(u'2', change.new_value)
+
+        change = changes[3]
+        self.assertIsInstance(change, Change)
+        self.assertEqual(u'461', change.changed_by.user_id)
+        self.assertEqual(u'Joao Luis', change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2014-01-16 10:16:15', unicode(change.changed_on))
+        self.assertEqual(u'assigned_to_id', change.field)
+        self.assertEqual(u'461', change.old_value)
+        self.assertEqual(None, change.new_value)
+
+        # changed_by, changed_on values should be different to
+        # the other changes
+        change = changes[6]
+        self.assertIsInstance(change, Change)
+        self.assertEqual(u'789', change.changed_by.user_id)
+        self.assertEqual(u'Loic Dachary', change.changed_by.name)
+        self.assertEqual(None, change.changed_by.email)
+        self.assertEqual(u'2014-01-16 13:23:19', unicode(change.changed_on))
+        self.assertEqual(u'status_id', change.field)
+        self.assertEqual(u'13', change.old_value)
+        self.assertEqual(u'3', change.new_value)
+
+    def test_no_changes(self):
+        # Test if nothing is parsed from a stream without a
+        # table of changes
+        issue = self._parse(ISSUE_NO_CHANGES_FILE)
+        changes = issue.changes
+        self.assertEqual(0, len(changes))
+
+    def test_invalid_change(self):
+        # Test if the parser raises an exception
+        # parsing a change not well formed
+        self.assertRaisesRegexp(UnmarshallingError,
+                                CHANGE_NAME_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_INVALID_CHANGE_FILE)
+
+    def test_relationships(self):
+        # Test whether there is no fail parsing the relationships
+        # of an issue
+        issue = self._parse(ISSUE_FILE)
+        relationships = issue.relationships
+        self.assertEqual(3, len(relationships))
+
+        relation = relationships[0]
+        self.assertIsInstance(relation, IssueRelationship)
+        self.assertEqual(RDM_RELATIONSHIP_RELATES, relation.rel_type)
+        self.assertEqual(u'2451', relation.related_to)
+
+        relation = relationships[1]
+        self.assertIsInstance(relation, IssueRelationship)
+        self.assertEqual(RDM_RELATIONSHIP_BLOCKS, relation.rel_type)
+        self.assertEqual(u'2279', relation.related_to)
+
+        relation = relationships[2]
+        self.assertIsInstance(relation, IssueRelationship)
+        self.assertEqual(RDM_RELATIONSHIP_BLOCKED, relation.rel_type)
+        self.assertEqual(u'2251', relation.related_to)
+
+    def test_no_relationships(self):
+        # Test if nothing is parsed from a stream
+        # without relations
+        issue = self._parse(ISSUE_NO_RELATIONSHIPS_FILE)
+        self.assertEqual(0, len(issue.relationships))
+
+    def test_invalid_relation(self):
+        # Test if the parser raises an exception
+        # when a relation is invalid
+        self.assertRaisesRegexp(UnmarshallingError,
+                                RELATION_TYPE_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_INVALID_RELATION_FILE)
+
+    def test_unknown_relation_type(self):
+        # Test if the parser raises an exception
+        # when finds an unknown type of relationship
+        self.assertRaisesRegexp(UnmarshallingError,
+                                RELATION_UNKNOWN_ERROR,
+                                self._parse,
+                                ISSUE_UNKNOWN_RELATION_TYPE_FILE)
+
+    def test_no_relations_key(self):
+        # Test whether it raises an exception when
+        # relations key is not found in the stream
+        self.assertRaisesRegexp(UnmarshallingError,
+                                ISSUE_RELATIONS_KEY_ERROR,
+                                self._parse,
+                                filename=ISSUE_NO_RELATIONSHIPS_KEY_FILE)
+
+    def _parse(self, filename):
+        """Generic method to parse a Redmine summary from a JSON stream.
+
+        :param filename: path of the file to parse
+        :type filename: str
+        :return: summary parsed from Redmine
+        :rtype: RedmineIssuesSummary
+        """
+        filepath = os.path.join(TEST_FILES_DIRNAME, filename)
+        json = read_file(filepath)
+        self.parser = RedmineIssueParser(json)
+        self.parser.parse()
+        return self.parser.issue
 
 
 if __name__ == "__main__":
