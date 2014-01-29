@@ -26,7 +26,7 @@ Redmine's tracker data model.
 
 import datetime
 
-from bicho.common import Identity, IssueSummary
+from bicho.common import Identity, IssueSummary, Issue
 
 
 class RedmineIdentity(Identity):
@@ -164,3 +164,77 @@ class RedmineIssuesSummary(object):
             raise TypeError('Parameter "issue_summary" should be a %s instance. %s given.' %
                             ('IssueSummary', issue_summary.__class__.__name__,))
         self._summary.append(issue_summary)
+
+
+class RedmineIssue(Issue):
+    """Redmine issue
+
+    :param issue_id: identifier of the issue
+    :type issue_id: str
+    :param issue_type: type of the issue
+    :type issue_type: str
+    :param summary: brief description of the issue
+    :type summary: str
+    :param description: long description of the issue
+    :type description: str
+    :param submitted_by: identity that submitted the issue
+    :type submitted_by: RedmineIdentity
+    :param submitted_on: date when the issue was submitted
+    :type submitted_on: datetime.datetime
+    :param status: status of the issue
+    :type status: str
+    :param resolution: resolution of the issue
+    :type resolution: str
+    :param priority: priority level of the issue
+    :type priority: str
+    :param assigned_to: identity assigned to the issue
+    :type assigned_to: RedmineIdentity
+
+    :raises: TypeError: when the type of the parameters is not valid.
+
+    ..note: custom fields not supported
+    """
+
+    def __init__(self, issue_id, issue_type, summary, description,
+                 submitted_by, submitted_on,
+                 status=None, resolution=None, priority=None,
+                 assigned_to=None):
+
+        if not isinstance(submitted_by, RedmineIdentity):
+            raise TypeError('Parameter "submitted_by" should be a %s instance. %s given.' %
+                            ('RedmineIdentity', submitted_by.__class__.__name__,))
+
+        if assigned_to is not None and not isinstance(assigned_to, RedmineIdentity):
+            raise TypeError('Parameter "assigned_to" should be a %s instance. %s given.' %
+                            ('RedmineIdentity', assigned_to.__class__.__name__,))
+
+        super(RedmineIssue, self).__init__(issue_id, issue_type, summary, description,
+                                           submitted_by, submitted_on, status, resolution,
+                                           priority, assigned_to)
+        self.project_id = None
+        self.project = None
+        self.rdm_tracker_id = None
+        self.rdm_tracker = None
+        self._updated_on = None
+
+    @property
+    def assigned_to(self):
+        return self._assigned_to
+
+    @assigned_to.setter
+    def assigned_to(self, value):
+        if value is not None and not isinstance(value, RedmineIdentity):
+            raise TypeError('Parameter "assigned_to" should be a %s instance. %s given.' %
+                            ('RemineIdentity', value.__class__.__name__,))
+        self._assigned_to = value
+
+    @property
+    def updated_on(self):
+        return self._updated_on
+
+    @updated_on.setter
+    def updated_on(self, value):
+        if value is not None and not isinstance(value, datetime.datetime):
+            raise TypeError('Parameter "updated_on" should be a %s instance. %s given.' %
+                            ('datetime', value.__class__.__name__))
+        self._updated_on = value
