@@ -42,6 +42,7 @@ MOCK_DATETIME_STR = '1970-01-01T00:00:01'
 
 # RegExps for testing TypeError exceptions
 TYPE_ERROR_REGEXP = '.+%s.+ should be a %s instance\. %s given'
+ASSIGNED_TO_STR_ERROR = TYPE_ERROR_REGEXP % ('assigned_to', 'Identity', 'str')
 SUBMITTED_BY_NONE_ERROR = TYPE_ERROR_REGEXP % ('submitted_by', 'Identity', 'NoneType')
 SUBMITTED_BY_STR_ERROR = TYPE_ERROR_REGEXP % ('submitted_by', 'Identity', 'str')
 SUBMITTED_ON_NONE_ERROR = TYPE_ERROR_REGEXP % ('submitted_on', 'datetime', 'NoneType')
@@ -270,6 +271,12 @@ class TestIssue(unittest.TestCase):
                                 summary='issue unit test',
                                 description='unit test for issue class',
                                 submitted_by=JANE_ROE, submitted_on=MOCK_DATETIME_STR)
+        self.assertRaisesRegexp(TypeError, ASSIGNED_TO_STR_ERROR,
+                                Issue, issue_id='1', issue_type='bug',
+                                summary='issue unit test',
+                                description='unit test for issue class',
+                                submitted_by=JANE_ROE, submitted_on=MOCK_DATETIME,
+                                assigned_to='John Doe')
 
 
 class TestComment(unittest.TestCase):

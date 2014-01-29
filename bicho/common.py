@@ -164,7 +164,7 @@ class Issue(object):
     @assigned_to.setter
     def assigned_to(self, value):
         if value is not None and not isinstance(value, Identity):
-            raise TypeError('Parameter "assigned_by" should be a %s instance. %s given.' %
+            raise TypeError('Parameter "assigned_to" should be a %s instance. %s given.' %
                             ('Identity', value.__class__.__name__,))
         self._assigned_to = value
 
