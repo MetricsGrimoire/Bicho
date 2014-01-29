@@ -48,6 +48,7 @@ UPDATED_ON_PARAM = 'updated_on'
 # Values
 ATTACHMENTS_VALUE = 'attachments'
 JOURNALS_VALUE = 'journals'
+RELATIONS_VALUE = 'relations'
 UPDATED_ON_VALUE = 'updated_on'
 STATUS_VALUE = '*'
 
@@ -96,7 +97,9 @@ class RedmineURLGenerator(object):
         if not issue_id:
             raise ValueError('issue_id cannot be None or empty')
 
-        qs = {INCLUDE_PARAM: '%s,%s' % (JOURNALS_VALUE, ATTACHMENTS_VALUE)}
+        qs = {INCLUDE_PARAM: '%s,%s,%s' % (JOURNALS_VALUE,
+                                           ATTACHMENTS_VALUE,
+                                           RELATIONS_VALUE)}
 
         suffix = ISSUES_SUFFIX + '/' + issue_id + JSON_SUFFIX
 
