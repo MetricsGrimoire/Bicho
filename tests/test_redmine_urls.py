@@ -64,7 +64,7 @@ class TestRedmineURLGenerator(unittest.TestCase):
 
     def test_issue_url(self):
         generator = RedmineURLGenerator(REDMINE_URL)
-        self.assertEqual('http://example.org/redmine/issues/88.json?include=journals',
+        self.assertEqual('http://example.org/redmine/issues/88.json?include=journals%2Cattachments',
                          generator.get_issue_url('88'))
 
     def test_issue_url_invalid_id(self):
