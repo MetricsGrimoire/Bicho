@@ -24,6 +24,7 @@ import pwd
 
 from launchpadlib.launchpad import Launchpad
 from launchpadlib.credentials import Credentials
+from launchpadlib.errors import NotFound
 
 from bicho.backends import Backend
 from bicho.config import Config
@@ -844,11 +845,14 @@ class LPBackend(Backend):
             issue.set_milestone_title(bug.milestone.title)
             issue.set_milestone_web_link(bug.milestone.web_link)
 
-        if bug.bug.duplicate_of:
-            temp_rel = TempRelationship(bug.bug.id,
-                                        unicode('duplicate_of'),
-                                        unicode(bug.bug.duplicate_of.id))
-            issue.add_temp_relationship(temp_rel)
+        try:
+            if bug.bug.duplicate_of:
+                temp_rel = TempRelationship(bug.bug.id,
+                                            unicode('duplicate_of'),
+                                            unicode(bug.bug.duplicate_of.id))
+                issue.add_temp_relationship(temp_rel)
+        except NotFound:
+            printdbg("Issue %s is a duplicate of a private issue. Ignoring the private issue." % issue.issue)
 
         issue.set_heat(bug.bug.heat)
         issue.set_linked_branches(bug.bug.linked_branches)
