@@ -92,31 +92,31 @@ class DBBugzillaIssueExtMySQL(DBBugzillaIssueExt):
 
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_bugzilla ( \
                      id INTEGER NOT NULL AUTO_INCREMENT, \
-                     alias VARCHAR(32) default NULL, \
+                     alias VARCHAR(64) default NULL, \
                      delta_ts DATETIME NOT NULL, \
                      reporter_accessible VARCHAR(32) default NULL, \
                      cclist_accessible VARCHAR(32) default NULL, \
                      classification_id VARCHAR(32) default NULL, \
                      classification VARCHAR(32) default NULL, \
-                     product VARCHAR(32) default NULL, \
-                     component VARCHAR(32) default NULL, \
-                     version VARCHAR(32) default NULL, \
-                     rep_platform VARCHAR(32) default NULL, \
-                     op_sys VARCHAR(32) default NULL, \
+                     product VARCHAR(64) default NULL, \
+                     component VARCHAR(64) default NULL, \
+                     version VARCHAR(64) default NULL, \
+                     rep_platform VARCHAR(64) default NULL, \
+                     op_sys VARCHAR(64) default NULL, \
                      dup_id INTEGER UNSIGNED default NULL, \
-                     bug_file_loc VARCHAR(32) default NULL, \
-                     status_whiteboard VARCHAR(32) default NULL, \
-                     target_milestone VARCHAR(32) default NULL, \
+                     bug_file_loc MEDIUMTEXT default NULL, \
+                     status_whiteboard MEDIUMTEXT default NULL, \
+                     target_milestone VARCHAR(64) default NULL, \
                      votes INTEGER UNSIGNED default NULL, \
                      everconfirmed VARCHAR(32) default NULL, \
-                     qa_contact VARCHAR(32) default NULL, \
+                     qa_contact VARCHAR(64) default NULL, \
                      estimated_time VARCHAR(32) default NULL, \
                      remaining_time VARCHAR(32) default NULL, \
                      actual_time VARCHAR(32) default NULL, \
                      deadline DATETIME default NULL, \
-                     keywords VARCHAR(32) default NULL, \
+                     keywords VARCHAR(64) default NULL, \
                      flag VARCHAR(32) default NULL, \
-                     cc VARCHAR(32) default NULL, \
+                     cc VARCHAR(64) default NULL, \
                      group_bugzilla VARCHAR(32) default NULL, \
                      issue_id INTEGER NOT NULL, \
                      PRIMARY KEY(id), \
