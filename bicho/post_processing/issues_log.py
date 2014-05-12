@@ -193,7 +193,7 @@ class IssuesLog():
                 % (db_ilog.issue_id, f[0]))
             for v in values:
                 db_ilog = self._assign_values(db_ilog, f[0], v[0])
-	    # Initial status does not have a real change
+	        # Initial status does not have a real change
             db_ilog.change_id = 0
         return db_ilog
 
