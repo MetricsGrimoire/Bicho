@@ -62,7 +62,7 @@ __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_log_bugzilla ( \
                      deadline DATETIME default NULL, \
                      keywords VARCHAR(32) default NULL, \
                      flag VARCHAR(32) default NULL, \
-                     cc VARCHAR(32) default NULL, \
+                     cc VARCHAR(64) default NULL, \
                      group_bugzilla VARCHAR(32) default NULL, \
                      url VARCHAR(255) default NULL, \
                      PRIMARY KEY(id), \
