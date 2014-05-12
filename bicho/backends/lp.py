@@ -24,12 +24,13 @@ import pwd
 
 from launchpadlib.launchpad import Launchpad
 from launchpadlib.credentials import Credentials
+from launchpadlib.errors import NotFound
 
 from bicho.backends import Backend
 from bicho.config import Config
 from bicho.utils import printerr, printdbg, printout
 from bicho.common import Tracker, People, Issue, Comment, Change, TempRelationship, Attachment
-from bicho.db.database import DBIssue, DBBackend, get_database, NotFoundError
+from bicho.db.database import DBIssue, DBBackend, DBTracker, DBIssue, get_database, NotFoundError
 
 from storm.locals import DateTime, Int, Reference, Unicode, Desc
 from datetime import datetime
@@ -261,7 +262,7 @@ class DBLaunchpadBackend(DBBackend):
         """
         pass
 
-    def get_last_modification_date(self, store):
+    def get_last_modification_date(self, store, trk_id):
         # get last modification date stored in the database for a given status
         # select date_last_updated as date from issues_ext_github order by date
         # desc limit 1;
@@ -270,7 +271,17 @@ class DBLaunchpadBackend(DBBackend):
         #state=closed&per_page=100&sort=updated&direction=asc&
         #since=2012-05-28T21:11:28Z
 
-        result = store.find(DBLaunchpadIssueExt)
+        # FIXME: the commented code is specific of tracker. In the case of meta-trackers
+        # such as the one used in OpenStack (tracker that contains other trackers), that tracker
+        # is always empty and the process starts from the very beginning. 
+        # In order to avoid this, the date_last_updated is independent of the tracker.
+        # This change may face other issues in the future. An example of this is 
+        # when using in the same database two different trackers from Launchpad.
+        # So this code works when having meta-trackers (the type of trackers we're using so far)
+        result = store.find(DBLaunchpadIssueExt) #,
+                            #DBLaunchpadIssueExt.issue_id == DBIssue.id,
+                            #DBIssue.tracker_id == DBTracker.id,
+                            #DBTracker.id == trk_id)
         aux = result.order_by(Desc(DBLaunchpadIssueExt.date_last_updated))[:1]
 
         for entry in aux:
@@ -834,11 +845,14 @@ class LPBackend(Backend):
             issue.set_milestone_title(bug.milestone.title)
             issue.set_milestone_web_link(bug.milestone.web_link)
 
-        if bug.bug.duplicate_of:
-            temp_rel = TempRelationship(bug.bug.id,
-                                        unicode('duplicate_of'),
-                                        unicode(bug.bug.duplicate_of.id))
-            issue.add_temp_relationship(temp_rel)
+        try:
+            if bug.bug.duplicate_of:
+                temp_rel = TempRelationship(bug.bug.id,
+                                            unicode('duplicate_of'),
+                                            unicode(bug.bug.duplicate_of.id))
+                issue.add_temp_relationship(temp_rel)
+        except NotFound:
+            printdbg("Issue %s is a duplicate of a private issue. Ignoring the private issue." % issue.issue)
 
         issue.set_heat(bug.bug.heat)
         issue.set_linked_branches(bug.bug.linked_branches)
@@ -969,7 +983,12 @@ class LPBackend(Backend):
                       "Incomplete (with response)",
                       "Incomplete (without response)"]
 
-        last_mod_date = bugsdb.get_last_modification_date()
+        # still useless
+        bugsdb.insert_supported_traker("launchpad", "x.x")
+        trk = Tracker(url, "launchpad", "x.x")
+        dbtrk = bugsdb.insert_tracker(trk)
+
+        last_mod_date = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
 
         if last_mod_date:
             bugs = self.lp.projects[pname].searchTasks(status=aux_status,
@@ -983,12 +1002,6 @@ class LPBackend(Backend):
         printdbg("Last bug already cached: %s" % last_mod_date)
 
         nbugs = len(bugs)
-
-        # still useless
-        bugsdb.insert_supported_traker("launchpad", "x.x")
-        trk = Tracker(url, "launchpad", "x.x")
-        dbtrk = bugsdb.insert_tracker(trk)
-        #
 
         if nbugs == 0:
             printout("No bugs found. Did you provide the correct url?")

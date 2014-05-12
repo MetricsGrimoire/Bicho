@@ -117,12 +117,12 @@ class DBIssueMySQL(DBIssue):
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      tracker_id INTEGER NOT NULL, \
                      issue VARCHAR(255) NOT NULL, \
-                     type VARCHAR(32) NULL, \
+                     type VARCHAR(64) NULL, \
                      summary VARCHAR(255) NOT NULL, \
                      description TEXT NOT NULL, \
-                     status VARCHAR(32) NOT NULL, \
-                     resolution VARCHAR(32) NULL, \
-                     priority VARCHAR(32) NULL, \
+                     status VARCHAR(64) NOT NULL, \
+                     resolution VARCHAR(64) NULL, \
+                     priority VARCHAR(64) NULL, \
                      submitted_by INTEGER UNSIGNED NOT NULL, \
                      submitted_on DATETIME NOT NULL, \
                      assigned_to INTEGER UNSIGNED NOT NULL, \
