@@ -28,6 +28,11 @@ import os
 import sys
 from urllib2 import Request, urlopen, urlparse, URLError, HTTPError
 
+# 500 is the max recommend by bugmaster@gnome.org.
+# Use 1 for legacy working.
+# 250 for working with bugzilla in redhat
+MAX_ISSUES_PER_QUERY = 250
+
 
 class ErrorLoadingConfig(Exception):
     """
@@ -201,6 +206,9 @@ class Config():
                             dest='logtable',
                             help='Enable generation of issues log table',
                             default=False)
+        parser.add_argument('-n', '--num-issues', type=int, dest='nissues',
+                            help='Number of issues requested on each query',
+                            default=MAX_ISSUES_PER_QUERY)
 
         # Options for output database
         group = parser.add_argument_group('Output database specific options')

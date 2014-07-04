@@ -821,6 +821,7 @@ class JiraBackend(Backend):
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
+        self.max_issues = Config.nissues
 
     def basic_jira_url(self):
         serverUrl = self.url.split("/browse/")[0]
@@ -893,7 +894,6 @@ class JiraBackend(Backend):
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
-        issues_per_xml_query = 500
         bugsdb = get_database(DBJiraBackend())
 
         bugsdb.insert_supported_traker("jira", "4.1.2")
@@ -932,8 +932,8 @@ class JiraBackend(Backend):
             print "Tickets to be retrieved:", str(bugs_number)
             remaining = bugs_number
             while (remaining > 0):
-                self.analyze_bug_list(issues_per_xml_query, bugs_number - remaining, bugsdb, dbtrk.id)
-                remaining -= issues_per_xml_query
+                self.analyze_bug_list(self.max_issues, bugs_number - remaining, bugsdb, dbtrk.id)
+                remaining -= self.max_issues
                 #print "Remaining time: ", (remaining/issues_per_xml_query)*Config.delay/60, "m", "(",remaining,")"
                 time.sleep(self.delay)
 

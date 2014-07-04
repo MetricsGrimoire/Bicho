@@ -916,11 +916,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         return issue
 
-# 500 is the max recommend by bugmaster@gnome.org.
-# Use 1 for legacy working.
-# 250 for working with bugzilla in redhat
-MAX_ISSUES_PER_XML_QUERY = 250
-
 # length of hibernation in seconds
 HIBERNATION_LENGTH = 100
 
@@ -930,6 +925,7 @@ class BGBackend(Backend):
     def __init__(self):
         self.url = self._healthy_url(Config.url)
         self.delay = Config.delay
+        self.max_issues = Config.nissues
         self.cookies = {}
         self.version = None
         self.tracker = None
@@ -1095,7 +1091,7 @@ class BGBackend(Backend):
         ids.reverse()
         while(ids):
             query_issues = []
-            while (len(query_issues) < MAX_ISSUES_PER_XML_QUERY and ids):
+            while (len(query_issues) < self.max_issues and ids):
                 query_issues.append(ids.pop())
 
             # Retrieving main bug information
