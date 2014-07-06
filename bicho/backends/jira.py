@@ -390,7 +390,7 @@ class SoupHtmlParser():
             else:
                 # instead of <a .. we got a <span ..
                 span_link = table.find("span", {"class": "user-hover user-avatar"})
-                author_url = span_link['rel']
+                author_url = span_link.get('rel', 'anonymous')
                 author = People(author_url)
 
 
