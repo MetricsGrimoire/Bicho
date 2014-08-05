@@ -1148,6 +1148,9 @@ class BGBackend(Backend):
         return last_ts_str, next_ts_str
 
     def _healthy_url(self, url):
+        if url.find('product=') == -1:
+            return url
+
         tokens = url.split('product=')
         component = tokens[1].split('&component=')
         if len(component) > 1:
@@ -1221,19 +1224,30 @@ class BGBackend(Backend):
         return url
 
     def _get_issues_list_url(self, base_url, version, from_date=None):
+        if '?' in base_url:
+            url = base_url + '&'
+        else:
+            url = base_url + '?'
+
         if ((version == "3.2.3") or (version == "3.2.2")):
-            url = base_url + "&order=Last+Changed&ctype=csv"
+            url = url + "order=Last+Changed&ctype=csv"
             if from_date:
                 """
                 Firefox ITS (3.2.3) replaces %20 with %2520 that causes
                 Bicho to crash
                 """
                 day = from_date[:from_date.index(' ')]
-                url = url + "&chfieldfrom=" + day
+            else:
+                day = '1970-01-01'
+            url = url + "&chfieldfrom=" + day
         else:
-            url = base_url + "&order=changeddate&ctype=csv"
+            url = url + "order=changeddate&ctype=csv"
             if from_date:
-                url = url + "&chfieldfrom=" + from_date.replace(' ', '%20')
+                day = from_date.replace(' ', '%20')
+            else:
+                day = '1970-01-01'
+            url = url + "&chfieldfrom=" + day
+
         return url
 
     def _get_issues_info_url(self, base_url, ids):
