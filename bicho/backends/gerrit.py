@@ -369,7 +369,7 @@ class Gerrit():
         comments = review['comments']
         by = None
         date = None
-        patchNumber = None
+        patchNumber = unicode('')
 
         # MERGED event searched from approvals
         if (issue.status=='MERGED'):
@@ -382,6 +382,7 @@ class Gerrit():
                         by = People(entry['by']['username'])
                         date = self._convert_to_datetime(entry["grantedOn"])
                         patchNumber = patchSetNumber
+                # TODO: if not by and date, take if from modified_on in issues_ext_gerrit
 
         # ABANDONED event searched from comments
         if (issue.status=='ABANDONED'):
@@ -394,6 +395,33 @@ class Gerrit():
         if (by and date):
             change = Change(unicode("status"), patchNumber,
                             issue.status, by, date)
+            issue.add_change(change)
+
+    def add_uploaded_patchset_from_comments(self, review, issue):
+        # comm.text like '%Patch Set%Verified%' "
+        UPLOAD_REGEXP_1 = re.compile(r'^Uploaded patch set (.*?).')
+        UPLOAD_REGEXP_2 = re.compile(r'^Patch Set (.*?):(.*)')
+        # Review all comments and create MERGE and ABANDONED changes
+        comments = review['comments']
+        ncomment = 0
+        patchset_added = []
+        for comment in comments:
+            ncomment += 1
+            by = People(comment['reviewer']["username"])
+            if (UPLOAD_REGEXP_2.match(comment["message"])):
+                patchset = comment["message"].split("Patch Set ")[1]
+                patchset = patchset.split(":")[0]
+            elif (UPLOAD_REGEXP_1.match(comment["message"])):
+                patchset = comment["message"].split(" ")[3]
+                patchset = patchset.split(".")[0]
+            else:
+                continue
+            # Sometimes we get more than one Verfieid for the same patch
+            if patchset in patchset_added: continue
+            patchset_added.append(patchset)
+            change = Change(unicode("status"), unicode(patchset),
+                            unicode("UPLOADED"), by,
+                            self._convert_to_datetime(comment["timestamp"]))
             issue.add_change(change)
 
     # Comments are not a robust way for getting review status
@@ -508,6 +536,7 @@ class Gerrit():
                     # extra changes not included in gerrit changes
                     # self.add_merged_abandoned_changes_from_comments(entry, review_data)
                     self.add_merged_abandoned_changes(entry, review_data)
+                    self.add_uploaded_patchset_from_comments(entry, review_data)
                     self.add_new_change(review_data)
                     bugsdb.insert_issue(review_data, dbtrk.id)
                     number_results += 1
