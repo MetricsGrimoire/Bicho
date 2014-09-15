@@ -294,6 +294,30 @@ class Gerrit():
 
             patchSetNumber = activity['number']
 
+            # Add uploaded event
+            upload = self._convert_to_datetime(activity['createdOn'])
+            # share this people build logic
+            if "username" in activity["uploader"].keys():
+                by = People(activity["uploader"]['username'])
+            elif "email" in activity["uploader"].keys():
+                by = People(activity["uploader"]['email'])
+            elif "name" in activity["uploader"].keys():
+                by = People(activity["uploader"]['name'])
+            else:
+                by = People(unicode(''))
+
+            if "name" in activity["uploader"].keys():
+                by.set_name(activity["uploader"]["name"])
+            if "email" in activity["uploader"].keys():
+                by.set_email(activity["uploader"]["email"])
+            # print "changed_on:" + entry['updated']
+            field = unicode('Upload')
+            new_value = unicode('')
+            old_value = patchSetNumber
+
+            change = Change(field, old_value, new_value, by, upload)
+            changesList.append(change)
+
             for entry in activity['approvals']:
                 # print "changed_by:" + entry['author']
                 if "username" in entry["by"].keys():
@@ -316,7 +340,6 @@ class Gerrit():
                 update = self._convert_to_datetime(entry["grantedOn"])
                 change = Change(field, old_value, new_value, by, update)
                 changesList.append(change)
-
         return changesList
 
     def check_merged_abandoned_changes(self, store, dbtrk_id):
@@ -466,6 +489,7 @@ class Gerrit():
         args_gerrit += " limit:" + str(limit)
         if (start != ""):
             args_gerrit += " resume_sortkey:" + start
+        # --patch-sets --submit
         args_gerrit += " --all-approvals --comments --format=JSON"
 
         if 'backend_user' in vars(Config):
