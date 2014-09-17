@@ -289,8 +289,9 @@ class Gerrit():
         patchSets = review['patchSets']
 
         for activity in patchSets:
-            if "approvals" not in activity.keys():
-                continue
+            # Now, we want all patches
+            # if "approvals" not in activity.keys():
+            #    continue
 
             patchSetNumber = activity['number']
 
