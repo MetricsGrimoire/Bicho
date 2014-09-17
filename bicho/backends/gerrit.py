@@ -319,28 +319,29 @@ class Gerrit():
             change = Change(field, old_value, new_value, by, upload)
             changesList.append(change)
 
-            for entry in activity['approvals']:
-                # print "changed_by:" + entry['author']
-                if "username" in entry["by"].keys():
-                    by = People(entry['by']['username'])
-                elif "email" in entry["by"].keys():
-                    by = People(entry['by']['email'])
-                elif "name" in entry["by"].keys():
-                    by = People(entry['by']['name'])
-                else:
-                    by = People(unicode(''))
+            if 'approvals' in activity:
+                for entry in activity['approvals']:
+                    # print "changed_by:" + entry['author']
+                    if "username" in entry["by"].keys():
+                        by = People(entry['by']['username'])
+                    elif "email" in entry["by"].keys():
+                        by = People(entry['by']['email'])
+                    elif "name" in entry["by"].keys():
+                        by = People(entry['by']['name'])
+                    else:
+                        by = People(unicode(''))
 
-                if "name" in entry["by"].keys():
-                    by.set_name(entry["by"]["name"])
-                if "email" in entry["by"].keys():
-                    by.set_email(entry["by"]["email"])
-                # print "changed_on:" + entry['updated']
-                field = entry['type']
-                new_value = entry['value']
-                old_value = patchSetNumber
-                update = self._convert_to_datetime(entry["grantedOn"])
-                change = Change(field, old_value, new_value, by, update)
-                changesList.append(change)
+                    if "name" in entry["by"].keys():
+                        by.set_name(entry["by"]["name"])
+                    if "email" in entry["by"].keys():
+                        by.set_email(entry["by"]["email"])
+                    # print "changed_on:" + entry['updated']
+                    field = entry['type']
+                    new_value = entry['value']
+                    old_value = patchSetNumber
+                    update = self._convert_to_datetime(entry["grantedOn"])
+                    change = Change(field, old_value, new_value, by, update)
+                    changesList.append(change)
         return changesList
 
     def check_merged_abandoned_changes(self, store, dbtrk_id):
