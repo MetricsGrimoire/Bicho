@@ -125,7 +125,7 @@ class DBIssueMySQL(DBIssue):
                      priority VARCHAR(64) NULL, \
                      submitted_by INTEGER UNSIGNED NOT NULL, \
                      submitted_on DATETIME NOT NULL, \
-                     assigned_to INTEGER UNSIGNED NOT NULL DEFAULT 0, \
+                     assigned_to INTEGER UNSIGNED NOT NULL, \
                      PRIMARY KEY(id), \
                      UNIQUE KEY(issue, tracker_id), \
                      INDEX issues_submitted_idx(submitted_by), \

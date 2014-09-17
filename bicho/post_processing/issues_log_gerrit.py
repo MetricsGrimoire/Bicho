@@ -130,8 +130,6 @@ class GerritIssuesLog(IssuesLog):
     def _build_initial_state(self, db_ilog):
         # Initial status in gerrit is NEW
         db_ilog.status = unicode('NEW')
-        db_ilog.change_id = 0
-        db_ilog.changed_by = 0
         return db_ilog
 
     def _copy_issue_ext(self, aux, db_ilog):
@@ -181,7 +179,6 @@ class GerritIssuesLog(IssuesLog):
             db_ilog.changed_by = aux[1]
             # This entry is not related to a row in changes
             db_ilog.change_id = 0
-            db_ilog.changed_by = 0
             self.store.add(db_ilog)
             self.store.flush()
         if final_status == 'ABANDONED':
@@ -192,7 +189,6 @@ class GerritIssuesLog(IssuesLog):
                                       % (db_ilog.issue_id))
             db_ilog.date = aux.get_one()[0]
             db_ilog.change_id = 0
-            db_ilog.changed_by = 0
             self.store.add(db_ilog)
             self.store.flush()
 
