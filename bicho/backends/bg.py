@@ -295,7 +295,7 @@ class SoupHtmlParser():
         # We look for the first table with 5 cols
         table = None
         for table in tables:
-            if len(table.tr.findAll('th')) == 5:
+            if len(table.tr.findAll('th', recursive=False)) == 5:
                 try:
                     for i in table.findAll(remove_tags):
                         i.replaceWith(i.text)
