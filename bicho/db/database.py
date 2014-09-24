@@ -480,9 +480,10 @@ class DBDatabase:
 
         """
         db_comment = self.store.find(DBComment,
-                                    DBComment.issue_id == issue_id,
-                                    DBComment.text == comment.comment,
-                                    DBComment.submitted_on == comment.submitted_on).one()
+                                     DBComment.issue_id == issue_id,
+                                     DBComment.text == unicode(comment.comment),
+                                     DBComment.submitted_on == comment.submitted_on).one()
+
         if not db_comment:
             #if comment is not stored, return -1 to know it's a new one
             db_comment = -1
