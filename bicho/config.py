@@ -31,7 +31,7 @@ from urllib2 import Request, urlopen, urlparse, URLError, HTTPError
 # 500 is the max recommend by bugmaster@gnome.org.
 # Use 1 for legacy working.
 # 250 for working with bugzilla in redhat
-MAX_ISSUES_PER_QUERY = 250
+MAX_ISSUES_PER_QUERY = 200
 
 
 class ErrorLoadingConfig(Exception):

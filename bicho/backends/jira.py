@@ -21,8 +21,8 @@
 #          Santiago Dueñas <sduenas@libresoft.es>
 #          Alvaro del Castillo <acs@bitergia.com>
 
-import datetime
-import urllib
+import urllib2
+import base64
 import time
 import sys
 
@@ -34,7 +34,7 @@ from bicho.backends import Backend
 from bicho.db.database import DBIssue, DBBackend, DBTracker, get_database
 from bicho.config import Config
 from bicho.utils import printout, printerr, printdbg
-from BeautifulSoup import BeautifulSoup, Tag, NavigableString
+from BeautifulSoup import BeautifulSoup
 #from BeautifulSoup import NavigableString
 from BeautifulSoup import Comment as BFComment
 
@@ -788,7 +788,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         bug_activity_url = bug.link + '?page=com.atlassian.jira.plugin.system.issuetabpanels%3Achangehistory-tabpanel'
         printdbg("Bug activity: " + bug_activity_url)
-        data_activity = urllib.urlopen(bug_activity_url).read()
+        data_activity = urllib2.urlopen(bug_activity_url).read()
         parser = SoupHtmlParser(data_activity, bug.key_id)
         changes = parser.parse_changes()
         for c in changes:
@@ -817,11 +817,19 @@ class JiraBackend(Backend):
     """
     Jira Backend
     """
-
     def __init__(self):
         self.delay = Config.delay
         self.url = Config.url
         self.max_issues = Config.nissues
+        self.cookies = {}
+
+        try:
+            self.backend_password = Config.backend_password
+            self.backend_user = Config.backend_user
+        except AttributeError:
+            printout("No account provided.")
+            self.backend_password = None
+            self.backend_user = None
 
     def basic_jira_url(self):
         serverUrl = self.url.split("/browse/")[0]
@@ -837,7 +845,8 @@ class JiraBackend(Backend):
         oneBug = self.basic_jira_url()
         oneBug += "&tempMax=1"
         printdbg("Getting number of issues: " + oneBug)
-        data_url = urllib.urlopen(oneBug).read()
+        f = self._urlopen_auth(oneBug)
+        data_url = f.read()
         bugs = data_url.split("<issue")[1].split('\"/>')[0].split("total=\"")[1]
         return int(bugs)
 
@@ -850,7 +859,7 @@ class JiraBackend(Backend):
             or 0x10000 <= i <= 0x10FFFF)
 
     def safe_xml_parse(self, url_issues, handler):
-        f = urllib.urlopen(url_issues)
+        f = self._urlopen_auth(url_issues)
         parser = xml.sax.make_parser()
         parser.setContentHandler(handler)
 
@@ -893,6 +902,8 @@ class JiraBackend(Backend):
 
     def run(self):
         printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
+
+        self._login()
 
         bugsdb = get_database(DBJiraBackend())
 
@@ -938,5 +949,61 @@ class JiraBackend(Backend):
                 time.sleep(self.delay)
 
             printout("Done. %s bugs analyzed" % (bugs_number))
+
+    def _login(self):
+        """
+        Authenticates a user in a Jira tracker
+        """
+        if not (Config.backend_user and Config.backend_password):
+            printout("No account data provided. Not logged in Jira")
+            return
+
+        import cookielib
+
+        cookie_j = cookielib.CookieJar()
+        cookie_h = urllib2.HTTPCookieProcessor(cookie_j)
+
+        url = self.url
+
+        auth_info = Config.backend_user + ':' + Config.backend_password
+        auth_info = auth_info.replace('\n', '')
+        base64string = base64.encodestring(auth_info)
+
+        request = urllib2.Request(url)
+        request.add_header("Authorization", "Basic %s" % base64string)
+
+        opener = urllib2.build_opener(cookie_h)
+        urllib2.install_opener(opener)
+
+        urllib2.urlopen(request)
+        for i, c in enumerate(cookie_j):
+            self.cookies[c.name] = c.value
+
+        printout("Logged in Jira as %s" % Config.backend_user)
+        printdbg("Jira session cookies: %s" % self.cookies)
+
+    def _urlopen_auth(self, url):
+        """
+        Opens an URL using an authenticated session
+        """
+        request = urllib2.Request(url)
+
+        opener = urllib2.build_opener()
+
+        if self._is_auth_session():
+            q = [str(c) + '=' + v for c, v in self.cookies.items()]
+            opener.addheaders.append(('Cookie', '; '.join(q)))
+
+        try:
+            return opener.open(request)
+        except (urllib2.HTTPError, urllib2.URLError) as e:
+            printerr("Error code: %s, reason: %s" % (e.code, e.reason))
+            raise e
+
+    def _is_auth_session(self):
+        """
+        Returns whether the session is authenticated
+        """
+        return len(self.cookies) > 0
 
 Backend.register_backend("jira", JiraBackend)
