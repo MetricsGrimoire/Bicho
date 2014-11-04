@@ -830,7 +830,7 @@ class JiraBackend(Backend):
         url_issues = serverUrl + query + "?pid=" + product
         url_issues += "&sorter/field=updated&sorter/order=INC"
         if self.last_mod_date:
-            url_issues += "&updated:after=" + self.last_mod_date
+            url_issues += "&updated:after=" + self.last_mod_date.replace(' ', '%20')
         return url_issues
 
     def bugsNumber(self, url):
