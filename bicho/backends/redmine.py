@@ -439,8 +439,13 @@ class Redmine():
         # Get statuses
         self._get_statuses()
 
-        f = urllib2.urlopen(request)         
+        f = urllib2.urlopen(request)
         tickets = json.loads(f.read())
+
+        if not tickets["issues"]:
+            printout("Done. No new bugs to analyze")
+            return
+
         for ticket in tickets["issues"]:
             issue = self.analyze_bug(ticket)
             bugsdb.insert_issue(issue, dbtrk.id)
