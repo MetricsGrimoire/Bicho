@@ -719,12 +719,16 @@ class LPBackend(Backend):
         """
         Returns Bicho People object from Launchpad person object
         """
-        p = People(lpperson.name)
-        p.set_name(lpperson.display_name)
-        if lpperson.confirmed_email_addresses:
-            for m in lpperson.confirmed_email_addresses:
-                p.set_email(m.email)
-                break
+        try:
+            p = People(lpperson.name)
+            p.set_name(lpperson.display_name)
+            if lpperson.confirmed_email_addresses:
+                for m in lpperson.confirmed_email_addresses:
+                    p.set_email(m.email)
+                    break
+        except Exception, e:
+            printerr(str(e))
+            p = People("unknown")
         return p
 
     def analyze_bug(self, bug):
