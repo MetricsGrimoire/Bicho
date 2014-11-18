@@ -95,7 +95,7 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
                      status VARCHAR(32) default NULL, \
                      issue_id INTEGER NOT NULL, \
                      description TEXT default NULL, \
-                     web_link VARCHAR(32) default NULL, \
+                     web_link VARCHAR(256) default NULL, \
                      bug_target_display_name VARCHAR(32) default NULL, \
                      bug_target_name VARCHAR(32) default NULL, \
                      date_assigned DATETIME default NULL, \
@@ -116,13 +116,13 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
                      milestone_name VARCHAR(32) default NULL, \
                      milestone_summary VARCHAR(32) default NULL, \
                      milestone_title VARCHAR(32) default NULL, \
-                     milestone_web_link VARCHAR(32) default NULL, \
+                     milestone_web_link VARCHAR(256) default NULL, \
                      heat INTEGER UNSIGNED default NULL, \
                      linked_branches VARCHAR(32) default NULL, \
                      tags VARCHAR(32) default NULL, \
                      title VARCHAR(32) default NULL, \
                      users_affected_count INTEGER UNSIGNED default NULL, \
-                     web_link_standalone VARCHAR(32) default NULL, \
+                     web_link_standalone VARCHAR(256) default NULL, \
                      PRIMARY KEY(id), \
                      UNIQUE KEY(issue_id), \
                      INDEX ext_issue_idx(issue_id), \
