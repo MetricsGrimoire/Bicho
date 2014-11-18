@@ -437,7 +437,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.summary = None
         self.bug_type = None
         self.status = None
-        self.resolution = None
+        self.resolution = ""
         self.security = None
         self.created = None
         self.updated = None
@@ -581,7 +581,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif self.is_status:
             self.status = ch
         elif self.is_resolution:
-            self.resolution = ch
+            self.resolution += ch
         elif self.is_security:
             self.security = ch
         elif self.is_assignee:
