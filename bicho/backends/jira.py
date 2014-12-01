@@ -380,19 +380,18 @@ class SoupHtmlParser():
                 printerr("Change author format not supported. Change lost!")
                 continue
 
-            a_link = table.find("a", {"class": "user-hover user-avatar"})
+            auth_link = table.find("a", {"class": "user-hover user-avatar"})
 
-            if a_link:
-                # at this point a_link will be similar to the lines below:
-                #<a class="user-hover user-avatar" rel="kiyoshi.lee"
-                author_url = a_link['rel']
-                author = People(author_url)
-            else:
-                # instead of <a .. we got a <span ..
-                span_link = table.find("span", {"class": "user-hover user-avatar"})
-                author_url = span_link.get('rel', 'anonymous')
-                author = People(author_url)
+            if not auth_link:
+                # Automated changes usually have this class
+                auth_link = table.find("a", {"class": "user-hover"})
 
+                # instead of <a .. we got a <span>
+                if not auth_link:
+                    auth_link = table.find("span", {"class": "user-hover user-avatar"})
+
+            author_url = auth_link.get('rel', 'anonymous')
+            author = People(author_url)
 
             # we look for a string similar to:
             #<time datetime="2011-11-19T00:27-0800">19/Nov/11 12:27 AM</time>
