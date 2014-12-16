@@ -59,6 +59,7 @@ class DBJiraIssueExt(object):
     security = Unicode()
     updated = DateTime()
     version = Unicode()
+    fix_version = Unicode()
     component = Unicode()
     votes = Int()
     project = Unicode()
@@ -89,6 +90,7 @@ class DBJiraIssueExtMySQL(DBJiraIssueExt):
                      security VARCHAR(35) NOT NULL, \
                      updated DATETIME NOT NULL, \
                      version VARCHAR(35) NOT NULL, \
+                     fix_version VARCHAR(35) NOT NULL, \
                      component VARCHAR(35) NOT NULL, \
                      votes INTEGER UNSIGNED, \
                      project VARCHAR(35) NOT NULL, \
@@ -145,6 +147,7 @@ class DBJiraBackend(DBBackend):
             db_issue_ext.security = self.__return_unicode(issue.security)
             db_issue_ext.updated = issue.updated
             db_issue_ext.version = self.__return_unicode(issue.version)
+            db_issue_ext.fix_version = self.__return_unicode(issue.fix_version)
             db_issue_ext.component = self.__return_unicode(issue.component)
             db_issue_ext.votes = issue.votes
             db_issue_ext.project = self.__return_unicode(issue.project)
@@ -220,6 +223,7 @@ class JiraIssue(Issue):
         self.security = None
         self.updated = None
         self.version = None
+        self.fix_version = None
         self.component = None
         self.votes = None
         self.project = None
@@ -254,6 +258,9 @@ class JiraIssue(Issue):
 
     def setVersion(self, version):
         self.version = version
+
+    def setFixVersion(self, fix_version):
+        self.fix_version = fix_version
 
     def setComponent(self, component):
         self.component = component
@@ -311,6 +318,7 @@ class Bug():
         self.created = None
         self.updated = None
         self.version = None
+        self.fix_version = None
         self.component = None
         self.votes = None
         self.project = None
@@ -429,6 +437,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.attachments = []
         self.customfields = []
         self.versions = []
+        self.fix_versions = []
 
         self.title = None
         self.link = None
@@ -442,6 +451,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.created = None
         self.updated = None
         self.version = None
+        self.fix_version = None
         self.component = None
         self.votes = None
 
@@ -482,6 +492,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.is_created = False
         self.is_updated = False
         self.is_version = False
+        self.is_fix_version = False
         self.is_component = False
         self.is_votes = False
 
@@ -523,6 +534,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.updated = ''
         elif name == 'version':
             self.is_version = True
+        elif name == 'fixVersion':
+            self.is_fix_version = True
         elif name == 'component':
             self.is_component = True
         elif name == 'votes':
@@ -596,6 +609,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.updated += ch
         elif self.is_version:
             self.version = ch
+        elif self.is_fix_version:
+            self.fix_version = ch
         elif self.is_component:
             self.component = ch
         elif self.is_votes:
@@ -648,6 +663,9 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif name == 'version':
             self.is_version = False
             self.versions.append(self.version)
+        elif name == 'fixVersion':
+            self.is_fix_version = False
+            self.fix_versions.append(self.fix_version)
         elif name == 'component':
             self.is_component = False
         elif name == 'votes':
@@ -698,6 +716,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newbug.created = self.created
             newbug.updated = self.updated
             newbug.version = ','.join(self.versions)
+            newbug.fix_version = ','.join(self.fix_versions)
             newbug.component = self.component
             newbug.votes = self.votes
             newbug.project = self.project
@@ -779,6 +798,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.setSecurity(bug.security)
         issue.setUpdated(parse(bug.updated).replace(tzinfo=None))
         issue.setVersion(bug.version)
+        issue.setFixVersion(bug.fix_version)
         issue.setComponent(bug.component)
         issue.setVotes(bug.votes)
         issue.setProject(bug.project)
