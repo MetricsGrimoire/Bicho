@@ -428,6 +428,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.comments = []
         self.attachments = []
         self.customfields = []
+        self.versions = []
 
         self.title = None
         self.link = None
@@ -646,6 +647,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_updated = False
         elif name == 'version':
             self.is_version = False
+            self.versions.append(self.version)
         elif name == 'component':
             self.is_component = False
         elif name == 'votes':
@@ -695,7 +697,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newbug.security = self.security
             newbug.created = self.created
             newbug.updated = self.updated
-            newbug.version = self.version
+            newbug.version = ','.join(self.versions)
             newbug.component = self.component
             newbug.votes = self.votes
             newbug.project = self.project
