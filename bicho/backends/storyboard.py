@@ -366,8 +366,9 @@ class StoryBoard():
             logging.info("Remaining stories: %i" % (remaining))
             if (self.debug): break
 
-        logging.info("Done. Stories analyzed:" + str(total_stories - remaining))
-        if remaining != 0:
+        logging.info("Done. Stories analyzed (updated):" + str(total_stories - remaining))
+
+        if remaining != 0 and self.last_mod_date is None:
             logging.error("Not all stories downloaded. Pending: " + str(remaining))
 
         # Time to analyze tasks changes for updated stories
@@ -396,8 +397,6 @@ class StoryBoard():
             time.sleep(0.2)
 
     def run(self):
-        """
-        """
         self.debug = False
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
 
@@ -413,8 +412,7 @@ class StoryBoard():
         trk = Tracker(Config.url, "storyboard", "beta")
         self.dbtrk = self.bugsdb.insert_tracker(trk)
 
-        # self.last_mod_date = self.bugsdb.get_last_modification_date()
-        self.last_mod_date = None
+        self.last_mod_date = self.bugsdb.get_last_modification_date()
 
         if self.last_mod_date:
             logging.info("Last bugs analyzed were modified on: %s" % self.last_mod_date)
