@@ -1,0 +1,363 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2012 Bitergia
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# Authors:  Alvaro del Castillo <acs@bitergia.com>
+#
+
+from bicho.config import Config
+
+from bicho.backends import Backend
+from bicho.utils import create_dir, printdbg, printout, printerr
+from bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.common import Tracker, Issue, People, Change
+
+from dateutil.parser import parse
+from datetime import datetime
+
+import errno
+import feedparser
+import json
+import logging
+import os
+import pprint
+import random
+import sys
+import time
+import traceback
+import urllib
+
+
+from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
+
+
+class DBStoryBoardIssueExt(object):
+    __storm_table__ = 'issues_ext_storyboard'
+
+    id = Int(primary=True)
+    project_id = Int()
+    story_id = Int()
+    mod_date = DateTime()
+    issue_id = Int()
+
+    issue = Reference(issue_id, DBIssue.id)
+
+    def __init__(self, issue_id):
+        self.issue_id = issue_id
+
+
+class DBStoryBoardIssueExtMySQL(DBStoryBoardIssueExt):
+    """
+    MySQL subclass of L{DBStoryBoardIssueExt}
+    """
+
+    # If the table is changed you need to remove old from database
+    __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_storyboard ( \
+                    id INTEGER NOT NULL AUTO_INCREMENT, \
+                    project_id INTEGER, \
+                    story_id INTEGER NOT NULL, \
+                    mod_date DATETIME, \
+                    issue_id INTEGER NOT NULL, \
+                    PRIMARY KEY(id), \
+                    FOREIGN KEY(issue_id) \
+                    REFERENCES tasks (id) \
+                    ON DELETE CASCADE \
+                    ON UPDATE CASCADE \
+                     ) ENGINE=MYISAM;'
+
+class DBStoryBoardBackend(DBBackend):
+    """
+    Adapter for StoryBoard backend.
+    """
+    def __init__(self):
+        self.MYSQL_EXT = [DBStoryBoardIssueExtMySQL]
+
+    def insert_issue_ext(self, store, issue, issue_id):
+        """
+        Insert the given extra parameters of issue with id X{issue_id}.
+
+        @param store: database connection
+        @type store: L{storm.locals.Store}
+        @param issue: issue to insert
+        @type issue: L{StoryBoardIssue}
+        @param issue_id: identifier of the issue
+        @type issue_id: C{int}
+
+        @return: the inserted extra parameters issue
+        @rtype: L{DBStoryBoardIssueExt}
+        """
+
+        newIssue = False
+
+        try:
+            db_issue_ext = store.find(DBStoryBoardIssueExt,
+                                      DBStoryBoardIssueExt.issue_id == issue_id).one()
+            if not db_issue_ext:
+                newIssue = True
+                db_issue_ext = DBStoryBoardIssueExt(issue_id)
+                #db_issue_ext = DBSourceForgeIssueExt(issue.category, issue.group, issue_id)
+
+
+            self.project_id = None
+            self.story_id = None
+            self.mod_date = None
+
+            db_issue_ext.project_id = issue.project_id
+            db_issue_ext.story_id = issue.story_id
+            db_issue_ext.mod_date = issue.mod_date
+
+            if newIssue is True:
+                store.add(db_issue_ext)
+
+            store.flush()
+            return db_issue_ext
+        except:
+            store.rollback()
+            raise
+
+    def insert_change_ext(self, store, change, change_id):
+        """
+        Does nothing
+        """
+        pass
+
+    def get_last_modification_date(self, store, tracker_id = None):
+        # get last modification date (day) stored in the database
+        # select date_last_updated as date from issues_ext_storyboard order by date
+        result = store.find(DBStoryBoardIssueExt)
+        aux = result.order_by(Desc(DBStoryBoardIssueExt.mod_date))[:1]
+
+        for entry in aux:
+            return entry.mod_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        return None
+
+
+class StoryBoardIssue(Issue):
+    """
+    Ad-hoc Issue extension for storyboard's issue
+    """
+    def __init__(self, issue, type, summary, desc, submitted_by, submitted_on):
+        Issue.__init__(self, issue, type, summary, desc, submitted_by,
+                       submitted_on)
+        self.project_id = None
+        self.story_id = None
+        self.mod_date = None
+
+class StoryBoard():
+    """
+    StoryBoard backend
+    """
+
+    project_test_file = None
+    safe_delay = 5
+
+    def __init__(self):
+        self.delay = Config.delay
+
+    def _convert_to_datetime(self, str_date):
+        """
+        Returns datetime object from string
+        """
+        return parse(str_date).replace(tzinfo=None)
+
+    def analyze_task(self, task):
+        issue = self.parse_task(task)
+        changes = self.analyze_task_changes(task)
+        for c in changes:
+            issue.add_change(c)
+        return issue
+
+    def parse_task(self, task):
+        # [u'status', u'assignee_id', u'title', u'story_id', u'created_at', u'updated_at', u'priority', u'creator_id', u'project_id', u'id']
+
+        people = People(task["creator_id"])
+        people.set_name(task["creator_id"])
+
+        description = None
+        created_at = None
+        if task["created_at"] is not None:
+            created_at = self._convert_to_datetime(task["created_at"])
+
+        issue = StoryBoardIssue(task["id"],
+                            "task",
+                            task["title"],
+                            description,
+                            people,
+                            created_at)
+        people = People(task["assignee_id"])
+        people.set_name(task["assignee_id"])
+        issue.assigned_to = people
+        issue.status = task["status"]
+        # No information from StoryBoard for this fields
+        issue.resolution = None
+        issue.priority = task["priority"]
+
+        # Extended attributes
+        if task["project_id"] is not None:
+            issue.project_id = task["project_id"]
+        issue.story_id = task["story_id"]
+        if task["updated_at"] is not None:
+            issue.mod_date = self._convert_to_datetime(task["updated_at"])
+
+        return issue
+
+    def analyze_task_changes(self, task):
+        # Changes are included in story events
+        return []
+
+        bug_number = bug_url.split('/')[-1]
+        changes_url = bug_url.replace("rest/", "") + "/feed.atom"
+
+        logging.debug("Analyzing issue changes" + changes_url)
+
+        d = feedparser.parse(changes_url)
+        changes = self.parse_changes(d)
+
+        return changes
+
+    def parse_changes(self, activity):
+        changesList = []
+        for entry in activity['entries']:
+            # print "changed_by:" + entry['author']
+            by = People(entry['author'])
+            # print "changed_on:" + entry['updated']
+            description = entry['description'].split('updated:')
+            changes = description.pop(0)
+            field = changes.rpartition('\n')[2].strip()
+            while description:
+                changes = description.pop(0).split('\n')
+                values = changes[0].split('=>')
+                if (len(values) != 2):
+                    logging.debug(field + " not supported in changes analysis")
+                    old_value = new_value = ""
+                else:
+                    # u'in-progress' => u'closed'
+                    values = changes[0].split('=>')
+                    old_value = self.remove_unicode(values[0].strip())
+                    if old_value == "''":
+                        old_value = ""
+                    new_value = self.remove_unicode(values[1].strip())
+                    if new_value == "''":
+                        new_value = ""
+                update = parse(entry['updated'])
+                change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
+                changesList.append(change)
+                if (len(changes) > 1):
+                    field = changes[1].strip()
+        return changesList
+
+    def remove_unicode(self, str):
+        """
+        Cleanup u'' chars indicating a unicode string
+        """
+        if (str.startswith('u\'') and str.endswith('\'')):
+            str = str[2:len(str) - 1]
+        return str
+
+    def run(self):
+        """
+        """
+        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
+
+        logging.info("Running StoryBoard bicho backend with delay of %s seconds" % (str(self.delay)))
+
+        tasks_per_query = 500 # max limit by default in https://storyboard.openstack.org/api/v1/
+        # tasks_per_query = 10 # debug
+
+        bugsdb = get_database(DBStoryBoardBackend())
+
+        # still useless in storyboard
+        bugsdb.insert_supported_traker("storyboard", "beta")
+        trk = Tracker(Config.url, "storyboard", "beta")
+        dbtrk = bugsdb.insert_tracker(trk)
+
+        last_mod_date = bugsdb.get_last_modification_date()
+
+        # Date before the first task
+        time_window_start = "1900-01-01T00:00:00Z"
+        time_window_end = datetime.now().isoformat() + "Z"
+
+        if last_mod_date:
+            time_window_start = last_mod_date
+            logging.info("Last bugs analyzed were modified on: %s" % last_mod_date)
+
+        time_window = time_window_start + " TO  " + time_window_end
+
+        self.url_tasks = Config.url + "/api/v1/tasks"
+        # self.url_tasks += "?sort_field=updated_at&sort_dir=asc&limit="+str(tasks_per_query)
+        self.url_tasks += "?limit="+str(tasks_per_query)
+
+        # A time range with all the tasks
+        # self.url_tasks += urllib.quote("mod_date_dt:[" + time_window + "]")
+        logging.debug("URL for getting tasks " + self.url_tasks)
+
+        f = urllib.urlopen(self.url_tasks)
+        total_tasks = int(f.info()['x-total'])
+        limit_tasks = int(f.info()['x-limit'])
+        f.close()
+
+        logging.info("Number of tasks: " + str(total_tasks))
+
+        if total_tasks == 0:
+            logging.info("No bugs found. Did you provide the correct url?")
+            sys.exit(0)
+        remaining = total_tasks
+
+        print "ETA ", (total_tasks * Config.delay) / (60), "m (", (total_tasks * Config.delay) / (60 * 60), "h)"
+
+        start_page = 0
+        total_pages = total_tasks / tasks_per_query
+        marker = None # The resource id where the page should begin
+
+        while start_page <= total_pages:
+            if marker:
+                self.url_tasks_page = self.url_tasks + "&marker="+str(marker)
+            else:
+                self.url_tasks_page = self.url_tasks
+
+            logging.info("URL for next tasks " + self.url_tasks_page)
+
+            f = urllib.urlopen(self.url_tasks_page)
+            taskList = json.loads(f.read())
+
+            task_items = []
+
+            for task in taskList:
+                try:
+                    marker = task['id']
+                    issue_data = self.analyze_task(task)
+                    marker = task['id']
+                    if issue_data is None:
+                        continue
+                    bugsdb.insert_issue(issue_data, dbtrk.id)
+                    remaining -= 1
+                except Exception, e:
+                    logging.error("Error in function analyze_task ")
+                    logging.error(task)
+                    traceback.print_exc(file=sys.stdout)
+                    sys.exit()
+                except UnicodeEncodeError:
+                    logging.error("UnicodeEncodeError: the task couldn't be stored")
+                    logging.error(task)
+            start_page += 1
+            logging.info("Remaining issues: %i" % (remaining))
+
+
+        logging.info("Done. Tasks analyzed:" + str(total_tasks - remaining))
+
+Backend.register_backend('storyboard', StoryBoard)
