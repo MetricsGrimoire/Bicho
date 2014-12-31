@@ -373,6 +373,7 @@ class StoryBoard():
         # Time to analyze tasks changes for updated stories
         logging.info("Total stories to analyze changes " + str(len(storiesUpdated)))
 
+        remaining = len(storiesUpdated)
         for story_id in storiesUpdated:
             url_events = Config.url + "/api/v1/stories/" + str(story_id) + "/events"
             f = urllib.urlopen(url_events)
@@ -389,6 +390,8 @@ class StoryBoard():
                     db_change = self.bugsdb._get_db_change(change, task_id, self.dbtrk.id)
                     if db_change == -1:
                         self.bugsdb._insert_change(change, task_id, self.dbtrk.id)
+            remaining -= 1
+            if remaining % 100 == 0: logging.info("Remaining: " + str(remaining))
             f.close()
             time.sleep(0.2)
 
