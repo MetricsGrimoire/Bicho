@@ -181,9 +181,9 @@ class StoryBoard():
 
     def parse_task(self, task):
         # [u'status', u'assignee_id', u'title', u'story_id', u'created_at', u'updated_at', u'priority', u'creator_id', u'project_id', u'id']
-
         people = People(task["creator_id"])
-        people.set_name(task["creator_id"])
+        people.set_email(self.get_email(task["creator_id"]))
+        people.set_name(self.get_fullname(task["creator_id"]))
 
         description = None
         created_at = None
@@ -197,7 +197,9 @@ class StoryBoard():
                             people,
                             created_at)
         people = People(task["assignee_id"])
-        people.set_name(task["assignee_id"])
+        people.set_email(self.get_email(task["assignee_id"]))
+        people.set_name(self.get_fullname(task["assignee_id"]))
+
         issue.assigned_to = people
         issue.status = task["status"]
         # No information from StoryBoard for this fields
@@ -217,6 +219,9 @@ class StoryBoard():
         # print "changed_by:" + entry['author']
         field = change['event_type']
         by = People(change['author_id'])
+        by.set_email(self.get_email(change['author_id']))
+        by.set_name(self.get_fullname(change['author_id']))
+
         old_value = new_value = None
         if field == "task_created":
             new_value = change['event_info']['task_title']
@@ -256,8 +261,6 @@ class StoryBoard():
         self.url_tasks_total = self.url_tasks + "?limit=1"
         self.url_tasks += "?limit="+str(self.items_per_query)
 
-        # A time range with all the tasks
-        # self.url_tasks += urllib.quote("mod_date_dt:[" + time_window + "]")
         logging.debug("URL for getting tasks " + self.url_tasks)
 
         f = urllib.urlopen(self.url_tasks_total)
@@ -289,7 +292,6 @@ class StoryBoard():
 
             for task in taskList:
                 try:
-                    marker = task['id']
                     issue_data = self.analyze_task(task)
                     marker = task['id']
                     if issue_data is None:
@@ -396,6 +398,52 @@ class StoryBoard():
             f.close()
             time.sleep(0.2)
 
+    def get_user_field(self, user_id, field):
+        for user in self.all_users:
+            if user['id'] == user_id:
+                if field in user:
+                    return user[field]
+
+    def get_username(self, user_id):
+        return self.get_user_field(user_id, "username")
+    def get_fullname(self, user_id):
+        return self.get_user_field(user_id, "full_name")
+    def get_email(self, user_id):
+        return self.get_user_field(user_id, "email")
+
+    def analyze_users(self):
+        """ Users is not big data so just gather all and store the info in memory """
+        self.all_users = []
+        self.url_users = Config.url + "/api/v1/users"
+        self.url_users_total = self.url_users + "?limit=1"
+        self.url_users += "?limit="+str(self.items_per_query)
+
+        f = urllib.urlopen(self.url_users_total)
+        total_users = int(f.info()['x-total'])
+        f.close()
+
+        start_page = 0
+        total_pages = total_users / self.items_per_query
+        marker = None # The resource id where the page should begin
+
+        while start_page <= total_pages:
+            if marker:
+                self.url_users_page = self.url_users + "&marker="+str(marker)
+            else:
+                self.url_users_page = self.url_users
+
+            logging.info("URL for next users " + self.url_users_page)
+
+            f = urllib.urlopen(self.url_users_page)
+            userList = json.loads(f.read())
+
+            self.all_users += userList
+
+            start_page += 1
+
+        logging.info("Done user gathering")
+
+
     def run(self):
         self.debug = False
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
@@ -417,8 +465,8 @@ class StoryBoard():
         if self.last_mod_date:
             logging.info("Last bugs analyzed were modified on: %s" % self.last_mod_date)
 
+        self.analyze_users()
         self.analyze_tasks()
         self.analyze_stories_events()
-
 
 Backend.register_backend('storyboard', StoryBoard)
