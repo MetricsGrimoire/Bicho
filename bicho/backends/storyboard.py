@@ -177,9 +177,6 @@ class StoryBoard():
 
     def analyze_task(self, task):
         issue = self.parse_task(task)
-        changes = self.analyze_task_changes(task)
-        for c in changes:
-            issue.add_change(c)
         return issue
 
     def parse_task(self, task):
@@ -216,50 +213,34 @@ class StoryBoard():
 
         return issue
 
-    def analyze_task_changes(self, task):
-        # Changes are included in story events
-        return []
+    def parse_change(self, change):
+        # print "changed_by:" + entry['author']
+        field = change['event_type']
+        by = People(change['author_id'])
+        old_value = new_value = None
+        if field == "task_created":
+            new_value = change['event_info']['task_title']
+        elif field == "task_priority_changed":
+            old_value = change['event_info']['old_priority']
+            new_value = change['event_info']['new_priority']
+        elif field == "task_status_changed":
+            old_value = change['event_info']['old_status']
+            new_value = change['event_info']['new_status']
+        elif field == "task_assignee_changed":
+            old_value = change['event_info']['old_assignee_id']
+            new_value = change['event_info']['new_assignee_id']
+        elif field == "task_details_changed":
+            # No data about the old and new details provided in API REST JSON
+            pass
+        elif field == "task_deleted":
+            pass
+        else:
+            logging.error(field + " not supported yet in changes.")
+            logging.info(change)
 
-        bug_number = bug_url.split('/')[-1]
-        changes_url = bug_url.replace("rest/", "") + "/feed.atom"
-
-        logging.debug("Analyzing issue changes" + changes_url)
-
-        d = feedparser.parse(changes_url)
-        changes = self.parse_changes(d)
-
-        return changes
-
-    def parse_changes(self, activity):
-        changesList = []
-        for entry in activity['entries']:
-            # print "changed_by:" + entry['author']
-            by = People(entry['author'])
-            # print "changed_on:" + entry['updated']
-            description = entry['description'].split('updated:')
-            changes = description.pop(0)
-            field = changes.rpartition('\n')[2].strip()
-            while description:
-                changes = description.pop(0).split('\n')
-                values = changes[0].split('=>')
-                if (len(values) != 2):
-                    logging.debug(field + " not supported in changes analysis")
-                    old_value = new_value = ""
-                else:
-                    # u'in-progress' => u'closed'
-                    values = changes[0].split('=>')
-                    old_value = self.remove_unicode(values[0].strip())
-                    if old_value == "''":
-                        old_value = ""
-                    new_value = self.remove_unicode(values[1].strip())
-                    if new_value == "''":
-                        new_value = ""
-                update = parse(entry['updated'])
-                change = Change(unicode(field), unicode(old_value), unicode(new_value), by, update)
-                changesList.append(change)
-                if (len(changes) > 1):
-                    field = changes[1].strip()
-        return changesList
+        update = parse(change['created_at'])
+        change = Change(field, unicode(old_value), unicode(new_value), by, update)
+        return change
 
     def remove_unicode(self, str):
         """
@@ -269,44 +250,17 @@ class StoryBoard():
             str = str[2:len(str) - 1]
         return str
 
-    def run(self):
-        """
-        """
-        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
-
-        logging.info("Running StoryBoard bicho backend with delay of %s seconds" % (str(self.delay)))
-
-        tasks_per_query = 500 # max limit by default in https://storyboard.openstack.org/api/v1/
-        # tasks_per_query = 10 # debug
-
-        bugsdb = get_database(DBStoryBoardBackend())
-
-        # still useless in storyboard
-        bugsdb.insert_supported_traker("storyboard", "beta")
-        trk = Tracker(Config.url, "storyboard", "beta")
-        dbtrk = bugsdb.insert_tracker(trk)
-
-        last_mod_date = bugsdb.get_last_modification_date()
-
-        # Date before the first task
-        time_window_start = "1900-01-01T00:00:00Z"
-        time_window_end = datetime.now().isoformat() + "Z"
-
-        if last_mod_date:
-            time_window_start = last_mod_date
-            logging.info("Last bugs analyzed were modified on: %s" % last_mod_date)
-
-        time_window = time_window_start + " TO  " + time_window_end
-
+    def analyze_tasks(self):
         self.url_tasks = Config.url + "/api/v1/tasks"
         # self.url_tasks += "?sort_field=updated_at&sort_dir=asc&limit="+str(tasks_per_query)
-        self.url_tasks += "?limit="+str(tasks_per_query)
+        self.url_tasks_total = self.url_tasks + "?limit=1"
+        self.url_tasks += "?limit="+str(self.items_per_query)
 
         # A time range with all the tasks
         # self.url_tasks += urllib.quote("mod_date_dt:[" + time_window + "]")
         logging.debug("URL for getting tasks " + self.url_tasks)
 
-        f = urllib.urlopen(self.url_tasks)
+        f = urllib.urlopen(self.url_tasks_total)
         total_tasks = int(f.info()['x-total'])
         limit_tasks = int(f.info()['x-limit'])
         f.close()
@@ -314,14 +268,12 @@ class StoryBoard():
         logging.info("Number of tasks: " + str(total_tasks))
 
         if total_tasks == 0:
-            logging.info("No bugs found. Did you provide the correct url?")
+            logging.info("No tasks found. Did you provide the correct url? " + Config.url)
             sys.exit(0)
         remaining = total_tasks
 
-        print "ETA ", (total_tasks * Config.delay) / (60), "m (", (total_tasks * Config.delay) / (60 * 60), "h)"
-
         start_page = 0
-        total_pages = total_tasks / tasks_per_query
+        total_pages = total_tasks / self.items_per_query
         marker = None # The resource id where the page should begin
 
         while start_page <= total_pages:
@@ -335,8 +287,6 @@ class StoryBoard():
             f = urllib.urlopen(self.url_tasks_page)
             taskList = json.loads(f.read())
 
-            task_items = []
-
             for task in taskList:
                 try:
                     marker = task['id']
@@ -344,7 +294,7 @@ class StoryBoard():
                     marker = task['id']
                     if issue_data is None:
                         continue
-                    bugsdb.insert_issue(issue_data, dbtrk.id)
+                    self.bugsdb.insert_issue(issue_data, self.dbtrk.id)
                     remaining -= 1
                 except Exception, e:
                     logging.error("Error in function analyze_task ")
@@ -357,7 +307,117 @@ class StoryBoard():
             start_page += 1
             logging.info("Remaining issues: %i" % (remaining))
 
-
         logging.info("Done. Tasks analyzed:" + str(total_tasks - remaining))
+
+    def analyze_stories_events(self):
+        # The changes in tasks is in stories events
+        # Get all stories updated after last analysis and review their changes
+        self.url_stories = Config.url + "/api/v1/stories"
+        self.url_stories += "?sort_field=updated_at&sort_dir=desc"
+        self.url_stories_total = self.url_stories + "&limit=1"
+        self.url_stories += "&limit="+str(self.items_per_query)
+
+        f = urllib.urlopen(self.url_stories_total)
+        total_stories = int(f.info()['x-total'])
+        f.close()
+
+        logging.info("Number of stories: " + str(total_stories))
+
+        if total_stories == 0:
+            logging.info("No stories found. Did you provide the correct url? " + Config.url)
+            sys.exit(0)
+        remaining = total_stories
+
+        start_page = 0
+        total_pages = total_stories / self.items_per_query
+        marker = None # The resource id where the page should begin
+        storiesUpdated = [] # stories with updated info
+        updated_stories = True # control if we have more updated stories
+
+        while start_page <= total_pages and updated_stories:
+            if marker:
+                self.url_stories_page = self.url_stories + "&marker="+str(marker)
+            else:
+                self.url_stories_page = self.url_stories
+
+            logging.info("URL for next stories " + self.url_stories_page)
+
+            f = urllib.urlopen(self.url_stories_page)
+            storiesList = json.loads(f.read())
+            logging.info("Stories gathered: " + str(len(storiesList)))
+
+            for story in storiesList:
+                # print story['updated_at'],story['title']
+                story_date = parse(story['updated_at']).replace(tzinfo=None)
+                if self.last_mod_date:
+                    last_date_shown = parse(self.last_mod_date).replace(tzinfo=None)
+                    if story_date > last_date_shown:
+                        storiesUpdated.append(story['id'])
+                    else:
+                        logging.info("First story updated before " + self.last_mod_date)
+                        logging.info(story['updated_at']+" "+story['title'])
+                        updated_stories = False
+                        break
+                else: storiesUpdated.append(story['id'])
+                marker = story['id']
+                remaining -= 1
+
+            start_page += 1
+            logging.info("Remaining stories: %i" % (remaining))
+            if (self.debug): break
+
+        logging.info("Done. Stories analyzed:" + str(total_stories - remaining))
+        if remaining != 0:
+            logging.error("Not all stories downloaded. Pending: " + str(remaining))
+
+        # Time to analyze tasks changes for updated stories
+        logging.info("Total stories to analyze changes " + str(len(storiesUpdated)))
+
+        for story_id in storiesUpdated:
+            url_events = Config.url + "/api/v1/stories/" + str(story_id) + "/events"
+            f = urllib.urlopen(url_events)
+            print (url_events)
+            data = f.read()
+            events = json.loads(data)
+            for event in events:
+                # Hack: event_info not provided in API as a JSON object
+                if event['event_info'] is None: continue
+                event['event_info'] = json.loads(event['event_info'])
+                if 'task_id' in event['event_info'].keys():
+                    task_id = event['event_info']['task_id']
+                    change = self.parse_change(event)
+                    db_change = self.bugsdb._get_db_change(change, task_id, self.dbtrk.id)
+                    if db_change == -1:
+                        self.bugsdb._insert_change(change, task_id, self.dbtrk.id)
+            f.close()
+            time.sleep(0.2)
+
+    def run(self):
+        """
+        """
+        self.debug = False
+        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
+
+        logging.info("Running StoryBoard bicho backend")
+
+        self.items_per_query = 500 # max limit by default in https://storyboard.openstack.org/api/v1/
+        if (self.debug): self.items_per_query = 10 # debug
+
+        self.bugsdb = get_database(DBStoryBoardBackend())
+
+        # still useless in storyboard
+        self.bugsdb.insert_supported_traker("storyboard", "beta")
+        trk = Tracker(Config.url, "storyboard", "beta")
+        self.dbtrk = self.bugsdb.insert_tracker(trk)
+
+        # self.last_mod_date = self.bugsdb.get_last_modification_date()
+        self.last_mod_date = None
+
+        if self.last_mod_date:
+            logging.info("Last bugs analyzed were modified on: %s" % self.last_mod_date)
+
+        self.analyze_tasks()
+        self.analyze_stories_events()
+
 
 Backend.register_backend('storyboard', StoryBoard)
