@@ -85,8 +85,8 @@ class DBJiraIssueExtMySQL(DBJiraIssueExt):
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      issue_key VARCHAR(32) NOT NULL, \
                      link VARCHAR(100) NOT NULL, \
-                     title VARCHAR(100) NOT NULL, \
-                     environment VARCHAR(35) NOT NULL, \
+                     title VARCHAR(256) NOT NULL, \
+                     environment VARCHAR(128) NOT NULL, \
                      security VARCHAR(35) NOT NULL, \
                      updated DATETIME NOT NULL, \
                      version VARCHAR(35) NOT NULL, \

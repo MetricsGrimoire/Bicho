@@ -114,8 +114,8 @@ class DBBugzillaIssueExtMySQL(DBBugzillaIssueExt):
                      remaining_time VARCHAR(32) default NULL, \
                      actual_time VARCHAR(32) default NULL, \
                      deadline DATETIME default NULL, \
-                     keywords VARCHAR(64) default NULL, \
-                     flag VARCHAR(32) default NULL, \
+                     keywords VARCHAR(256) default NULL, \
+                     flag VARCHAR(128) default NULL, \
                      cc VARCHAR(64) default NULL, \
                      group_bugzilla VARCHAR(32) default NULL, \
                      issue_id INTEGER NOT NULL, \
