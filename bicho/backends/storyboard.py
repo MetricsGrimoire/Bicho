@@ -23,7 +23,7 @@ from bicho.config import Config
 
 from bicho.backends import Backend
 from bicho.utils import create_dir, printdbg, printout, printerr
-from bicho.db.database import DBIssue, DBBackend, get_database
+from bicho.db.database import DBIssue, DBChange, DBPeople, DBBackend, get_database
 from bicho.common import Tracker, Issue, People, Change
 
 from dateutil.parser import parse
@@ -311,6 +311,33 @@ class StoryBoard():
 
         logging.info("Done. Tasks analyzed:" + str(total_tasks - remaining))
 
+
+    def check_tasks_events (self):
+        """ Add event/invalid changes if don't exists and task in this status """
+        print "Checking task events ..."
+        by = People('bicho_tool')
+        by.set_name('Bicho tool')
+
+        issues = self.bugsdb.store.find(DBIssue)
+        people_none = self.bugsdb.store.find(DBPeople, DBPeople.user_id == unicode("None")).one()
+        for task in issues:
+            if task.status in ['merged','invalid']:
+                # Closed condition that needs and event for it
+                changes = self.bugsdb.store.find(DBChange, DBChange.issue_id == task.id)
+                found_change = False
+                for change in changes:
+                    if change.new_value == task.status:
+                        found_change = True
+                        break
+                if not found_change:
+                    task_ext = self.bugsdb.store.find(DBStoryBoardIssueExt,
+                                                      DBStoryBoardIssueExt.issue_id == task.id).one()
+                    field = "task_status_changed"
+                    old_value = None
+                    logging.info("Adding to " + task.summary + " " + task.status + " event")
+                    change = Change(field, old_value, task.status, by, task_ext.mod_date)
+                    self.bugsdb._insert_change(change, task.id, self.dbtrk.id)
+
     def analyze_stories_events(self):
         # The changes in tasks is in stories events
         # Get all stories updated after last analysis and review their changes
@@ -357,7 +384,7 @@ class StoryBoard():
                         storiesUpdated.append(story['id'])
                     else:
                         logging.info("First story updated before " + self.last_mod_date)
-                        logging.info(story['updated_at']+" "+story['title'])
+                        logging.info("No updates from " + story['updated_at']+" "+story['title'])
                         updated_stories = False
                         break
                 else: storiesUpdated.append(story['id'])
@@ -380,12 +407,12 @@ class StoryBoard():
         for story_id in storiesUpdated:
             url_events = Config.url + "/api/v1/stories/" + str(story_id) + "/events"
             f = urllib.urlopen(url_events)
-            print (url_events)
             data = f.read()
             events = json.loads(data)
+
             for event in events:
-                # Hack: event_info not provided in API as a JSON object
                 if event['event_info'] is None: continue
+                # Hack: event_info not provided in API as a JSON object. Convert it to JSON.
                 event['event_info'] = json.loads(event['event_info'])
                 if 'task_id' in event['event_info'].keys():
                     task_id = event['event_info']['task_id']
@@ -393,6 +420,8 @@ class StoryBoard():
                     db_change = self.bugsdb._get_db_change(change, task_id, self.dbtrk.id)
                     if db_change == -1:
                         self.bugsdb._insert_change(change, task_id, self.dbtrk.id)
+
+
             remaining -= 1
             if remaining % 100 == 0: logging.info("Remaining: " + str(remaining))
             f.close()
@@ -455,7 +484,6 @@ class StoryBoard():
 
         self.bugsdb = get_database(DBStoryBoardBackend())
 
-        # still useless in storyboard
         self.bugsdb.insert_supported_traker("storyboard", "beta")
         trk = Tracker(Config.url, "storyboard", "beta")
         self.dbtrk = self.bugsdb.insert_tracker(trk)
@@ -468,5 +496,6 @@ class StoryBoard():
         self.analyze_users()
         self.analyze_tasks()
         self.analyze_stories_events()
+        self.check_tasks_events()
 
 Backend.register_backend('storyboard', StoryBoard)
