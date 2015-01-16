@@ -314,7 +314,6 @@ class StoryBoard():
 
     def check_tasks_events (self):
         """ Add event/invalid changes if don't exists and task in this status """
-        print "Checking task events ..."
         by = People('bicho_tool')
         by.set_name('Bicho tool')
 
@@ -334,7 +333,7 @@ class StoryBoard():
                                                       DBStoryBoardIssueExt.issue_id == task.id).one()
                     field = "task_status_changed"
                     old_value = None
-                    logging.info("Adding to " + task.summary + " " + task.status + " event")
+                    # logging.info("Adding to " + task.summary + " " + task.status + " event")
                     change = Change(field, old_value, task.status, by, task_ext.mod_date)
                     self.bugsdb._insert_change(change, task.id, self.dbtrk.id)
 
@@ -416,10 +415,15 @@ class StoryBoard():
                 event['event_info'] = json.loads(event['event_info'])
                 if 'task_id' in event['event_info'].keys():
                     task_id = event['event_info']['task_id']
+                    issue = self.bugsdb.store.find(DBIssue, DBIssue.issue == unicode(task_id)).one()
+                    if issue is None:
+                        logging.error("Task " + str(task_id) + " found in event but does not exists")
+                        logging.info(event)
+                        continue
                     change = self.parse_change(event)
-                    db_change = self.bugsdb._get_db_change(change, task_id, self.dbtrk.id)
+                    db_change = self.bugsdb._get_db_change(change, issue.id, self.dbtrk.id)
                     if db_change == -1:
-                        self.bugsdb._insert_change(change, task_id, self.dbtrk.id)
+                        self.bugsdb._insert_change(change, issue.id, self.dbtrk.id)
 
 
             remaining -= 1
