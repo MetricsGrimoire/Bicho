@@ -85,8 +85,8 @@ class DBJiraIssueExtMySQL(DBJiraIssueExt):
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      issue_key VARCHAR(32) NOT NULL, \
                      link VARCHAR(100) NOT NULL, \
-                     title VARCHAR(100) NOT NULL, \
-                     environment VARCHAR(35) NOT NULL, \
+                     title VARCHAR(256) NOT NULL, \
+                     environment VARCHAR(128) NOT NULL, \
                      security VARCHAR(35) NOT NULL, \
                      updated DATETIME NOT NULL, \
                      version VARCHAR(35) NOT NULL, \
@@ -431,7 +431,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.init_bug()
 
     def init_bug(self):
-
         self.mapping = []
         self.comments = []
         self.attachments = []
@@ -441,12 +440,12 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         self.title = None
         self.link = None
-        self.description = ""
-        self.environment = ""
+        self.description = None
+        self.environment = None
         self.summary = None
         self.bug_type = None
         self.status = None
-        self.resolution = ""
+        self.resolution = None
         self.security = None
         self.created = None
         self.updated = None
@@ -480,38 +479,18 @@ class BugsHandler(xml.sax.handler.ContentHandler):
 
         #control data
         self.first_desc = True
-        self.is_title = False
-        self.is_link = False
         self.is_description = False
-        self.is_environment = False
-        self.is_summary = False
-        self.is_bug_type = False
-        self.is_status = False
-        self.is_resolution = False
-        self.is_security = False
-        self.is_created = False
-        self.is_updated = False
-        self.is_version = False
-        self.is_fix_version = False
-        self.is_component = False
-        self.is_votes = False
-
-        self.is_project = False
-        self.is_issue_key = False
-        self.is_assignee = False
-        self.is_reporter = False
-        self.is_comment = False
-        self.is_customfieldname = False
         self.is_customfieldvalue = False
 
     def startElement(self, name, attrs):
+        self.value = unicode("")
+
         if name == "item":
             self.init_bug()
         elif name == 'title':
             self.is_title = True
         elif name == 'link':
             self.is_link = True
-            self.link = ''
         elif name == 'description':
             self.is_description = True
         elif name == 'environment':
@@ -528,10 +507,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_security = True
         elif name == 'created':
             self.is_created = True
-            self.created = ''
         elif name == 'updated':
             self.is_updated = True
-            self.updated = ''
         elif name == 'version':
             self.is_version = True
         elif name == 'fixVersion':
@@ -573,113 +550,65 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         elif name == 'customfieldvalues':
             self.is_customfieldvalue = True
 
-
     def characters(self, ch):
-        if self.is_title:
-            self.title = ch
-        elif self.is_link:
-            self.link += ch
-        elif self.is_description:
-            #FIXME problems with ascii, not support str() function
+        if self.is_description:
             if (self.first_desc is True):
                 self.first_desc = False
             else:
-                self.description = self.description + ch.strip()
-        elif self.is_environment:
-            self.environment = self.environment + ch
-        elif self.is_summary:
-            self.summary = ch
-        elif self.is_bug_type:
-            self.bug_type = ch
-        elif self.is_status:
-            self.status = ch
-        elif self.is_resolution:
-            self.resolution += ch
-        elif self.is_security:
-            self.security = ch
-        elif self.is_assignee:
-            #FIXME problems with ascii, not support str() function
-            self.assignee = ch
-        elif self.is_reporter:
-            #FIXME problems with ascii, not support str() function
-            self.reporter = ch
-        elif self.is_created:
-            self.created += ch
-        elif self.is_updated:
-            self.updated += ch
-        elif self.is_version:
-            self.version = ch
-        elif self.is_fix_version:
-            self.fix_version = ch
-        elif self.is_component:
-            self.component = ch
-        elif self.is_votes:
-            self.votes = int(ch)
-        elif self.is_project:
-            self.project = ch
-        elif self.is_issue_key:
-            self.issue_key = ch
-        elif self.is_comment:
-            #FIXME problems with ascii, not support str() function
-            self.comment = self.comment + ch
-        elif self.is_customfieldname:
-            self.customfieldname = ch
+                self.value = self.value + ch.strip()
         elif self.is_customfieldvalue:
             if ch.lstrip().__len__() != 0:
-                self.customfieldvalue = ch.lstrip()
-
+                self.value += ch.lstrip()
+        else:
+            self.value += ch
 
     def endElement(self, name):
         if name == 'title':
-            self.is_title = False
+            self.title = self.value
         elif name == 'link':
-            self.is_link = False
+            self.link = self.value
         elif name == 'project':
-            self.is_project = False
+            self.project = self.value
         elif name == 'description':
             self.is_description = False
+            self.description = self.value
         elif name == 'environment':
-            self.is_environment = False
+            self.environment = self.value
         elif name == 'key':
-            self.is_issue_key = False
+            self.issue_key = self.value
         elif name == 'summary':
-            self.is_summary = False
+            self.summary = self.value
         elif name == 'type':
-            self.is_bug_type = False
+            self.bug_type = self.value
         elif name == 'status':
-            self.is_status = False
+            self.status = self.value
         elif name == 'resolution':
-            self.is_resolution = False
+            self.resolution = self.value
         elif name == 'security':
-            self.is_security = False
+            self.security = self.value
         elif name == 'assignee':
-            self.is_assignee = False
+            self.assignee = self.value
         elif name == 'reporter':
-            self.is_reporter = False
+            self.reporter = self.value
         elif name == 'created':
-            self.is_created = False
+            self.created = self.value
         elif name == 'updated':
-            self.is_updated = False
+            self.updated = self.value
         elif name == 'version':
-            self.is_version = False
-            self.versions.append(self.version)
+            self.versions.append(self.value)
         elif name == 'fixVersion':
-            self.is_fix_version = False
-            self.fix_versions.append(self.fix_version)
+            self.fix_versions.append(self.value)
         elif name == 'component':
-            self.is_component = False
+            self.component = self.value
         elif name == 'votes':
-            self.is_votes = False
+            self.votes = int(self.value)
         elif name == 'comment':
-            self.is_comment = False
             newComment = JiraComment()
-            newComment.comment = self.comment
+            newComment.comment = self.value
             newComment.comment_id = self.comment_id
             newComment.comment_author = self.comment_author
             newComment.comment_created = self.comment_created
             self.comments.append(newComment)
-            self.comment = ""
-
         elif name == 'attachment':
             newAttachment = JiraAttachment()
             newAttachment.attachment_id = self.attachment_id
@@ -688,12 +617,11 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newAttachment.attachment_author = self.attachment_author
             newAttachment.attachment_created = self.attachment_created
             self.attachments.append(newAttachment)
-
         elif name == 'customfieldname':
-            self.is_customfieldname = False
+            self.customfieldname = self.value
         elif name == 'customfieldvalues':
             self.is_customfieldvalue = False
-
+            self.customfieldvalue = self.value
         elif name == 'customfield':
             newCustomfield = Customfield()
             newCustomfield.customfield_id = self.customfield_id
@@ -701,7 +629,6 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newCustomfield.customfieldname = self.customfieldname
             newCustomfield.customfieldvalue = self.customfieldvalue
             self.customfields.append(newCustomfield)
-
         elif name == 'item':
             newbug = Bug()
             newbug.title = self.title

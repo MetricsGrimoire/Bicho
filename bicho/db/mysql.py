@@ -119,7 +119,7 @@ class DBIssueMySQL(DBIssue):
                      issue VARCHAR(255) NOT NULL, \
                      type VARCHAR(64) NULL, \
                      summary VARCHAR(255) NOT NULL, \
-                     description TEXT NOT NULL, \
+                     description MEDIUMTEXT NOT NULL, \
                      status VARCHAR(64) NOT NULL, \
                      resolution VARCHAR(64) NULL, \
                      priority VARCHAR(64) NULL, \

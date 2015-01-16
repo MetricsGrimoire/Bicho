@@ -104,6 +104,17 @@ E7. Getting information from a project using Redmine
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u "https://www.bitergia.net/"
 
 
+Known issues
+------------
+
+Newer versions of MySQL server may raise the next error message:
+```
+Error Code: 1406. Data too long for column
+```
+
+To avoid this problem, please update your MySQL configuration removing `STRICT_TRANS_TABLES` value from `sql-mode` parameter.
+
+
  Roadmap
 ---------
 
