@@ -45,6 +45,32 @@ import urllib
 from storm.locals import DateTime, Desc, Int, Reference, Unicode, Bool
 
 
+class DBStoryBoardStory(object):
+    __storm_table__ = 'stories'
+
+    story_id = Int(primary=True)
+    created_date = DateTime()
+    updated_date = DateTime()
+    status = Unicode()
+    author = Int()
+
+    def __init__(self, story_id):
+        self.story_id = story_id
+
+class DBStoryBoardStoryMySQL(DBStoryBoardStory):
+    """
+    MySQL subclass of L{DBStoryBoardIssueExt}
+    """
+
+    # If the table is changed you need to remove old from database
+    __sql_table__ = 'CREATE TABLE IF NOT EXISTS stories ( \
+                    story_id INTEGER NOT NULL, \
+                    created_date DATETIME, \
+                    mod_date DATETIME, \
+                    updated_id INTEGER NOT NULL, \
+                    PRIMARY KEY(story_id) \
+                     ) ENGINE=MYISAM;'
+
 class DBStoryBoardIssueExt(object):
     __storm_table__ = 'issues_ext_storyboard'
 
@@ -84,7 +110,29 @@ class DBStoryBoardBackend(DBBackend):
     Adapter for StoryBoard backend.
     """
     def __init__(self):
-        self.MYSQL_EXT = [DBStoryBoardIssueExtMySQL]
+        self.MYSQL_EXT = [DBStoryBoardIssueExtMySQL,DBStoryBoardStoryMySQL]
+
+    def insert_story(self, store, story):
+        try:
+            db_story = store.find(DBStoryBoardStory,
+                                  DBStoryBoardStory.story_id == story_id).one()
+            if not db_story:
+                newStory = True
+                db_story = DBStoryBoardStory(story_id)
+
+            db_story.story_id = story.story_id
+            db_story.mod_date = story.mod_date
+            db_story.status = story.status
+            db_story.author = story.author
+
+            if newStory is True:
+                store.add(db_story)
+
+            store.flush()
+            return db_story
+        except:
+            store.rollback()
+            raise
 
     def insert_issue_ext(self, store, issue, issue_id):
         """
