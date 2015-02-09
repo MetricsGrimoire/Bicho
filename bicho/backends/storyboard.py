@@ -49,10 +49,14 @@ class DBStoryBoardStory(object):
     __storm_table__ = 'stories'
 
     story_id = Int(primary=True)
-    created_date = DateTime()
-    updated_date = DateTime()
+    created_at = DateTime()
+    updated_at = DateTime()
     status = Unicode()
-    author = Int()
+    description = Unicode()
+    title = Unicode()
+    tags = Unicode()
+    creator_id = Int()
+    is_bug = Bool()
 
     def __init__(self, story_id):
         self.story_id = story_id
@@ -65,9 +69,14 @@ class DBStoryBoardStoryMySQL(DBStoryBoardStory):
     # If the table is changed you need to remove old from database
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS stories ( \
                     story_id INTEGER NOT NULL, \
-                    created_date DATETIME, \
-                    mod_date DATETIME, \
-                    updated_id INTEGER NOT NULL, \
+                    created_at DATETIME, \
+                    updated_at DATETIME, \
+                    status VARCHAR(255), \
+                    creator_id INTEGER NOT NULL, \
+                    is_bug BOOLEAN, \
+                    title TEXT, \
+                    description TEXT, \
+                    tags TEXT, \
                     PRIMARY KEY(story_id) \
                      ) ENGINE=MYISAM;'
 
@@ -113,17 +122,25 @@ class DBStoryBoardBackend(DBBackend):
         self.MYSQL_EXT = [DBStoryBoardIssueExtMySQL,DBStoryBoardStoryMySQL]
 
     def insert_story(self, store, story):
+        newStory = False
         try:
             db_story = store.find(DBStoryBoardStory,
-                                  DBStoryBoardStory.story_id == story_id).one()
+                                  DBStoryBoardStory.story_id == story['id']).one()
             if not db_story:
                 newStory = True
-                db_story = DBStoryBoardStory(story_id)
+                db_story = DBStoryBoardStory(story['id'])
 
-            db_story.story_id = story.story_id
-            db_story.mod_date = story.mod_date
-            db_story.status = story.status
-            db_story.author = story.author
+            db_story.updated_at = StoryBoard.convert_to_datetime(story['updated_at'])
+            db_story.created_at = StoryBoard.convert_to_datetime(story['created_at'])
+            db_story.status = story['status']
+            if story['creator_id']:
+                db_story.creator_id = story['creator_id']
+            else:
+                db_story.creator_id = -1
+            db_story.is_bug = story['is_bug']
+            db_story.description = story['description']
+            db_story.title = story['title']
+            db_story.tags = unicode(";".join(story['tags']))
 
             if newStory is True:
                 store.add(db_story)
@@ -217,7 +234,8 @@ class StoryBoard():
     def __init__(self):
         self.delay = Config.delay
 
-    def _convert_to_datetime(self, str_date):
+    @staticmethod
+    def convert_to_datetime(str_date):
         """
         Returns datetime object from string
         """
@@ -236,7 +254,7 @@ class StoryBoard():
         description = None
         created_at = None
         if task["created_at"] is not None:
-            created_at = self._convert_to_datetime(task["created_at"])
+            created_at = StoryBoard.convert_to_datetime(task["created_at"])
 
         issue = StoryBoardIssue(task["id"],
                             "task",
@@ -259,7 +277,7 @@ class StoryBoard():
             issue.project_id = task["project_id"]
         issue.story_id = task["story_id"]
         if task["updated_at"] is not None:
-            issue.mod_date = self._convert_to_datetime(task["updated_at"])
+            issue.mod_date = StoryBoard.convert_to_datetime(task["updated_at"])
 
         return issue
 
@@ -385,9 +403,10 @@ class StoryBoard():
                     change = Change(field, old_value, task.status, by, task_ext.mod_date)
                     self.bugsdb._insert_change(change, task.id, self.dbtrk.id)
 
-    def analyze_stories_events(self):
+    def analyze_stories_and_events(self):
         # The changes in tasks is in stories events
-        # Get all stories updated after last analysis and review their changes
+        # Get all stories updated after last analysis store them
+        # and review their changes
         self.url_stories = Config.url + "/api/v1/stories"
         self.url_stories += "?sort_field=updated_at&sort_dir=desc"
         self.url_stories_total = self.url_stories + "&limit=1"
@@ -429,12 +448,15 @@ class StoryBoard():
                     last_date_shown = parse(self.last_mod_date).replace(tzinfo=None)
                     if story_date > last_date_shown:
                         storiesUpdated.append(story['id'])
+                        self.backend.insert_story(self.bugsdb.store, story)
                     else:
                         logging.info("First story updated before " + self.last_mod_date)
                         logging.info("No updates from " + story['updated_at']+" "+story['title'])
                         updated_stories = False
                         break
-                else: storiesUpdated.append(story['id'])
+                else:
+                    storiesUpdated.append(story['id'])
+                    self.backend.insert_story(self.bugsdb.store, story)
                 marker = story['id']
                 remaining -= 1
 
@@ -534,7 +556,8 @@ class StoryBoard():
         self.items_per_query = 500 # max limit by default in https://storyboard.openstack.org/api/v1/
         if (self.debug): self.items_per_query = 10 # debug
 
-        self.bugsdb = get_database(DBStoryBoardBackend())
+        self.backend = DBStoryBoardBackend()
+        self.bugsdb = get_database(self.backend)
 
         self.bugsdb.insert_supported_traker("storyboard", "beta")
         trk = Tracker(Config.url, "storyboard", "beta")
@@ -547,7 +570,7 @@ class StoryBoard():
 
         self.analyze_users()
         self.analyze_tasks()
-        self.analyze_stories_events()
+        self.analyze_stories_and_events()
         self.check_tasks_events()
 
 Backend.register_backend('storyboard', StoryBoard)
