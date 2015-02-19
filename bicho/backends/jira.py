@@ -235,6 +235,9 @@ class JiraIssue(Issue):
     def setStatus(self, status):
         self.status = status
 
+    def setPriority(self, priority):
+        self.set_priority(priority)
+
     def setResolution(self, resolution):
         self.resolution = resolution
 
@@ -313,6 +316,7 @@ class Bug():
         self.summary = None
         self.bug_type = None
         self.status = None
+        self.priority = None
         self.resolution = None
         self.security = None
         self.created = None
@@ -445,6 +449,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         self.summary = None
         self.bug_type = None
         self.status = None
+        self.priority = None
         self.resolution = None
         self.security = None
         self.created = None
@@ -501,6 +506,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.is_bug_type = True
         elif name == 'status':
             self.is_status = True
+        elif name == 'priority':
+            self.is_priority = True
         elif name == 'resolution':
             self.is_resolution = True
         elif name == 'security':
@@ -582,6 +589,8 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             self.bug_type = self.value
         elif name == 'status':
             self.status = self.value
+        elif name == 'priority':
+            self.priority = self.value
         elif name == 'resolution':
             self.resolution = self.value
         elif name == 'security':
@@ -638,6 +647,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
             newbug.summary = self.summary
             newbug.bug_type = self.bug_type
             newbug.status = self.status
+            newbug.priority = self.priority
             newbug.resolution = self.resolution
             newbug.security = self.security
             newbug.created = self.created
@@ -704,6 +714,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         summary = bug.summary
         description = bug.description
         status = bug.status
+        priority = bug.priority
         resolution = bug.resolution
 
         assigned_by = People(bug.assignee_username)
@@ -732,6 +743,7 @@ class BugsHandler(xml.sax.handler.ContentHandler):
         issue.setProject_id(bug.project_id)
         issue.setProject_key(bug.project_key)
         issue.setStatus(status)
+        issue.setPriority(priority)
         issue.setResolution(resolution)
 
         bug_activity_url = bug.link + '?page=com.atlassian.jira.plugin.system.issuetabpanels%3Achangehistory-tabpanel'
