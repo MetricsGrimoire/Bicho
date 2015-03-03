@@ -495,11 +495,17 @@ class Gerrit():
 
         version_raw = subprocess.check_output(cmd)
 
-        # output: gerrit version 2.10
-        version = version_raw.split('gerrit version')[1]
-        version = version.split('.')
-        mayor = int(version[0])
-        minor = int(version[1])
+        # output: gerrit version 2.10-rc1-988-g333a9dd
+        m = re.match("gerrit version (\d+)\.(\d+).*", version_raw)
+
+        if not m:
+            raise Exception("Invalid gerrit version %s" % version_raw)
+
+        try:
+            mayor = int(m.group(1))
+            minor = int(m.group(2))
+        except Exception, e:
+            raise Exception("Invalid gerrit version %s. Error: %s" % (version_raw, str(e)))
 
         return mayor, minor
 
