@@ -495,6 +495,7 @@ class GithubBackend(Backend):
         result = urllib2.urlopen(request)
         content = result.read()
 
+        self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
         events = json.loads(content)
 
         return events
@@ -511,6 +512,7 @@ class GithubBackend(Backend):
         result = urllib2.urlopen(request)
         content = result.read()
 
+        self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
         comments = json.loads(content)
 
         return comments
