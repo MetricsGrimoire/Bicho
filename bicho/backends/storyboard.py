@@ -381,7 +381,8 @@ class StoryBoard():
     def check_tasks_events (self):
         """ Add event/invalid changes if don't exists and task in this status """
         by = People('bicho_tool')
-        by.set_name('Bicho tool')
+        # TODO: at some point this should be NULL
+        by.set_name('Unknown')
 
         issues = self.bugsdb.store.find(DBIssue)
         people_none = self.bugsdb.store.find(DBPeople, DBPeople.user_id == unicode("None")).one()
