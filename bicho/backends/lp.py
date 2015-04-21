@@ -934,7 +934,7 @@ class LPBackend(Backend):
             people_lp = self.lp.people[self._get_nickname_from_uri(uri)]
             people_issue = People(people_lp.name)
             people_issue.set_name(people_lp.display_name)
-        except KeyError:
+        except Exception:
             # user deleted from Launchpad!
             people_issue = People(self._get_nickname_from_uri(uri))
         return people_issue
