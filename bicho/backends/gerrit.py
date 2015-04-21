@@ -579,6 +579,7 @@ class Gerrit():
         while (number_results == limit or
                number_results == limit + 1):  # wikimedia gerrit returns limit+1
             # ordered by lastUpdated
+            time.sleep(self.delay)
             tickets = self.getReviews(limit, last_item, mayor, minor)
             number_results = 0
 
