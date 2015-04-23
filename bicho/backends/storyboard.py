@@ -400,6 +400,9 @@ class StoryBoard():
                                                       DBStoryBoardIssueExt.issue_id == task.id).one()
                     field = "task_status_changed"
                     old_value = None
+                    if task_ext.mod_date == None:
+                        # Can't generate the event without date
+                        continue
                     # logging.info("Adding to " + task.summary + " " + task.status + " event")
                     change = Change(field, old_value, task.status, by, task_ext.mod_date)
                     self.bugsdb._insert_change(change, task.id, self.dbtrk.id)
