@@ -540,10 +540,11 @@ class StoryBoard():
 
             f = urllib.urlopen(self.url_users_page)
             userList = json.loads(f.read())
+            marker = userList[-1]['id']
+            start_page += 1
 
             self.all_users += userList
 
-            start_page += 1
 
         logging.info("Done user gathering")
 
