@@ -25,7 +25,6 @@ from backends import Backend
 import info
 from argparse import ArgumentParser
 import os
-import sys
 from urllib2 import Request, urlopen, urlparse, URLError, HTTPError
 
 # 500 is the max recommend by bugmaster@gnome.org.
@@ -183,6 +182,8 @@ class Config():
                             help='Backend user', default=None)
         parser.add_argument('--backend-password', dest='backend_password',
                             help='Backend password', default=None)
+        parser.add_argument('--backend-token', dest='backend_token',
+                            help='Backend authentication token', default=None)
         parser.add_argument('-c', '--cfg', dest='cfgfile',
                             help='Use a custom configuration file', default=None)
         parser.add_argument('-d', '--delay', type=int, dest='delay',
