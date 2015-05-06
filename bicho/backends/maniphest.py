@@ -509,6 +509,16 @@ class Maniphest(Backend):
             printerr("Error: --backend-token is mandatory to download issues from Maniphest\n")
             sys.exit(1)
 
+    def up_to_date(self, last_mod_date, pht):
+        # If the next issue to parse is older than the issue
+        # we had stored at the beginning, that "means" we already
+        # have updated the set
+        if not last_mod_date:
+            return False
+
+        updated_on = unix_to_datetime(pht['dateModified'])
+        return last_mod_date > updated_on
+
     def insert_tracker(self, url):
         self.db.insert_supported_traker('maniphest', None)
 
@@ -679,6 +689,7 @@ class Maniphest(Backend):
             printdbg("Fetching tasks")
 
             count = 0
+            stop = False
 
             ph_tasks = self.conduit.tasks(offset=count,
                                           limit=self.max_issues)
@@ -686,6 +697,11 @@ class Maniphest(Backend):
 
             while ph_tasks:
                 for pht in ph_tasks:
+                    if self.up_to_date(last_mod_date, pht):
+                        printout("Up to date")
+                        stop = True
+                        break
+
                     issue = self.get_issue_from_task(pht)
 
                     # Insert issue
@@ -693,13 +709,18 @@ class Maniphest(Backend):
 
                     nbugs += 1
 
+                if stop:
+                    break
+
                 count = count + self.max_issues
 
                 ph_tasks = self.conduit.tasks(offset=count,
                                               limit=self.max_issues)
                 printdbg("Tasks fetched from %s to %s" % (count, count + self.max_issues))
 
-            printdbg("No more tasks fetched")
+                if not ph_tasks:
+                    printdbg("No more tasks fetched")
+                    printout("Up to date")
         except (requests.exceptions.HTTPError, ConduitError), e:
             printerr("Error: %s" % e)
             sys.exit(1)
@@ -708,4 +729,3 @@ class Maniphest(Backend):
 
 
 Backend.register_backend('maniphest', Maniphest)
-
