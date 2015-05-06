@@ -32,7 +32,7 @@ from storm.locals import DateTime, Int, Float, Reference, Unicode, Desc
 from bicho.config import Config
 from bicho.utils import printout, printdbg, printerr
 from bicho.backends import Backend
-from bicho.common import Tracker, People, Issue
+from bicho.common import Tracker, People, Issue, Comment, Change
 from bicho.db.database import DBIssue, DBTracker, DBBackend, NotFoundError, get_database
 
 
@@ -459,7 +459,10 @@ class Conduit(object):
 
         result = self.call(method, params)
 
-        return result[task_id]
+        ph_trans = result[task_id]
+        ph_trans.sort(key=lambda x : x['dateCreated'])
+
+        return ph_trans
 
     def call(self, method, params):
         # Conduit parameters
@@ -578,7 +581,44 @@ class Maniphest(Backend):
             for project in projects:
                 issue.add_project(project)
 
+        # Retrieve comments and changes
+        phtrans = self.conduit.transactions(pht['id'])
+        comments, changes = self.get_events_from_transactions(phtrans)
+
+        for comment in comments:
+            issue.add_comment(comment)
+        for change in changes:
+            issue.add_change(change)
+
+        printdbg("Task %s (%s) parsed" % (pht['objectName'], pht['phid']))
+
         return issue
+
+    def get_events_from_transactions(self, phtrans):
+        comments = []
+        changes = []
+
+        for phtr in phtrans:
+            printdbg("Parsing transaction %s - date: %s" \
+                     % (phtr['transactionPHID'], phtr['dateCreated']))
+
+            field = phtr['transactionType']
+            dt = unix_to_datetime(phtr['dateCreated'])
+            author = self.get_identity(phtr['authorPHID'])
+            ov = phtr['oldValue']
+            nv = phtr['newValue']
+            text = phtr['comments']
+
+            if field == 'core:comment':
+                comment = Comment(text, author, dt)
+                comments.append(comment)
+            else:
+                old_value = unicode(ov) if ov is not None else None
+                new_value = unicode(nv) if nv is not None else None
+                change = Change(field, old_value, new_value, author, dt)
+                changes.append(change)
+
+        return comments, changes
 
     def get_identity(self, ph_id):
         if not ph_id:
@@ -588,10 +628,13 @@ class Maniphest(Backend):
             return self.identities[ph_id]
 
         result = self.conduit.users([ph_id])
-        raw_data = result[0]
 
-        identity = People(raw_data['userName'])
-        identity.name = raw_data['realName']
+        if result:
+            raw_data = result[0]
+            identity = People(raw_data['userName'])
+            identity.name = raw_data['realName']
+        else:
+            identity = People(ph_id)
 
         self.identities[ph_id] = identity
 
