@@ -250,6 +250,11 @@ class Config():
         group.add_argument('--db-database-in', dest='db_database_in',
                            help='Input database name', default=None)
 
+        # Maniphest options
+        group = parser.add_argument_group('Maniphest options')
+        group.add_argument('--no-resume', action='store_true', dest='no_resume',
+                           help='Disable resume mode', default=False)
+
         args = parser.parse_args()
 
         if args.cfgfile is not None:  # if a config file was specified on the command line

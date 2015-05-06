@@ -497,6 +497,7 @@ class Maniphest(Backend):
         self.url = Config.url
         self.delay = Config.delay
         self.max_issues = Config.nissues
+        self.no_resume = Config.no_resume
         self.db = get_database(DBManiphestBackend())
 
         self.identities = {}
@@ -513,6 +514,8 @@ class Maniphest(Backend):
         # If the next issue to parse is older than the issue
         # we had stored at the beginning, that "means" we already
         # have updated the set
+        if self.no_resume:
+            return False
         if not last_mod_date:
             return False
 
