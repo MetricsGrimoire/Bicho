@@ -135,6 +135,19 @@ class Config():
             except ValueError, e:
                 print("Not an URL: " + Config.url)
 
+        if Config.backend == 'maniphest':
+            start_from = getattr(Config, 'start_from', None)
+
+            if start_from:
+                try:
+                    from dateutil import parser
+                    parser.parse(start_from)
+                except:
+                    msg = "Date format error on start-from argument: %s" % start_from
+                    raise ErrorLoadingConfig(msg)
+            else:
+                Config.start_from = None
+
         if getattr(Config, 'input', None) == 'db':
             Config.check_params(['db_driver_in', 'db_user_in',
                                  'db_password_in', 'db_hostname_in',
@@ -251,9 +264,12 @@ class Config():
                            help='Input database name', default=None)
 
         # Maniphest options
-        group = parser.add_argument_group('Maniphest options')
+        group = group = parser.add_mutually_exclusive_group()
         group.add_argument('--no-resume', action='store_true', dest='no_resume',
-                           help='Disable resume mode', default=False)
+                           help='Disable resume mode (only on maniphest)', default=False)
+        group.add_argument('--start-from', dest='start_from',
+                           help='Do not retrieve issues after this date (only on maniphest)',
+                           default=None)
 
         args = parser.parse_args()
 

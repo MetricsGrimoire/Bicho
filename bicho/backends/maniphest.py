@@ -501,6 +501,14 @@ class Maniphest(Backend):
         self.delay = Config.delay
         self.max_issues = Config.nissues
         self.no_resume = Config.no_resume
+
+        if Config.start_from:
+            # Date format was already checked by config class
+            from dateutil import parser
+            self.start_from = parser.parse(Config.start_from)
+        else:
+            self.start_from = None
+
         self.db = get_database(DBManiphestBackend())
 
         self.identities = {}
@@ -513,16 +521,17 @@ class Maniphest(Backend):
             printerr("Error: --backend-token is mandatory to download issues from Maniphest\n")
             sys.exit(1)
 
-    def up_to_date(self, last_mod_date, pht):
+    def up_to_date(self, last_mod_date, updated_on):
         # If the next issue to parse is older than the issue
         # we had stored at the beginning, that "means" we already
         # have updated the set
         if self.no_resume:
             return False
+        if self.start_from:
+            return False
         if not last_mod_date:
             return False
 
-        updated_on = unix_to_datetime(pht['dateModified'])
         return last_mod_date > updated_on
 
     def insert_tracker(self, url):
@@ -715,6 +724,8 @@ class Maniphest(Backend):
 
         if last_mod_date:
             printdbg("Last modification date stored: %s" % last_mod_date)
+        if self.start_from:
+            printdbg("Ignoring tasks after %s" % str(self.start_from))
 
         printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
         ph_tasks = self.conduit.tasks(offset=count,
@@ -722,9 +733,16 @@ class Maniphest(Backend):
 
         while ph_tasks:
             for pht in ph_tasks:
-                if self.up_to_date(last_mod_date, pht):
+                updated_on = unix_to_datetime(pht['dateModified'])
+
+                if self.up_to_date(last_mod_date, updated_on):
                     stop = True
                     break
+
+                if self.start_from and updated_on > self.start_from:
+                    printdbg("Skipping task %s - %s" % \
+                             (pht['objectName'] ,str(updated_on)))
+                    continue
 
                 issue = self.get_issue_from_task(pht)
 
