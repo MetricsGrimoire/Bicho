@@ -11,10 +11,12 @@ Currently Bicho supports:
 - Sourceforge.net (abandoned)
 - JIRA
 - Launchpad
+- GitHub
+- Maniphest
+- Redmine
+- Gerrit
 - Allura (unstable)
-- GitHub (unstable)
 - Google Code (abandoned)
-- Redmine (unstable, no changes)
 
 
  License
@@ -103,6 +105,9 @@ E7. Getting information from a project using Redmine
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-user=[REDMINE USER] --backend-password=[REDMINE PASSWORD] -d 1 -b redmine -u "https://www.bitergia.net/"
 
+E8. Getting information from Maniphest
+
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-token=[API TOKEN] -b maniphest -u https://phabricator.wikimedia.org [--no-resume]
 
 Known issues
 ------------
