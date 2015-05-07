@@ -215,6 +215,9 @@ class DBDatabase:
                         self.backend.insert_change_ext(self.store, change, db_change.id)
 
             # Insert CC/watchers
+            # Remove old watchers
+            self._remove_issues_watchers(db_issue.id, tracker_id)
+
             for person in issue.watchers:
                 try:
                     #db_issues_watchers = self._insert_issues_watchers(person, db_issue.id,
@@ -369,8 +372,8 @@ class DBDatabase:
         """
         Insert watchers for the issue X{issue_id}
 
-        @return: the inserted comment
-        @rtype: L{DBComment}
+        @return: the inserted watcher
+        @rtype: L{DBIssuesWatchers}
         """
         watcher = self.insert_people(people)
 
@@ -379,6 +382,16 @@ class DBDatabase:
         self.store.add(db_issues_watchers)
         self.store.flush()
         return db_issues_watchers
+
+    def _remove_issues_watchers(self, issue_id, tracker_id):
+        """
+        Remove watchers from the issue X{issue_id}
+        """
+        result = self._get_db_watchers(issue_id, tracker_id)
+
+        for r in result:
+            self.store.remove(r)
+        self.store.flush()
 
     def _get_db_supported_tracker(self, name, version):
         """
@@ -540,6 +553,19 @@ class DBDatabase:
             db_attachment = -1
 
         return db_attachment
+
+    def _get_db_watchers(self, issue_id, tracker_id):
+        """
+        Look for the watchers of the issue X{issue_id}
+
+        @param issue_id: issue identifier
+        @type issue_id: C{int}
+        @param tracker_id: identifier of the tracker
+        @type tracker_id: C{int}
+        """
+        db_watchers = self.store.find(DBIssuesWatchers,
+                                      DBIssuesWatchers.issue_id == issue_id)
+        return db_watchers
 
     def _get_db_temp_rel(self, t_relationship, issue_id):
         """

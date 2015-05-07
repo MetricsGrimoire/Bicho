@@ -407,6 +407,9 @@ class Conduit(object):
         return result
 
     def users(self, phids):
+        if not phids:
+            return []
+
         method = 'user.query'
         params = {'phids' : phids,
                   'limit' : len(phids)}
@@ -594,6 +597,12 @@ class Maniphest(Backend):
             for project in projects:
                 issue.add_project(project)
 
+        # Retrieve subscribers
+        subscribers = self.get_identities(pht['ccPHIDs'])
+
+        for subscriber in subscribers:
+            issue.add_watcher(subscriber)
+
         # Retrieve comments and changes
         phtrans = self.conduit.transactions(pht['id'])
         comments, changes = self.get_events_from_transactions(phtrans)
@@ -652,6 +661,26 @@ class Maniphest(Backend):
         self.identities[ph_id] = identity
 
         return identity
+
+    def get_identities(self, phids):
+        ids = []
+        request = []
+
+        for phid in phids:
+            if phid in self.identities:
+                ids.append(self.identities[phid])
+            else:
+                request.append(phid)
+
+        # Request non-cached identities
+        result = self.conduit.users(request)
+
+        for r in result:
+            identity = People(r['userName'])
+            identity.name = r['realName']
+            ids.append(identity)
+            self.identities[phid] = identity
+        return ids
 
     def get_projects(self, phids):
         prjs = []
