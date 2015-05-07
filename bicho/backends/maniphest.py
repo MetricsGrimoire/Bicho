@@ -672,13 +672,12 @@ class Maniphest(Backend):
             self.projects[project.phid] = project
         return prjs
 
-    def run(self):
+    def fetch_and_store_tasks(self):
+        printdbg("Fetching tasks")
+
         nbugs = 0
-
-        printout("Running Bicho with delay of %s seconds" % (str(self.delay)))
-
-        if not self.check_auth():
-            sys.exit(1)
+        count = 0
+        stop = False
 
         # Insert tracker information
         dbtrk = self.insert_tracker(self.url)
@@ -688,47 +687,50 @@ class Maniphest(Backend):
         if last_mod_date:
             printdbg("Last modification date stored: %s" % last_mod_date)
 
-        try:
-            printdbg("Fetching tasks")
+        printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
+        ph_tasks = self.conduit.tasks(offset=count,
+                                      limit=self.max_issues)
 
-            count = 0
-            stop = False
-
-            ph_tasks = self.conduit.tasks(offset=count,
-                                          limit=self.max_issues)
-            printdbg("Tasks fetched from %s to %s" % (count, count + self.max_issues))
-
-            while ph_tasks:
-                for pht in ph_tasks:
-                    if self.up_to_date(last_mod_date, pht):
-                        printout("Up to date")
-                        stop = True
-                        break
-
-                    issue = self.get_issue_from_task(pht)
-
-                    # Insert issue
-                    self.db.insert_issue(issue, dbtrk.id)
-
-                    nbugs += 1
-
-                if stop:
+        while ph_tasks:
+            for pht in ph_tasks:
+                if self.up_to_date(last_mod_date, pht):
+                    stop = True
                     break
 
-                count = count + self.max_issues
+                issue = self.get_issue_from_task(pht)
 
-                ph_tasks = self.conduit.tasks(offset=count,
+                # Insert issue
+                self.db.insert_issue(issue, dbtrk.id)
+
+                nbugs += 1
+
+            if stop:
+                printout("Up to date")
+                break
+
+            count = count + self.max_issues
+
+            printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
+            ph_tasks = self.conduit.tasks(offset=count,
                                               limit=self.max_issues)
-                printdbg("Tasks fetched from %s to %s" % (count, count + self.max_issues))
 
-                if not ph_tasks:
-                    printdbg("No more tasks fetched")
-                    printout("Up to date")
+            if not ph_tasks:
+                printdbg("No more tasks fetched")
+                printout("Up to date")
+
+        printout("Done. %s bugs analyzed" % (nbugs))
+
+    def run(self):
+        printout("Running Bicho - %s" % self.url)
+
+        if not self.check_auth():
+            sys.exit(1)
+
+        try:
+            self.fetch_and_store_tasks()
         except (requests.exceptions.HTTPError, ConduitError), e:
             printerr("Error: %s" % e)
             sys.exit(1)
-
-        printout("Done. %s bugs analyzed" % (nbugs))
 
 
 Backend.register_backend('maniphest', Maniphest)
