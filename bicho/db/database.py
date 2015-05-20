@@ -147,7 +147,7 @@ class DBDatabase:
         @rtype: L{DBIssue}
         """
 
-        newIssue = False;
+        newIssue = False
 
         try:
             db_issue = self._get_db_issue(issue.issue, tracker_id)
@@ -289,7 +289,10 @@ class DBDatabase:
             aux_issue_id = self._get_db_issue(tr.issue_id, tr.tracker_id)
             aux_related_to = self._get_db_issue(tr.related_to, tr.tracker_id)
             if (aux_related_to != -1 and aux_issue_id != -1):
-                self._insert_relationship(aux_issue_id.id, tr.type, aux_related_to.id)
+                db_rel = self._get_db_rel(aux_issue_id.id, tr.type, aux_related_to.id)
+
+                if db_rel == -1:
+                    self._insert_relationship(aux_issue_id.id, tr.type, aux_related_to.id)
             else:
                 printdbg("Issue %s belongs to a different tracker and won't be stored" % tr.related_to)
 
@@ -580,6 +583,20 @@ class DBDatabase:
             db_temp_rel = -1
 
         return db_temp_rel
+
+    def _get_db_rel(self, issue_id, type, related_to):
+        """
+        """
+        #DBIssueRelationship
+        db_rel = self.store.find(DBIssueRelationship,
+                                 DBIssueRelationship.issue_id == issue_id,
+                                 DBIssueRelationship.type == type,
+                                 DBIssueRelationship.related_to == related_to).one()
+
+        if not db_rel:
+            db_rel = -1
+
+        return db_rel
 
 
 class DBSupportedTracker(object):
