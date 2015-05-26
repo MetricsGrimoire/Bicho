@@ -178,6 +178,9 @@ class Gerrit():
     Gerrit backend
     """
 
+    MAX_SSH_RETRIES = 5
+    MIN_SSH_WAIT_SECS = 5
+
     project_test_file = None
     safe_delay = 5
 
@@ -474,7 +477,7 @@ class Gerrit():
                 abandoned = True
                 by_abandoned = by
                 date_abandoned = self._convert_to_datetime(comment["timestamp"])
-            elif (RESTORED_REGEXP_1.match(comment["message"]) or 
+            elif (RESTORED_REGEXP_1.match(comment["message"]) or
                    RESTORED_REGEXP_2.match(comment["message"])):
                 abandoned = False
 
@@ -493,7 +496,7 @@ class Gerrit():
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh " + "-p 29418 " + Config.url + " " + args_gerrit)
 
-        version_raw = subprocess.check_output(cmd)
+        version_raw = self.run_ssh_command(cmd)
 
         # output: gerrit version 2.10-rc1-988-g333a9dd
         m = re.match("gerrit version (\d+)\.(\d+).*", version_raw)
@@ -529,7 +532,9 @@ class Gerrit():
         else:
             cmd = ["ssh", "-p 29418", Config.url, args_gerrit]
             printdbg("Gerrit cmd: " + "ssh " + "-p 29418 " + Config.url + " " + args_gerrit)
-        tickets_raw = subprocess.check_output(cmd)
+
+        tickets_raw = self.run_ssh_command(cmd)
+
         # tickets_raw = open('./tickets.json', 'r').read()
         tickets_raw = "[" + tickets_raw.replace("\n", ",") + "]"
         tickets_raw = tickets_raw.replace(",]", "]")
@@ -542,6 +547,27 @@ class Gerrit():
 #        tickets = json.loads(tickets_test)
 
         return tickets
+
+    def run_ssh_command(self, cmd):
+        retries = 0
+        wait = self.MIN_SSH_WAIT_SECS
+
+        while True:
+            try:
+                output = subprocess.check_output(cmd)
+                return output
+            except subprocess.CalledProcessError, e:
+                printdbg("Command failded. code: %s, output: %s" % (e.returncode, e.output))
+
+                if retries == self.MAX_SSH_RETRIES:
+                    printdbg("Aborting. Max retriying times excedeed")
+                    raise
+
+                printdbg("Retriying in %s seconds" % str(wait))
+                time.sleep(wait)
+
+                retries += 1
+                wait = wait * 2
 
     def run(self):
         """
