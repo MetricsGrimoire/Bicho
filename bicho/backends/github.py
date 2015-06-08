@@ -372,12 +372,19 @@ class GithubBackend(Backend):
     def __init__(self):
         self.url = Config.url
         self.delay = Config.delay
-        try:
-            self.backend_password = Config.backend_password
+        self.backend_token = None
+        self.backend_user = None
+        self.backend_password = None
+
+        if hasattr(Config, 'backend_token'):
+            self.backend_token = Config.backend_token
+        elif hasattr(Config, 'backend_user') and hasattr(Config, 'backend_password'):
             self.backend_user = Config.backend_user
-        except AttributeError:
-            printerr("\n--backend-user and --backend-password are mandatory \
-            to download bugs from Github\n")
+            self.backend_password = Config.backend_password
+        else:
+            msg = "\n--backend-user and --backend-password or --backend-token" + \
+                  " are mandatory to download bugs from Github\n"
+            printerr(msg)
             sys.exit(1)
         self.remaining_ratelimit = 0
 
@@ -466,6 +473,17 @@ class GithubBackend(Backend):
 
         return parse(str[:-1])
 
+    def __set_request_auth(self, request):
+        if self.backend_token:
+            auth = "token %s" % self.backend_token
+        else:
+            base64string = base64.encodestring(
+                '%s:%s' % (self.backend_user,
+                           self.backend_password)).replace('\n', '')
+            auth = "Basic %s" % base64string
+
+        request.add_header("Authorization", auth)
+
     def __get_project_from_url(self):
 
         project_name = None
@@ -483,14 +501,12 @@ class GithubBackend(Backend):
     def __get_tracker_url_from_bug(self, bug):
         return bug['url'][:bug['url'].rfind('/')]
 
+
     def __get_batch_activities(self, bug_number):
         url = self.url + "/" + str(bug_number) + "/events"
-        base64string = base64.encodestring(
-            '%s:%s' % (self.backend_user,
-                       self.backend_password)).replace('\n', '')
 
         request = urllib2.Request(url)
-        request.add_header("Authorization", "Basic %s" % base64string)
+        self.__set_request_auth(request)
 
         result = urllib2.urlopen(request)
         content = result.read()
@@ -502,12 +518,9 @@ class GithubBackend(Backend):
 
     def __get_batch_comments(self, bug_number):
         url = self.url + "/" + str(bug_number) + "/comments"
-        base64string = base64.encodestring(
-            '%s:%s' % (self.backend_user,
-                       self.backend_password)).replace('\n', '')
 
         request = urllib2.Request(url)
-        request.add_header("Authorization", "Basic %s" % base64string)
+        self.__set_request_auth(request)
 
         result = urllib2.urlopen(request)
         content = result.read()
@@ -530,12 +543,8 @@ class GithubBackend(Backend):
         if since:
             url = url + "&since=" + str(since)
 
-        base64string = base64.encodestring(
-            '%s:%s' % (self.backend_user,
-                       self.backend_password)).replace('\n', '')
-
         request = urllib2.Request(url)
-        request.add_header("Authorization", "Basic %s" % base64string)
+        self.__set_request_auth(request)
 
         result = urllib2.urlopen(request)
         content = result.read()
@@ -603,13 +612,12 @@ class GithubBackend(Backend):
         while len(bugs) > 0:
 
             for bug in bugs:
-
                 try:
                     issue_data = self.analyze_bug(bug)
                 except Exception:
                     #FIXME it does not handle the e
-                    printerr("Error in function analyzeBug with URL: ' \
-                    '%s and Bug: %s" % (url, bug))
+                    msg = "Error in function analyzeBug with URL: %s and bug: %s" % (url, bug)
+                    printerr(msg)
                     raise
 
                 try:
