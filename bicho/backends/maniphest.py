@@ -340,7 +340,10 @@ class ManiphestIssue(Issue):
         @param priority_color: priority color of the issue
         @type priority_color: C{str}
         """
-        self.points = float(points)
+        try:
+            self.points = float(points)
+        except ValueError:
+            self.points = None
 
     def set_uri(self, uri):
         """
