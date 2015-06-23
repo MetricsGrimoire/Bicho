@@ -137,6 +137,7 @@ class Config():
 
         if Config.backend == 'maniphest':
             start_from = getattr(Config, 'start_from', None)
+            from_id = getattr(Config, 'from_id', None)
 
             if start_from:
                 try:
@@ -147,6 +148,15 @@ class Config():
                     raise ErrorLoadingConfig(msg)
             else:
                 Config.start_from = None
+
+            if from_id:
+                try:
+                    Config.from_id = int(from_id)
+                except:
+                    msg = "Invalid issue id: %s" % from_id
+                    raise ErrorLoadingConfig(msg)
+            else:
+                Config.from_id = None
 
         if getattr(Config, 'input', None) == 'db':
             Config.check_params(['db_driver_in', 'db_user_in',
@@ -269,6 +279,9 @@ class Config():
                            help='Disable resume mode (only on maniphest)', default=False)
         group.add_argument('--start-from', dest='start_from',
                            help='Do not retrieve issues after this date (only on maniphest)',
+                           default=None)
+        group.add_argument('--from-id', dest='from_id',
+                           help='Retrieve issues in sequence from the given id (only on maniphest)',
                            default=None)
 
         args = parser.parse_args()

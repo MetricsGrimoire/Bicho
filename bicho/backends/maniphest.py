@@ -433,21 +433,28 @@ class Conduit(object):
 
         return prjs
 
-    def tasks(self, offset=None, limit=None):
+    def tasks(self, offset=None, limit=None, as_id=False):
         method = 'maniphest.query'
         params = {'order' : 'order-modified'}
 
-        if offset:
-            params['offset'] = offset
-        if limit:
-            params['limit'] = limit
+        if not as_id:
+            if offset:
+                params['offset'] = offset
+            if limit:
+                params['limit'] = limit
+        else:
+            start = offset
+            stop = start + limit
+            params['ids'] = range(start, stop)
 
         result = self.call(method, params)
+
+        if not result:
+            return []
 
         ph_tasks = sorted(result.items(),
                           key=lambda x : x[1]['dateModified'],
                           reverse=True)
-
         ph_tasks = [pht[1] for pht in ph_tasks]
 
         return ph_tasks
@@ -509,8 +516,13 @@ class Maniphest(Backend):
             # Date format was already checked by config class
             from dateutil import parser
             self.start_from = parser.parse(Config.start_from)
+            self.from_id = None
+        elif Config.from_id:
+            self.from_id = Config.from_id
+            self.start_from = None
         else:
             self.start_from = None
+            self.from_id = None
 
         self.db = get_database(DBManiphestBackend())
 
@@ -528,6 +540,8 @@ class Maniphest(Backend):
         # If the next issue to parse is older than the issue
         # we had stored at the beginning, that "means" we already
         # have updated the set
+        if self.from_id:
+            return False
         if self.no_resume:
             return False
         if self.start_from:
@@ -691,7 +705,7 @@ class Maniphest(Backend):
             identity = People(r['userName'])
             identity.name = r['realName']
             ids.append(identity)
-            self.identities[phid] = identity
+            self.identities[r['phid']] = identity
         return ids
 
     def get_projects(self, phids):
@@ -725,14 +739,24 @@ class Maniphest(Backend):
 
         last_mod_date = self.db.get_last_modification_date(tracker_id=dbtrk.id)
 
-        if last_mod_date:
-            printdbg("Last modification date stored: %s" % last_mod_date)
-        if self.start_from:
-            printdbg("Ignoring tasks after %s" % str(self.start_from))
+        if self.from_id:
+            count = self.from_id
+            as_id = True
 
-        printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
+            printout("Fetching tasks from %s id to %s id" % (count, count + self.max_issues - 1))
+        else:
+            as_id = False
+
+            if last_mod_date:
+                printdbg("Last modification date stored: %s" % last_mod_date)
+            if self.start_from:
+                printdbg("Ignoring tasks after %s" % str(self.start_from))
+
+            printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
+
         ph_tasks = self.conduit.tasks(offset=count,
-                                      limit=self.max_issues)
+                                      limit=self.max_issues,
+                                      as_id=as_id)
 
         while ph_tasks:
             for pht in ph_tasks:
@@ -760,9 +784,14 @@ class Maniphest(Backend):
 
             count = count + self.max_issues
 
-            printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
+            if as_id:
+                printout("Fetching tasks from %s id to %s id" % (count, count + self.max_issues - 1))
+            else:
+                printout("Fetching tasks from %s to %s" % (count, count + self.max_issues))
+
             ph_tasks = self.conduit.tasks(offset=count,
-                                              limit=self.max_issues)
+                                          limit=self.max_issues,
+                                          as_id=as_id)
 
             if not ph_tasks:
                 printdbg("No more tasks fetched")
