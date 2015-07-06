@@ -39,6 +39,7 @@ from lazr.restfulclient.errors import HTTPError
 
 CLOSED_STATE = "closed"
 OPEN_STATE = "open"
+ALL_STATES = "all"
 
 
 class DBGithubIssueExt(object):
@@ -101,7 +102,7 @@ class DBGithubBackend(DBBackend):
     def __init__(self):
         self.MYSQL_EXT = [DBGithubIssueExtMySQL]
 
-    def get_last_modification_date(self, store, bugs_state, tracker_id):
+    def get_last_modification_date(self, store, tracker_id):
         # get last modification date stored in the database for a given status
         # select date_last_updated as date from issues_ext_github order by date
         # desc limit 1;
@@ -115,19 +116,6 @@ class DBGithubBackend(DBBackend):
                             DBIssue.tracker_id == DBTracker.id,
                             DBTracker.id == tracker_id)
         #printdbg (str(Tracker(url, "github", "v3")))
-
-        if (bugs_state == OPEN_STATE):
-            result = store.find(DBGithubIssueExt,
-                                DBGithubIssueExt.status == u"open",
-                                DBGithubIssueExt.issue_id == DBIssue.id,
-                                DBIssue.tracker_id == DBTracker.id,
-                                DBTracker.id == tracker_id)
-        elif (bugs_state == CLOSED_STATE):
-            result = store.find(DBGithubIssueExt,
-                                DBGithubIssueExt.status == u"closed",
-                                DBGithubIssueExt.issue_id == DBIssue.id,
-                                DBIssue.tracker_id == DBTracker.id,
-                                DBTracker.id == tracker_id)
         aux = result.order_by(Desc(DBGithubIssueExt.updated_at))[:1]
 
         for entry in aux:
@@ -530,18 +518,14 @@ class GithubBackend(Backend):
 
         return comments
 
-    def __get_batch_bugs_state(self, state=OPEN_STATE, since=None):
-        if state == OPEN_STATE:
-            url = self.url + "?state=open&page=" + str(self.pagecont) \
-                + "&per_page=100&sort=updated&direction=asc"
-        else:
-            url = self.url + "?state=closed&page=" + str(self.pagecont) \
-                + "&per_page=100&sort=updated&direction=asc"
-            # we need to download both closed and open bugs,
-            #by default state = open
+    def __get_batch_bugs_state(self, state=ALL_STATES, since=None):
+        url = self.url + "?state=" + state + "&page=" + str(self.pagecont) \
+            + "&per_page=100&sort=updated&direction=asc"
 
         if since:
             url = url + "&since=" + str(since)
+
+        printdbg(url)
 
         request = urllib2.Request(url)
         self.__set_request_auth(request)
@@ -555,15 +539,8 @@ class GithubBackend(Backend):
         return bugs
 
     def __get_batch_bugs(self):
-        if self.bugs_state == OPEN_STATE:
-            bugs = self.__get_batch_bugs_state(state=OPEN_STATE,
-                                               since=self.mod_date_open)
-            if len(bugs) == 0:
-                self.bugs_state = CLOSED_STATE
-                self.pagecont = 1
-        if self.bugs_state == CLOSED_STATE:
-            bugs = self.__get_batch_bugs_state(state=CLOSED_STATE,
-                                               since=self.mod_date_closed)
+        bugs = self.__get_batch_bugs_state(state=ALL_STATES,
+                                           since=self.mod_date)
         return bugs
 
     def run(self):
@@ -581,28 +558,21 @@ class GithubBackend(Backend):
         trk = Tracker(url, "github", "v3")
         dbtrk = bugsdb.insert_tracker(trk)
 
-        self.bugs_state = "open"
+        self.bugs_state = ALL_STATES
         self.pagecont = 1
+        self.mod_date = None
 
-        self.mod_date_open = None
-        self.mod_date_closed = None
+        aux_date = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
 
-        aux_date_open = bugsdb.get_last_modification_date(state="open",
-                                                          tracker_id=dbtrk.id)
-        if aux_date_open:
-            self.mod_date_open = aux_date_open.isoformat()
-        aux_date_closed = bugsdb.get_last_modification_date(state="closed",
-                                                            tracker_id=dbtrk.id)
-        if aux_date_closed:
-            self.mod_date_closed = aux_date_closed.isoformat()
+        if aux_date:
+            self.mod_date = aux_date.isoformat()
+            printdbg("Last issue already cached: %s" % self.mod_date)
 
-        printdbg("Last open bug already cached: %s" % self.mod_date_open)
-        printdbg("Last closed bug already cached: %s" % self.mod_date_closed)
         bugs = self.__get_batch_bugs()
         nbugs = len(bugs)
 
         if len(bugs) == 0:
-            if aux_date_open or aux_date_closed:
+            if aux_date:
                 printout("Bicho database up to date")
             else:
                 printout("No bugs found. Did you provide the correct url?")
