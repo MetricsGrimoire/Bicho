@@ -374,6 +374,8 @@ class GithubBackend(Backend):
                   " are mandatory to download bugs from Github\n"
             printerr(msg)
             sys.exit(1)
+
+        self.newest_first = Config.newest_first
         self.remaining_ratelimit = 0
 
     def get_domain(self, url):
@@ -518,9 +520,9 @@ class GithubBackend(Backend):
 
         return comments
 
-    def __get_batch_bugs_state(self, state=ALL_STATES, since=None):
+    def __get_batch_bugs_state(self, state=ALL_STATES, since=None, direction='asc'):
         url = self.url + "?state=" + state + "&page=" + str(self.pagecont) \
-            + "&per_page=100&sort=updated&direction=asc"
+            + "&per_page=100&sort=updated&direction=" + direction
 
         if since:
             url = url + "&since=" + str(since)
@@ -539,8 +541,14 @@ class GithubBackend(Backend):
         return bugs
 
     def __get_batch_bugs(self):
+        direction = 'asc'
+
+        if self.newest_first:
+            direction = 'desc'
+
         bugs = self.__get_batch_bugs_state(state=ALL_STATES,
-                                           since=self.mod_date)
+                                           since=self.mod_date,
+                                           direction=direction)
         return bugs
 
     def run(self):

@@ -273,8 +273,13 @@ class Config():
         group.add_argument('--db-database-in', dest='db_database_in',
                            help='Input database name', default=None)
 
+        # GitHub options
+        group = parser.add_argument_group('GitHub specific options')
+        group.add_argument('--newest-first', action='store_true', dest='newest_first',
+                           help='Fetch newest issues first', default=False)
+
         # Maniphest options
-        group = group = parser.add_mutually_exclusive_group()
+        group = parser.add_mutually_exclusive_group()
         group.add_argument('--no-resume', action='store_true', dest='no_resume',
                            help='Disable resume mode (only on maniphest)', default=False)
         group.add_argument('--start-from', dest='start_from',
