@@ -355,6 +355,10 @@ class GithubIssue(Issue):
         self.title = title
 
 
+class GitHubRateLimitReached(Exception):
+    pass
+
+
 class GithubBackend(Backend):
 
     def __init__(self):
@@ -491,32 +495,33 @@ class GithubBackend(Backend):
     def __get_tracker_url_from_bug(self, bug):
         return bug['url'][:bug['url'].rfind('/')]
 
+    def __fetch_data(self, url):
+        request = urllib2.Request(url)
+        self.__set_request_auth(request)
+
+        try:
+            result = urllib2.urlopen(request)
+            content = result.read()
+        except urllib2.HTTPError, e:
+            if e.code == 403:
+                raise GitHubRateLimitReached()
+            raise e
+
+        self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
+
+        return json.loads(content)
 
     def __get_batch_activities(self, bug_number):
         url = self.url + "/" + str(bug_number) + "/events"
 
-        request = urllib2.Request(url)
-        self.__set_request_auth(request)
-
-        result = urllib2.urlopen(request)
-        content = result.read()
-
-        self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
-        events = json.loads(content)
+        events = self.__fetch_data(url)
 
         return events
 
     def __get_batch_comments(self, bug_number):
         url = self.url + "/" + str(bug_number) + "/comments"
 
-        request = urllib2.Request(url)
-        self.__set_request_auth(request)
-
-        result = urllib2.urlopen(request)
-        content = result.read()
-
-        self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
-        comments = json.loads(content)
+        comments = self.__fetch_data(url)
 
         return comments
 
@@ -529,14 +534,7 @@ class GithubBackend(Backend):
 
         printdbg(url)
 
-        request = urllib2.Request(url)
-        self.__set_request_auth(request)
-
-        result = urllib2.urlopen(request)
-        content = result.read()
-
-        self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
-        bugs = json.loads(content)
+        bugs = self.__fetch_data(url)
 
         return bugs
 
@@ -576,7 +574,12 @@ class GithubBackend(Backend):
             self.mod_date = aux_date.isoformat()
             printdbg("Last issue already cached: %s" % self.mod_date)
 
-        bugs = self.__get_batch_bugs()
+        try:
+            bugs = self.__get_batch_bugs()
+        except GitHubRateLimitReached:
+            printout("GitHub rate limit reached. To resume, wait some minutes.")
+            sys.exit(0)
+
         nbugs = len(bugs)
 
         if len(bugs) == 0:
@@ -592,6 +595,9 @@ class GithubBackend(Backend):
             for bug in bugs:
                 try:
                     issue_data = self.analyze_bug(bug)
+                except GitHubRateLimitReached:
+                    printout("GitHub rate limit reached. To resume, wait some minutes.")
+                    sys.exit(0)
                 except Exception:
                     #FIXME it does not handle the e
                     msg = "Error in function analyzeBug with URL: %s and bug: %s" % (url, bug)
@@ -618,7 +624,13 @@ class GithubBackend(Backend):
                 time.sleep(self.delay)
 
             self.pagecont += 1
-            bugs = self.__get_batch_bugs()
+
+            try:
+                bugs = self.__get_batch_bugs()
+            except GitHubRateLimitReached:
+                printout("GitHub rate limit reached. To resume, wait some minutes.")
+                sys.exit(0)
+
             nbugs = nbugs + len(bugs)
 
         #end while
