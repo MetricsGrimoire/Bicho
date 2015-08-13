@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2012-2013 GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,14 +17,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # Authors: Luis Cañas Díaz <lcanas@libresoft.es>
+#
 
-import sys
-import time
 import os
 import pwd
 
 from launchpadlib.launchpad import Launchpad
-from launchpadlib.credentials import Credentials
 from launchpadlib.errors import NotFound
 
 from bicho.backends import Backend
@@ -35,8 +34,6 @@ from bicho.db.database import DBIssue, DBBackend, DBTracker, DBIssue, get_databa
 from storm.locals import DateTime, Int, Reference, Unicode, Desc
 from datetime import datetime
 from dateutil.parser import parse  # used to convert str time to datetime
-
-from tempfile import mkdtemp
 
 
 class DBLaunchpadIssueExt(object):
@@ -271,17 +268,10 @@ class DBLaunchpadBackend(DBBackend):
         #state=closed&per_page=100&sort=updated&direction=asc&
         #since=2012-05-28T21:11:28Z
 
-        # FIXME: the commented code is specific of tracker. In the case of meta-trackers
-        # such as the one used in OpenStack (tracker that contains other trackers), that tracker
-        # is always empty and the process starts from the very beginning. 
-        # In order to avoid this, the date_last_updated is independent of the tracker.
-        # This change may face other issues in the future. An example of this is 
-        # when using in the same database two different trackers from Launchpad.
-        # So this code works when having meta-trackers (the type of trackers we're using so far)
-        result = store.find(DBLaunchpadIssueExt) #,
-                            #DBLaunchpadIssueExt.issue_id == DBIssue.id,
-                            #DBIssue.tracker_id == DBTracker.id,
-                            #DBTracker.id == trk_id)
+        result = store.find(DBLaunchpadIssueExt,
+                            DBLaunchpadIssueExt.issue_id == DBIssue.id,
+                            DBIssue.tracker_id == DBTracker.id,
+                            DBTracker.id == trk_id)
         aux = result.order_by(Desc(DBLaunchpadIssueExt.date_last_updated))[:1]
 
         for entry in aux:
@@ -710,6 +700,7 @@ class LPBackend(Backend):
     def __init__(self):
         self.url = Config.url
         self.delay = Config.delay
+        self.lp = None
 
     def get_domain(self, url):
         strings = url.split('/')
@@ -956,12 +947,47 @@ class LPBackend(Backend):
     def __get_tracker_url_from_bug(self, bug):
         return bug.web_link[:bug.web_link.rfind('+bug') - 1]
 
-    def __no_credential():
-        print "Can't proceed without Launchpad credential."
-        sys.exit()
+    def analyze_project_bugs(self, bugs, dbtrk, bugsdb):
+        analyzed = []
+        nbugs = 0
+
+        for bug in bugs:
+            if bug.web_link in analyzed:
+                continue  # for the bizarre error #338
+
+            try:
+                issue_data = self.analyze_bug(bug)
+            except Exception, e:
+                printerr("Error in function analyzeBug with URL: ' \
+                         '%s and Bug: %s" % (str(dbtrk.url), bug))
+                raise e
+
+            try:
+                bugsdb.insert_issue(issue_data, dbtrk.id)
+                nbugs += 1
+            except UnicodeEncodeError:
+                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
+                         % (issue_data.issue))
+            except NotFoundError:
+                printerr("NotFoundError: the issue %s couldn't be stored"
+                         % (issue_data.issue))
+            except Exception, e:
+                printerr("Unexpected Error: the issue %s couldn't be stored"
+                         % (issue_data.issue))
+                print e
+
+            analyzed.append(bug.web_link)  # for the bizarre error #338
+
+        try:
+            # we read the temporary table with the relationships and create
+            # the final one
+            bugsdb.store_final_relationships()
+        except Exception, e:
+            raise e
+
+        printout("Done. %s/%s bugs analyzed" % (nbugs, len(bugs)))
 
     def run(self):
-
         print("Running Bicho with delay of %s seconds" % (str(self.delay)))
 
         url = self.url
@@ -987,74 +1013,48 @@ class LPBackend(Backend):
                       "Incomplete (with response)",
                       "Incomplete (without response)"]
 
-        # still useless
+        # Check whether the project is a meta project
+        lp_project = self.lp.projects[pname]
+
+        if hasattr(lp_project, 'projects'):
+            projects = [p for p in lp_project.projects]
+        else:
+            projects = [lp_project]
+
+        printdbg("%s projects to analyze" % len(projects))
+
+        # Still useless - insert meta project
         bugsdb.insert_supported_traker("launchpad", "x.x")
         trk = Tracker(url, "launchpad", "x.x")
         dbtrk = bugsdb.insert_tracker(trk)
 
-        last_mod_date = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
+        for p in projects:
+            trk_url = p.web_link.replace('://', '://bugs.')
+            trk = Tracker(trk_url, "launchpad", "x.x")
+            dbtrk = bugsdb.insert_tracker(trk)
 
-        if last_mod_date:
-            bugs = self.lp.projects[pname].searchTasks(status=aux_status,
-                                                       omit_duplicates=False,
-                                                       order_by='date_last_updated',
-                                                       modified_since=last_mod_date)
-        else:
-            bugs = self.lp.projects[pname].searchTasks(status=aux_status,
-                                                       omit_duplicates=False,
-                                                       order_by='date_last_updated')
-        printdbg("Last bug already cached: %s" % last_mod_date)
+            last_mod_date = bugsdb.get_last_modification_date(tracker_id=dbtrk.id)
 
-        nbugs = len(bugs)
+            if last_mod_date:
+                bugs = p.searchTasks(status=aux_status,
+                                     omit_duplicates=False,
+                                     order_by='date_last_updated',
+                                     modified_since=last_mod_date)
+            else:
+                bugs = p.searchTasks(status=aux_status,
+                                     omit_duplicates=False,
+                                     order_by='date_last_updated')
 
-        if nbugs == 0:
-            printout("No bugs found. Did you provide the correct url?")
-            sys.exit(0)
+            printdbg("Last bug already cached: %s" % last_mod_date)
 
-        analyzed = []
+            nbugs = len(bugs)
 
-        for bug in bugs:
+            if nbugs == 0:
+                printout("No bugs found on %s" % p.name)
+                continue
+            else:
+                printout("%s bugs found on %s" % (nbugs, p.name))
 
-            if bug.web_link in analyzed:
-                continue  # for the bizarre error #338
-
-            try:
-                issue_data = self.analyze_bug(bug)
-            except Exception:
-                #FIXME it does not handle the e
-                printerr("Error in function analyzeBug with URL: ' \
-                '%s and Bug: %s" % (url, bug))
-                raise
-
-            try:
-                # we can have meta-trackers but we want to have the original
-                #tracker name
-                tr_url = self.__get_tracker_url_from_bug(bug)
-                if (tr_url != url):
-                    aux_trk = Tracker(tr_url, "launchpad", "x.x")
-                    dbtrk = bugsdb.insert_tracker(aux_trk)
-                bugsdb.insert_issue(issue_data, dbtrk.id)
-            except UnicodeEncodeError:
-                printerr("UnicodeEncodeError: the issue %s couldn't be stored"
-                         % (issue_data.issue))
-            except NotFoundError:
-                printerr("NotFoundError: the issue %s couldn't be stored"
-                         % (issue_data.issue))
-            except Exception, e:
-                printerr("Unexpected Error: the issue %s couldn't be stored"
-                         % (issue_data.issue))
-                print e
-
-            analyzed.append(bug.web_link)  # for the bizarre error #338
-            time.sleep(self.delay)
-
-        try:
-            # we read the temporary table with the relationships and create
-            # the final one
-            bugsdb.store_final_relationships()
-        except:
-            raise
-
-        printout("Done. %s bugs analyzed" % (nbugs))
+            self.analyze_project_bugs(bugs, dbtrk, bugsdb)
 
 Backend.register_backend("lp", LPBackend)
