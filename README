@@ -109,6 +109,11 @@ E8. Getting information from Maniphest
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] --backend-token=[API TOKEN] -b maniphest -u https://phabricator.wikimedia.org [--no-resume]
 
+E9. Getting information from Trac
+
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b trac -u https://fedorahosted.org/freeipa/
+
+
 Known issues
 ------------
 
