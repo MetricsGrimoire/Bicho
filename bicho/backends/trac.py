@@ -363,14 +363,12 @@ class Trac(Backend):
         summary = attrs['summary']
         description = attrs['description']
         status = attrs['status']
-        priority = attrs['priority']
+        
         resolution = attrs['resolution']
 
-        milestone = attrs['milestone']
         component = attrs['component']
         keywords = attrs['keywords']
         version = attrs['version']
-        rhbz = attrs['rhbz']
 
         # Authors
         submitted_by = self.get_identity(attrs['reporter'])
@@ -380,19 +378,26 @@ class Trac(Backend):
         issue = TracIssue(issue_id, task_type, summary, description,
                           submitted_by, submitted_on)
         issue.set_status(status)
-        issue.set_priority(priority)
+        
         issue.set_resolution(resolution)
 
         issue.set_updated_on(updated_on)
         issue.set_uri(self.get_uri(issue_id))
-        issue.set_milestone(milestone)
         issue.set_component(component)
         issue.set_keywords(keywords)
         issue.set_version(version)
-        issue.set_rhbz(rhbz)
 
         if assigned_to:
             issue.set_assigned(assigned_to)
+
+        if 'priority' in attrs:
+            issue.set_priority(attrs['priority'])
+
+        if 'milestone' in attrs:
+            issue.set_milestone(attrs['milestone'])
+            
+        if 'rhbz' in attrs:
+            issue.set_rhbz(attrs['rhbz'])
 
         # Retrieve CCs
         subscribers = attrs['cc']
