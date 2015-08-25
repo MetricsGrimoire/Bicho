@@ -171,6 +171,8 @@ class DBDatabase:
 
             if issue.assigned_to is not None:
                 db_issue.assigned_to = self.insert_people(issue.assigned_to).id
+            else:
+                db_issue.assigned_to = 0
 
             #if issue is new, we add to the data base before the flush()
             if newIssue == True:
