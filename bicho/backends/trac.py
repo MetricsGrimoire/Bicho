@@ -22,6 +22,7 @@
 import datetime
 import json
 import sys
+import time
 
 import dateutil.parser
 import requests
@@ -465,11 +466,12 @@ class Trac(Backend):
             self.db.insert_issue(issue, dbtrk.id)
 
             nbugs += 1
+            time.sleep(self.delay)
 
         printout("Done. %s bugs analyzed from %s" % (nbugs, len(trac_tickets)))
 
     def run(self):
-        printout("Running Bicho - %s" % self.url)
+        printout("Running Bicho with delay of %s seconds - %s" % (self.delay, self.url))
 
         try:
             self.fetch_and_store_tickets()
