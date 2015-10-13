@@ -365,10 +365,14 @@ class DBDatabase:
         @return: the inserted change
         @rtype: L{DBChange}
         """
-        changed_by = self.insert_people(change.changed_by)
+        if not change.changed_by:
+            changed_by_id = -1
+        else:
+            changed_by = self.insert_people(change.changed_by)
+            changed_by_id = changed_by.id
 
         db_change = DBChange(change.field, change.old_value, change.new_value,
-                             changed_by.id, change.changed_on, issue_id)
+                             changed_by_id, change.changed_on, issue_id)
         self.store.add(db_change)
         self.store.flush()
         return db_change

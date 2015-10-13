@@ -352,7 +352,7 @@ class Change:
         self.old_value = old_value
         self.new_value = new_value
 
-        if not isinstance(changed_by, People):
+        if changed_by and not isinstance(changed_by, People):
             raise ValueError('Parameter "changed_by" should be a %s instance. %s given.' %
                              ('People', changed_by.__class__.__name__,))
 
