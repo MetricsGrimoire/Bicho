@@ -114,6 +114,10 @@ E9. Getting information from Trac
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b trac -u https://fedorahosted.org/freeipa/
 
+E10.
+
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -n 25 -b reviewboard -u https://reviews.apache.org/groups/geode/
+
 
 Known issues
 ------------
