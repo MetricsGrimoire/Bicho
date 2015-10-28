@@ -367,6 +367,7 @@ class GithubBackend(Backend):
         self.backend_token = None
         self.backend_user = None
         self.backend_password = None
+        self.users = {}
 
         if hasattr(Config, 'backend_token'):
             self.backend_token = Config.backend_token
@@ -400,15 +401,12 @@ class GithubBackend(Backend):
             bug_type = unicode('')
         summary = bug['title']
         desc = bug['body']
-        submitted_by = People(bug['user']['login'])
-        ## FIXME send petition to bug['user']['url']
+        submitted_by = self.__get_user(bug['user']['login'])
 
         submitted_on = self.__to_datetime(bug['created_at'])
 
         if bug['assignee']:
-            assignee = People(bug['assignee']['login'])
-            ## assignee.set_name(bug.assignee.display_name)
-            ## FIXME get name from bug['assignee']['url']
+            assignee = self.__get_user(bug['assignee']['login'])
         else:
             assignee = People(unicode("nobody"))
 
@@ -438,8 +436,7 @@ class GithubBackend(Backend):
 
         comments = self.__get_batch_comments(bug['number'])
         for c in comments:
-            by = People(c['user']['login'])
-            ## by.setname() FIXME - to be done
+            by = self.__get_user(c['user']['login'])
             date = self.__to_datetime(c['created_at'])
             com = Comment(c['body'], by, date)
             issue.add_comment(com)
@@ -451,7 +448,7 @@ class GithubBackend(Backend):
             added = e['commit_id']
             removed = unicode('')
             if e['actor']:
-                by = People(e['actor']['login'])
+                by = self.__get_user(e['actor']['login'])
             else:
                 by = People(u"nobody")
             ## by.setname() FIXME - to be done
@@ -505,11 +502,30 @@ class GithubBackend(Backend):
         except urllib2.HTTPError, e:
             if e.code == 403:
                 raise GitHubRateLimitReached()
+            printdbg("Error raised on %s" % url)
             raise e
 
         self.remaining_ratelimit = result.info()['x-ratelimit-remaining']
 
         return json.loads(content)
+
+    def __get_user(self, username):
+        if username in self.users:
+            return self.users[username]
+
+        url = "https://api.github.com/users/" + username
+        raw_user = self.__fetch_data(url)
+
+        user = People(username)
+
+        if 'name' in raw_user:
+            user.name = raw_user['name']
+        if 'email' in raw_user:
+            user.email = raw_user['email']
+
+        self.users[username] = user
+
+        return user
 
     def __get_batch_activities(self, bug_number):
         url = self.url + "/" + str(bug_number) + "/events"
