@@ -442,6 +442,7 @@ class Gerrit():
             elif (UPLOAD_REGEXP_1.match(comment["message"])):
                 patchset = comment["message"].split(" ")[3]
                 patchset = patchset.split(".")[0]
+                patchset = patchset.replace(":", "")
             else:
                 continue
             # Sometimes we get more than one Verfieid for the same patch
