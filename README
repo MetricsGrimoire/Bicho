@@ -1,8 +1,8 @@
  Description
 -----------
 
-Bicho is a command line-based tool used to parse bug/issue tracking 
-systems. It gets all the information associated with issues and stores 
+Bicho is a command line-based tool used to parse bug/issue tracking
+systems. It gets all the information associated with issues and stores
 them in a relational database. (It is part of the MetricsGrimoire suite,
 which produces data for vizGrimoire to analyze and visualize.)
 
@@ -100,7 +100,7 @@ $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[D
 
 E6. Getting information from a project using GitHub
 
-$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u "https://api.github.com/repos/composer/composer/issues" --backend-user=[GITHUB USER] --backend-password=[GITHUB PASS]
+$ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b github -u "https://api.github.com/repos/composer/composer/issues" --backend-token=[API TOKEN]
 
 E7. Getting information from a project using Redmine
 
@@ -114,7 +114,7 @@ E9. Getting information from Trac
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -b trac -u https://fedorahosted.org/freeipa/
 
-E10.
+E10. Getting information from Review Board
 
 $ bicho --db-user-out=[DB USER] --db-password-out=[DB PASS] --db-database-out=[DB NAME] -n 25 -b reviewboard -u https://reviews.apache.org/groups/geode/
 
