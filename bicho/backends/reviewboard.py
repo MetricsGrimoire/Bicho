@@ -48,11 +48,11 @@ ABANDONED_STATUS = unicode('ABANDONED')
 
 
 class DBReviewBoardIssueExt(object):
-    __storm_table__ = 'issues_ext_reviewboard'
+    __storm_table__ = 'issues_ext_gerrit'
 
     id = Int(primary=True)
     issue_id = Int()
-    updated_on = DateTime()
+    mod_date = DateTime()
     branch = Unicode()
     uri = Unicode()
 
@@ -70,7 +70,7 @@ class DBReviewBoardIssueExtMySQL(DBReviewBoardIssueExt):
     __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_reviewboard (\
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      issue_id INTEGER NOT NULL, \
-                     updated_on DATETIME default NULL, \
+                     mod_date DATETIME default NULL, \
                      branch TEXT, \
                      uri TEXT, \
                      PRIMARY KEY(id), \
@@ -99,10 +99,10 @@ class DBReviewBoardBackend(DBBackend):
         if result.is_empty():
             return None
 
-        db_issue_ext = result.order_by(Desc(DBReviewBoardIssueExt.updated_on))[0]
-        updated_on = db_issue_ext.updated_on
+        db_issue_ext = result.order_by(Desc(DBReviewBoardIssueExt.mod_date))[0]
+        mod_date = db_issue_ext.mod_date
 
-        return updated_on
+        return mod_date
 
     def insert_issue_ext(self, store, issue, issue_id):
         is_new = False
@@ -114,7 +114,7 @@ class DBReviewBoardBackend(DBBackend):
                 is_new = True
                 db_issue_ext = DBReviewBoardIssueExt(issue_id)
 
-                db_issue_ext.updated_on = issue.updated_on
+                db_issue_ext.mod_date = issue.mod_date
                 db_issue_ext.branch = issue.branch
                 db_issue_ext.uri = issue.uri
 
@@ -153,7 +153,7 @@ class ReviewBoardIssue(Issue):
         Issue.__init__(self, issue, type, summary, desc, submitted_by,
                        submitted_on)
 
-        self.updated_on = None
+        self.mod_date = None
 
     def set_branch(self, branch):
         """
@@ -174,18 +174,18 @@ class ReviewBoardIssue(Issue):
         """
         self.uri = uri
 
-    def set_updated_on(self, updated_on):
+    def set_mod_date(self, mod_date):
         """
-        Set the updated_on of the issue
+        Set the mod_date of the issue
 
-        @param updated_on: date when the issue was updated
-        @type updated_on: L{datetime.datetime}
+        @param mod_date: date when the issue was updated
+        @type mod_date: L{datetime.datetime}
         """
-        if not isinstance(updated_on, datetime.datetime):
-            raise ValueError('Parameter "updated_on" should be a %s '
+        if not isinstance(mod_date, datetime.datetime):
+            raise ValueError('Parameter "mod_date" should be a %s '
                              'instance. %s given.' %
                              ('datetime', input.__class__.__name__))
-        self.updated_on = updated_on
+        self.mod_date = mod_date
 
 
 class ReviewBoardAPIError(Exception):
@@ -355,7 +355,7 @@ class ReviewBoard(Backend):
         url = raw_rq['absolute_url']
 
         submitted_on = self.str_to_datetime(raw_rq['time_added'])
-        updated_on = self.str_to_datetime(raw_rq['last_updated'])
+        mod_date = self.str_to_datetime(raw_rq['last_updated'])
 
         # Retrieve submitter information
         submitted_by = self.get_identity(raw_rq['links']['submitter']['title'])
@@ -364,7 +364,7 @@ class ReviewBoard(Backend):
         rq = ReviewBoardIssue(rq_id, rq_type, summary, desc,
                               submitted_by, submitted_on)
         rq.set_status(status)
-        rq.set_updated_on(updated_on)
+        rq.set_mod_date(mod_date)
         rq.set_branch(branch)
         rq.set_uri(url)
 
