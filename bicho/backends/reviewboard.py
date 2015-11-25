@@ -67,7 +67,7 @@ class DBReviewBoardIssueExtMySQL(DBReviewBoardIssueExt):
     MySQL subclass of L{DBReviewBoardIssueExt}
     """
 
-    __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_reviewboard (\
+    __sql_table__ = 'CREATE TABLE IF NOT EXISTS issues_ext_gerrit (\
                      id INTEGER NOT NULL AUTO_INCREMENT, \
                      issue_id INTEGER NOT NULL, \
                      mod_date DATETIME default NULL, \
