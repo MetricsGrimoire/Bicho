@@ -112,12 +112,12 @@ class DBLaunchpadIssueExtMySQL(DBLaunchpadIssueExt):
                      milestone_data_targeted VARCHAR(32) default NULL, \
                      milestone_name VARCHAR(32) default NULL, \
                      milestone_summary VARCHAR(32) default NULL, \
-                     milestone_title VARCHAR(32) default NULL, \
+                     milestone_title VARCHAR(255) default NULL, \
                      milestone_web_link VARCHAR(256) default NULL, \
                      heat INTEGER UNSIGNED default NULL, \
                      linked_branches VARCHAR(32) default NULL, \
-                     tags VARCHAR(32) default NULL, \
-                     title VARCHAR(32) default NULL, \
+                     tags VARCHAR(255) default NULL, \
+                     title VARCHAR(255) default NULL, \
                      users_affected_count INTEGER UNSIGNED default NULL, \
                      web_link_standalone VARCHAR(256) default NULL, \
                      PRIMARY KEY(id), \
