@@ -402,8 +402,11 @@ class SoupHtmlParser():
                 if not auth_link:
                     auth_link = table.find("span", {"class": "user-hover user-avatar"})
 
-            author_url = auth_link.get('rel', 'anonymous')
-            author = People(author_url)
+            if auth_link:
+                author_id = auth_link.get('rel', 'anonymous')
+            else:
+                author_id = 'anonymous'
+            author = People(author_id)
 
             # we look for a string similar to:
             #<time datetime="2011-11-19T00:27-0800">19/Nov/11 12:27 AM</time>
