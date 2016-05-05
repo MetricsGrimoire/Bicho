@@ -612,7 +612,7 @@ class Maniphest(Backend):
         issue.set_uri(uri)
 
         # Retrieve points
-        points = pht['auxiliary']['isdc:sprint:storypoints']
+        points = pht['auxiliary'].get('isdc:sprint:storypoints', None)
         if points:
             issue.set_points(points)
 
